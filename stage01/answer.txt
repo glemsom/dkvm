@@ -1,0 +1,40 @@
+# Example answer file for setup-alpine script
+# If you don't want to use a certain option, then comment it out
+
+# Use dk layout with dk variant
+KEYMAPOPTS="dk dk"
+
+# Set hostname to alpine-test
+HOSTNAMEOPTS="-n dkvm01"
+
+# Contents of /etc/network/interfaces
+INTERFACESOPTS="auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+    hostname dkvm
+"
+
+# Set timezone to UTC
+TIMEZONEOPTS="-z Europe/Copenhagen"
+
+# set http/ftp proxy
+PROXYOPTS="none"
+
+# Add random mirror
+APKREPOSOPTS="-r"
+
+# Install Openssh
+SSHDOPTS="-c openssh"
+
+# Use busybox
+NTPOPTS="-c busybox"
+
+# Use /dev/sda as a data disk
+DISKOPTS="none"
+
+# Setup in /media/sdb1
+LBUOPTS="none"
+APKCACHEOPTS="none"
+
