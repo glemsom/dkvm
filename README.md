@@ -1,7 +1,8 @@
 # dkvm
 DKVM - Desktop KVM
 
-My attempt to build a Desktop KVM system for my own use.
-I am using QEMU to build a disk image - which can be written to a USB stick.
+DKVM is a minimal KVM hypervisor running from RAM.
+The idea behind DKVM is to re-use the already well-known components on GNU/Linux systems to do network, storage and virtualization - and then run everything else inside a VM.
+The scripts are for my personal use - so some adjustment is needed if you want to build this yourself.
 
-The basic idea is to have a minimal OS, good enough to run VGA Passthrough 
+To build, simply edit "setup.sh" and follow the instructions.
