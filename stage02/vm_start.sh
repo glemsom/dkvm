@@ -103,7 +103,7 @@ case $1 in
 		HARDDISK=/media/storage01/disks/winblows_system.raw
 		FILESIZE=50G # This is ONLY for the install disk
 		HARDDISK2=/media/storage01/disks/winblows_disk2.raw
-		HARDDISK2=/media/storage02/disks/winblows_disk3.raw
+		HARDDISK3=/media/storage02/disks/winblows_disk3.raw
 		INSTALLCD=/media/storage01/home/glemsom/Downloads/win10-final.iso # NOTE: Required baked in virtio drivers!
 		# https://www.vultr.com/docs/how-to-create-a-windows-custom-iso-with-updates-using-ntlite
 		#ROM=/media/storage02/gfx-970.rom
@@ -135,7 +135,7 @@ if [ ! -z "$HARDDISK2" ]; then
         harddisk="$harddisk -drive if=none,id=drive1,cache=none,aio=native,format=raw,file=${HARDDISK2} -device virtio-blk-pci,iothread=iothread0,drive=drive1"
 fi
 if [ ! -z "$HARDDISK3" ]; then
-        harddisk="$harddisk -drive if=none,id=drive1,cache=none,aio=native,format=raw,file=${HARDDISK3} -device virtio-blk-pci,iothread=iothread0,drive=drive2"
+        harddisk="$harddisk -drive if=none,id=drive2,cache=none,aio=native,format=raw,file=${HARDDISK3} -device virtio-blk-pci,iothread=iothread0,drive=drive2"
 fi
 ##########################################
 
