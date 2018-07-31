@@ -43,8 +43,7 @@ sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config
 /etc/init.d/sshd restart
 
 # Disable stp for br0
-echo "
-bridge-stp 0" >> /etc/network/interfaces
+echo "	bridge-stp 0" >> /etc/network/interfaces
 
 # Allow br0 as bridge-device for qemu
 echo "allow br0" > /etc/qemu/bridge.conf

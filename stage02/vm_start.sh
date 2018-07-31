@@ -19,7 +19,7 @@ if [ "$1" == "menu" ]; then
 	4: Winblows 10 install
 	#######################
 
-
+	7: Update DKVM
 	8: reboot
 	9: shutdown'
 	echo -n "Choice: "
@@ -41,6 +41,13 @@ if [ "$1" == "menu" ]; then
 		4)
 			echo "Starting install for Winblows"
 			$0 winblows install
+		;;
+		7)
+			apk update
+			apk upgrade
+			apk cache clean
+			lbu commit -v
+			lbu commit -v -d
 		;;
 		8)
 			reboot
