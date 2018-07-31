@@ -67,8 +67,8 @@ fi
 vga="std"                                                                                                                                                         
 display="-display vnc=:0"                                                                                                                                         
 mouse="-usb -device usb-tablet"                                                                                                                                   
-#net="-net nic,model=e1000 -net bridge,br=br0"                                                                                                                    
-net="-device virtio-net-pci,netdev=net0 -netdev bridge,id=net0"
+net="-net nic,model=e1000 -net bridge,br=br0"                                                                                                                    
+#net="-device virtio-net-pci,netdev=net0 -netdev bridge,id=net0"
 pciExtra=""                                                                                                                                                       
 vfio=""                                                                                                                                                           
 ##########################################   
@@ -96,7 +96,6 @@ case $1 in
 		SMP="-smp sockets=1,cores=3,threads=2"
 		CORELIST="3 9 4 10 5 11"
 		MEM="-m 8192"
-		#net="-net nic,model=e1000 -net bridge,br=br0" #Use e1000 for ubuntu, as virtio causes issues
 		;;
 	winblows) 
 		VM=winblows
@@ -130,12 +129,15 @@ esac
 
 ##### BIOS / HDDs ########################
 bios="-drive if=pflash,format=raw,readonly,file=${BIOS} -drive if=pflash,format=raw,file=${BIOS_VARS}"
-harddisk="-object iothread,id=iothread0 -drive if=none,id=drive0,cache=none,aio=native,format=raw,file=${HARDDISK} -device virtio-blk-pci,iothread=iothread0,drive=drive0"
+harddisk="-drive if=virtio,id=drive0,cache=none,aio=native,format=raw,file=${HARDDISK}"
+
 if [ ! -z "$HARDDISK2" ]; then
-        harddisk="$harddisk -drive if=none,id=drive1,cache=none,aio=native,format=raw,file=${HARDDISK2} -device virtio-blk-pci,iothread=iothread0,drive=drive1"
+        #harddisk="$harddisk -drive if=none,id=drive1,cache=none,aio=native,format=raw,file=${HARDDISK2} -device virtio-blk-pci,iothread=iothread0,drive=drive1"
+	harddisk="$harddisk -drive if=virtio,id=drive1,cache=none,aio=native,format=raw,file=${HARDDISK2}"
 fi
 if [ ! -z "$HARDDISK3" ]; then
-        harddisk="$harddisk -drive if=none,id=drive2,cache=none,aio=native,format=raw,file=${HARDDISK3} -device virtio-blk-pci,iothread=iothread0,drive=drive2"
+        #harddisk="$harddisk -drive if=none,id=drive2,cache=none,aio=native,format=raw,file=${HARDDISK3} -device virtio-blk-pci,iothread=iothread0,drive=drive2"
+	harddisk="$harddisk -drive if=virtio,id=drive2,cache=none,aio=native,format=raw,file=${HARDDISK3}"
 fi
 ##########################################
 
