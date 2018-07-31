@@ -9,7 +9,7 @@ mount -o remount,rw /media/usb
 mkdir /media/usb/cache
 
 # Extra arguments for Linux kernel
-extraArgs="intel_iommu=on vfio-pci.ids=10de:1200,10de:0e0c,10de:13c2,10de:0fbb elevator=noop isolcpus=2-5,8-11 nohz_full=2-5,8-11 rcu_nocbs=2-5,8-11"
+extraArgs="intel_pstate=disable intel_iommu=on vfio-pci.ids=10de:1200,10de:0e0c,10de:13c2,10de:0fbb elevator=noop isolcpus=2-5,8-11 nohz_full=2-5,8-11 rcu_nocbs=2-5,8-11"
 
 # Patch syslinux (legacy boot)
 cp /media/usb/boot/syslinux/syslinux.cfg /media/usb/boot/syslinux/syslinux.cfg.old
