@@ -51,7 +51,7 @@ showMainMenu() {
     for i in `seq 0 $(( ${#menuItems[@]} - 1 ))`; do
         menuStr="$menuStr ${menuItemsType[$i]}-${i} '${menuItems[$i]}'"
     done
-    local backtitle=$(ip a | grep "inet " | grep -v "inet 127" | awk '{print "DKVM          ip: "$2 " nic: " $9}')
+    local backtitle=$(ip a | grep "inet " | grep -v "inet 127" | awk '{print "DKVM          ip: "$2 " nic: " $7}')
     menuStr="--title '$title' --backtitle '$backtitle' --no-tags --no-cancel --menu 'Select option' 20 50 20 $menuStr --stdout"
     menuAnswer=$(eval "dialog $menuStr")
     if [ $? -eq 1 ]; then
@@ -101,7 +101,7 @@ mainHandlerVM() {
     local VMMEM=$(getConfigItem $configFile MEM)
     local VMMAC=$(getConfigItem $configFile MAC)
     local VMCPUOPTS=$(getConfigItem $configFile CPUOPTS)
-    local VMEXTRA=$(getConfigItem $configFile VMEXTRA)
+    local VMEXTRA=$(getConfigItem $configFile EXTRA)
 
 
     # Build qemu command
@@ -109,7 +109,8 @@ mainHandlerVM() {
     OPTS+=" -mem-prealloc"
     OPTS+=" -device virtio-net-pci,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
     OPTS+=" -name $VMNAME"
-    OPTS+=" -mem-path=/dev/hugepages -mem $VMMEM"
+    OPTS+=" -mem-path /dev/hugepages -m $VMMEM"
+    OPTS+=" $VMEXTRA "
     if [ ! -z "$VMSOCKETS" ] && [ ! -z "$VMTHREADS" ] && [ ! -z "$VMCORES" ]; then
         OPTS+=" -smp sockets=${VMSOCKETS},cores=${VMCORES},threads=${VMTHREADS}"
     fi
@@ -140,14 +141,12 @@ mainHandlerVM() {
     else
         OPTS+=" -cpu host"
     fi
-    echo $VMCPUOPTS
-    echo "$OPTS"
 
     vCPUpin "$VMCORELIST" &
     IRQAffinity "$VMCORELIST" &
     realTimeTune
 
-    echo qemu-system-x86_64 $OPTS
+    eval qemu-system-x86_64 $OPTS
 }
 
 getConfigItem() {
