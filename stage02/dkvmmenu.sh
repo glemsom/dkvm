@@ -171,7 +171,9 @@ mainHandlerVM() {
        echo "$VENDOR $DEVICE" | tee /sys/bus/pci/drivers/vfio-pci/new_id
 	sleep 1
     done
+    local CORES=$(echo $VMCORELIST | sed 's/ /,/g')    
 
+    #eval ./chrt -r 50 ./taskset -c $CORES qemu-system-x86_64 $OPTS
     eval qemu-system-x86_64 $OPTS
 }
 
@@ -201,8 +203,9 @@ vCPUpin() {
 	local COUNT=1
 	for THREAD_ID in $THREADS; do
 		CURCORE=$(echo $CORELIST | cut -d " " -f $COUNT)
-        echo "Binding $THREAD_ID to $CURCORE"
+		echo "Binding $THREAD_ID to $CURCORE with realtime priority"
 		taskset -pc $CURCORE $THREAD_ID > /dev/null 2>&1
+		chrt -pf 50 $THREAD_ID
 		COUNT=$(( $COUNT + 1 ))
 	done
 }
