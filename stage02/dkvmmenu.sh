@@ -26,6 +26,21 @@ for cfile in dkvm_vmconfig.*; do
     menuItemsVMs[$itemNumber]="$itemName"
 done
 
+doOut() {
+    local TAILFILE=dkvm.log
+    if [ "$1" == "clear" ]; then
+        rm -f "$TAILFILE"
+        touch "$TAILFILE"
+    elif [ "$1" == "showlog" ]; then
+        dialog --tailbox "$TAILFILE" 20 70
+        # When exited, kill any remaining qemu
+        kill $PIDOFQEMU
+        sleep 10
+        kill -9 $PIDOFQEMU
+    else
+        cat - >> "$TAILFILE"
+    fi
+}
 
 buildItems() {
     for vm in ${menuItemsVMs[*]}; do
@@ -86,6 +101,7 @@ realTimeTune() {
 }
 mainHandlerVM() {
     clear
+    doOut "clear"
     local configFile="dkvm_vmconfig.${1}"
 
     local VMNAME="$(getConfigItem $configFile NAME)"
@@ -122,17 +138,17 @@ mainHandlerVM() {
 
     if [ ! -z "$VMHARDDISK" ]; then
         COUNT=0
-	for DISK in $VMHARDDISK; do
+    for DISK in $VMHARDDISK; do
             # Do we need virtio,id=driveX here ?
             #OPTS+=" -drive if=virtio,cache=none,aio=native,format=raw,file=${DISK}"
             OPTS+=" -drive if=virtio,format=raw,file=${DISK}"
-	    #OPTS+=" -drive if=none,id=drive${COUNT},cache=directsync,aio=native,format=raw,file=${DISK} -device virtio-blk-pci,drive=drive${COUNT},scsi=off"
-	    let COUNT=COUNT+1
+        #OPTS+=" -drive if=none,id=drive${COUNT},cache=directsync,aio=native,format=raw,file=${DISK} -device virtio-blk-pci,drive=drive${COUNT},scsi=off"
+        let COUNT=COUNT+1
         done
     fi
     if [ ! -z "$VMCDROM" ]; then
         for CD in $VMCDROM; do
-            
+
             OPTS+=" -drive file=${VMCDROM},media=cdrom"
         done
     fi
@@ -147,40 +163,41 @@ mainHandlerVM() {
     else
         OPTS+=" -cpu host"
     fi
-
+    doOut "clear"
+    reloadPCIDevices $VMPCIDEVICE
     vCPUpin "$VMCORELIST" &
     #IRQAffinity "$VMCORELIST" &
-    realTimeTune
-
-    for PCIDEVICE in $VMPCIDEVICE; do
-       VENDOR=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/vendor)
-       DEVICE=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/device)
-
-       if [ -e /sys/bus/pci/devices/0000:${PCIDEVICE}/driver ]; then
-       		echo "0000:${PCIDEVICE}" | tee /sys/bus/pci/devices/0000:${PCIDEVICE}/driver/unbind 2>/dev/null
-       		echo "Unloaded $PCIDEVICE"
-       fi
-	sleep 1
-       if [ -e "/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" ]; then
-            echo "Resetting $PCIDEVICE"
-            echo 1 > "/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" 2>/dev/null
-       fi
-	sleep 1
-
-       echo "Registrating vfio-pci on ${VENDOR}:${DEVICE}"
-       echo "$VENDOR $DEVICE" | tee /sys/bus/pci/drivers/vfio-pci/new_id
-	sleep 1
-    done
-    local CORES=$(echo $VMCORELIST | sed 's/ /,/g')    
-
-    #eval ./chrt -r 50 ./taskset -c $CORES qemu-system-x86_64 $OPTS
+    #realTimeTune
     eval qemu-system-x86_64 $OPTS
+    PIDOFQEMU=$?!
+    doOut showlog
 }
 
+reloadPCIDevices() {
+    local VMPCIDEVICE="$1"
+    for PCIDEVICE in $VMPCIDEVICE; do
+        VENDOR=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/vendor)
+        DEVICE=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/device)
+
+        if [ -e /sys/bus/pci/devices/0000:${PCIDEVICE}/driver ]; then
+            echo "0000:${PCIDEVICE}" > /sys/bus/pci/devices/0000:${PCIDEVICE}/driver/unbind 2>/dev/null
+            echo "Unloaded $PCIDEVICE"
+        fi
+        sleep 1
+        if [ -e "/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" ]; then
+            echo "Resetting $PCIDEVICE"
+            echo 1 > "/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" 2>/dev/null
+        fi
+        sleep 1
+
+        echo "Registrating vfio-pci on ${VENDOR}:${DEVICE}"
+        echo "$VENDOR $DEVICE" > /sys/bus/pci/drivers/vfio-pci/new_id
+        sleep 1
+    done
+}
 getConfigItem() {
     local configFile="$1"
     local item="$2"
-
 
     if [ -f "$configFile" ]; then
         local value=$(cat "$configFile" | grep "^${item}=" | sed "s/${item}=//g")
@@ -194,20 +211,50 @@ getConfigItem() {
 
 
 vCPUpin() {
-    sleep 20
+    sleep 2 # Give QEMU time to start the threads
     local CORELIST="$1"
-    echo "Setting CPU affinity using cores: $CORELIST"
-    local THREADS=`( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout -t 2 nc localhost 4444 | tr , '\n' ) | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g'`
-	echo "Threads: $THREADS"
+    echo "Setting CPU affinity using cores: $CORELIST" | doOut
+    if timeout --help 2>&1 | grep -q BusyBox; then
+        TIMEOUT="-t 2"
+    else
+        TIMEOUT="2"
+    fi
+    if [ -f ./chrt ]; then
+        CHRTCMD=./chrt
+    else
+        CHRTCMD=chrt
+    fi
 
-	local COUNT=1
-	for THREAD_ID in $THREADS; do
-		CURCORE=$(echo $CORELIST | cut -d " " -f $COUNT)
-		echo "Binding $THREAD_ID to $CURCORE with realtime priority"
-		taskset -pc $CURCORE $THREAD_ID > /dev/null 2>&1
-		chrt -pf 50 $THREAD_ID
-		COUNT=$(( $COUNT + 1 ))
-	done
+    local THREADS=`( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n' ) | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g'`
+    THREADS="100 
+200 
+300"
+
+    echo "Threads: $THREADS" | doOut
+
+    if [ "$(echo $CORELIST | tr -cd ' ' | wc -c )" -lt $(echo "$THREADS" | wc -l) ]; then
+        local USEHT=yes
+    else
+        local USEHT=no
+    fi
+
+    local COUNT=1
+    for THREAD_ID in $THREADS; do
+        if [ $USEHT == yes ]; then
+            NCOUNT=$(( $COUNT + 1 ))
+            CURCORE=$(echo $CORELIST | cut -d " " -f $COUNT,$NCOUNT | sed 's/ /,/g')
+            COUNTUP=2
+        else
+            CURCORE=$(echo $CORELIST | cut -d " " -f $COUNT)
+            COUNTUP=1
+        fi
+        echo "Binding $THREAD_ID to $CURCORE" | doOut
+        echo taskset -pc $CURCORE $THREAD_ID 2>&1 | doOut
+        echo "Setting SCHED_FIFO priority to $THREAD_ID"  | doOut
+        echo $CHRTCMD -pf 20 $THREAD_ID | doOut
+        COUNT=$(( $COUNT + $COUNTUP ))
+    done
+    
 }
 
 IRQAffinity() {
