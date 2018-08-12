@@ -35,7 +35,7 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils ovmf@community qemu-img mdadm bcache-tools qemu-system-x86_64
+apk add util-linux bridge bridge-utils ovmf@community qemu-img mdadm bcache-tools qemu-system-x86_64 bash
 rc-update add mdadm-raid
 
 echo "Patching openssh for root login"
