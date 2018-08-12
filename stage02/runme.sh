@@ -9,7 +9,8 @@ mount -o remount,rw /media/usb
 mkdir /media/usb/cache
 
 # Extra arguments for Linux kernel
-extraArgs="intel_pstate=disable intel_iommu=on vfio-pci.ids=10de:1200,10de:0e0c,10de:13c2,10de:0fbb elevator=noop isolcpus=2-5,8-11 nohz_full=2-5,8-11 rcu_nocbs=2-5,8-11"
+#TODO : Get this from a config file instead?
+extraArgs="intel_pstate=disable intel_iommu=on iommu=pt transparent_hugepage=never vfio-pci.ids=10de:13c2,10de:0fbb,1106:3483 elevator=noop default_hugepagesz=1G hugepagesz=1G hugepages=12 isolcpus=2-5,8-11 nohz_full=2-5,8-11 rcu_nocbs=2-5,8-11"
 
 # Patch syslinux (legacy boot)
 cp /media/usb/boot/syslinux/syslinux.cfg /media/usb/boot/syslinux/syslinux.cfg.old
@@ -58,6 +59,9 @@ modprobe vfio_iommu_type1
 modprobe tun
 modprobe vfio-pci
 modprobe vfio
+modprobe vhost_net
+modprobe vhost_scsi
+modprobe vhost_sock
 rmmod pcspkr
 " >>/etc/local.d/modules.start
 
@@ -70,8 +74,9 @@ rc-update add local default
 lbu include /root/.ssh
 
 ######### CUSTOM STUFF ##################
-echo "options vfio-pci ids=10de:1200,10de:0e0c,10de:13c2,10de:0fbb
-options kvm-intel nested=1" > /etc/modprobe.d/vfio.conf
+echo "options vfio-pci ids=10de:13c2,10de:0fbb,1106:3483
+options kvm-intel nested=1 enable_apicv=1
+" > /etc/modprobe.d/vfio.conf
 
 echo '#!/bin/sh
 # Load require modules
@@ -88,7 +93,12 @@ echo /dev/sda2 > /sys/fs/bcache/register
 echo /dev/sdb2 > /sys/fs/bcache/register
 
 
-mount /dev/bcache0 /media/storage02/' >> /etc/local.d/mount.start
+mount /dev/bcache0 /media/storage02/
+
+mkdir /dev/hugepages
+
+mount -t hugetlbfs -o pagesize=1G none /dev/hugepages
+' >> /etc/local.d/mount.start
 chmod +x /etc/local.d/mount.start
 
 cp /media/cdrom/vm_start.sh /root/vm_start.sh
