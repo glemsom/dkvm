@@ -98,7 +98,7 @@ lbu include /root/vm_start.sh
 
 # Patch inittab to start vm_start.sh
 cp /etc/inittab /etc/inittab.bak
-cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/vm_start.sh menu#' > /etc/inittab
+cat /etc/inittab.bak | sed 's#tty2::.*#tty2::respawn:/root/vm_start.sh menu#' | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh' > /etc/inittab
 
 ########################################
 
