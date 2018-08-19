@@ -35,13 +35,15 @@ doOut() {
         rm -f "$TAILFILE"
         touch "$TAILFILE"
     elif [ "$1" == "showlog" ]; then
-        dialog --tailbox "$TAILFILE" 20 70
+        dialog --backtitle "$backtitle" --tailbox "$TAILFILE" 25 75
         # When exited, kill any remaining qemu
         killall qemu-system-x86_64
         sleep 2
         kill -9 qemu-system-x86_64
-	reset
-	clear
+        reset
+        clear
+        killall dkvmmenu.sh
+        exit
     else
         cat - >> "$TAILFILE"
     fi
@@ -71,7 +73,7 @@ showMainMenu() {
     for i in `seq 0 $(( ${#menuItems[@]} - 1 ))`; do
         menuStr="$menuStr ${menuItemsType[$i]}-${i} '${menuItems[$i]}'"
     done
-    local backtitle=$(ip a | grep "inet " | grep -v "inet 127" | awk '{print "DKVM          ip: "$2 " nic: " $7}')
+    backtitle=$(ip a | grep "inet " | grep -v "inet 127" | awk '{print "DKVM          ip: "$2 " nic: " $7}')
     menuStr="--title '$title' --backtitle '$backtitle' --no-tags --no-cancel --menu 'Select option' 20 50 20 $menuStr --stdout"
     menuAnswer=$(eval "dialog $menuStr")
     if [ $? -eq 1 ]; then
@@ -217,7 +219,7 @@ getConfigItem() {
 
 
 vCPUpin() {
-    sleep 10 # Give QEMU time to start the threads
+    sleep 5 # Give QEMU time to start the threads
     local CORELIST="$1"
     echo "Setting CPU affinity using cores: $CORELIST" | doOut
     if timeout --help 2>&1 | grep -q BusyBox; then
@@ -233,9 +235,9 @@ vCPUpin() {
 
     local THREADS=`( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n' ) | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g'`
 
-    echo "Threads: $THREADS" | doOut
+    echo Threads: $THREADS | doOut
 
-    if [ "$(echo $CORELIST | tr -cd ' ' | wc -c )" -lt $(echo "$THREADS" | wc -l) ]; then
+    if [ "$(echo $CORELIST | tr -cd ' ' | wc -c )" -gt $(echo "$THREADS" | wc -l) ]; then
         local USEHT=yes
     else
         local USEHT=no
@@ -252,9 +254,9 @@ vCPUpin() {
             COUNTUP=1
         fi
         echo "Binding $THREAD_ID to $CURCORE" | doOut
-        echo taskset -pc $CURCORE $THREAD_ID 2>&1 | doOut
+        taskset -pc $CURCORE $THREAD_ID 2>&1 | doOut
         echo "Setting SCHED_FIFO priority to $THREAD_ID"  | doOut
-        echo $CHRTCMD -pf 20 $THREAD_ID | doOut
+        $CHRTCMD -pf 20 $THREAD_ID | doOut
         COUNT=$(( $COUNT + $COUNTUP ))
     done
     

@@ -6,3 +6,4 @@ usbdisk.img
 dkvm_vmconfig.*
 .PKGINFO
 *rsa.pub
+dkvm.log
