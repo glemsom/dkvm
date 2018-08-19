@@ -42,11 +42,11 @@ setup-alpine -e -f /media/sr1/answer.txt
 
 modprobe vfat
 echo "Formatting usb disk"
-mkdosfs /dev/sda1
-mkfs.vfat -n dkvm /dev/sda1
+mkdosfs ${installDisk}1
+mkfs.vfat -n dkvm ${installDisk}1
 
 echo "Making usb disk bootable"
-setup-bootable /media/cdrom /dev/sda1
+setup-bootable /media/cdrom ${installDisk}1
 
 echo "System will now poweroff, and restart with stage02 iso"
 sleep 10

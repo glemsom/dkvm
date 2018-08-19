@@ -27,6 +27,10 @@ mkdir -p ${chroot_dir}/root
 mkdir -p ${chroot_dir}/etc/apk
 echo "${mirror}/${branch}/main" > ${chroot_dir}/etc/apk/repositories
 
+# HACK ##########
+#rm -rf "${chroot_dir}"
+#cp -rp "${chroot_dir}-save" "${chroot_dir}"
+#################
 mount -t proc none ${chroot_dir}/proc
 mount -o bind /sys ${chroot_dir}/sys
 mount -o bind /dev ${chroot_dir}/dev
@@ -68,20 +72,20 @@ git checkout 3.8-stable
 cd main/linux-vanilla
 
 # Get current kernel version
-KERNELVER=$(grep pkgver APKBUILD | head -n 1 | cut -d = -f 2)
-PKGREL=$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)
+KERNELVER=\$(grep pkgver APKBUILD | head -n 1 | cut -d = -f 2)
+PKGREL=\$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)
 
 abuild -r || err
 
-sudo apk add /home/alpine/packages/main/x86_64/linux-vanilla-${KERNELVER}-${PKGVER}.apk
+sudo apk add /home/alpine/packages/main/x86_64/linux-vanilla-\${KERNELVER}-r\${PKGREL}.apk
 mkdir /home/alpine/dkvm_kernel && cd /home/alpine/dkvm_kernel
 
 sudo sed -i 's/usb/usb squashfs/' /etc/mkinitfs/mkinitfs.conf || err
-sudo mkinitfs ${KERNELVER}-${PKGVER}-vanilla || err "Cannot build initrd"
+sudo mkinitfs \${KERNELVER}-\${PKGREL}-vanilla || err "Cannot build initrd"
 cp /boot/*vanilla .
 
 mkdir -p modloop_files/modules
-sudo cp -rp /lib/modules/${KERNELVER}-${PKGVER}-vanilla modloop_files/modules || err "Cannot copy modules"
+sudo cp -rp /lib/modules/\${KERNELVER}-\${PKGREL}-vanilla modloop_files/modules || err "Cannot copy modules"
 sudo cp -rp /lib/firmware modloop_files/modules || err "Cannot copy firmware"
 
 mksquashfs modloop_files modloop-vanilla
@@ -90,6 +94,7 @@ EOF
 chmod +x ${chroot_dir}/home/alpine/runme.sh
 
 chroot ${chroot_dir} /bin/su - alpine -c "/home/alpine/runme.sh"
+
 mkdir ${workdir}/kernel_files
 cp -r ${chroot_dir}/home/alpine/dkvm_kernel ${workdir}/kernel_files
 

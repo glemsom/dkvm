@@ -74,16 +74,22 @@ loopDevice=$(sudo losetup --show -f -P "$diskfile" 2>&1)
 mkdir tmp_dkvm
 sudo mount -o loop ${loopDevice}p1 tmp_dkvm
 
-#Inject new kernel
+# Inject new kernel
 sudo cp stage03/kernel_files/dkvm_kernel/*vanilla tmp_dkvm/boot/
+
+# Copy chrt from host OS
+if [ ! -z "`which chrt`" ]; then
+	sudo cp `which chrt` tmp_dkvm/
+fi
+
+
 
 # Cleanup mount
 sudo umount tmp_dkvm
 sudo umount ${loopDevice}p1
-sudo rm tmp_dkvm
 sudo losetup -D
 rm -rf stage03/kernel_files/dkvm_kernel
-rm -rf tmp_dkvm/boot
+rm -rf tmp_dkvm
 sleep 5
 
 while mount | grep ${loopDevice}p1 -q; do
