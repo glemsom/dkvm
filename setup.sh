@@ -77,9 +77,10 @@ sudo mount -o loop ${loopDevice}p1 tmp_dkvm
 # Inject new kernel
 sudo cp stage03/kernel_files/dkvm_kernel/*vanilla tmp_dkvm/boot/
 
+sudo mkdir tmp_dkvm/custom
 # Copy chrt from host OS
 if [ ! -z "`which chrt`" ]; then
-	sudo cp `which chrt` tmp_dkvm/
+	sudo cp `which chrt` tmp_dkvm/custom/
 fi
 
 

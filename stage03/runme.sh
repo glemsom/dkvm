@@ -74,7 +74,7 @@ cd main/linux-vanilla
 # Get current kernel version
 KERNELVER=\$(grep pkgver APKBUILD | head -n 1 | cut -d = -f 2)
 PKGREL=\$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)
-
+#/bin/bash
 abuild -r || err
 
 sudo apk add /home/alpine/packages/main/x86_64/linux-vanilla-\${KERNELVER}-r\${PKGREL}.apk

@@ -37,9 +37,11 @@ doOut() {
     elif [ "$1" == "showlog" ]; then
         dialog --tailbox "$TAILFILE" 20 70
         # When exited, kill any remaining qemu
-        kill $PIDOFQEMU
-        sleep 10
-        kill -9 $PIDOFQEMU
+        killall qemu-system-x86_64
+        sleep 2
+        kill -9 qemu-system-x86_64
+	reset
+	clear
     else
         cat - >> "$TAILFILE"
     fi
@@ -127,8 +129,8 @@ mainHandlerVM() {
     OPTS="-enable-kvm -nodefaults -machine q35,accel=kvm,kernel_irqchip=on,mem-merge=off -qmp tcp:localhost:4444,server,nowait"
     OPTS+=" -mem-prealloc -realtime mlock=off -rtc base=localtime,clock=host"
     #OPTS+=" -device virtio-net-pci,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
-    OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
-    #OPTS+=" -device e1000,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
+    #OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
+    OPTS+=" -device e1000,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
     #OPTS+=" -name $VMNAME"
     OPTS+=" -mem-path /dev/hugepages -m $VMMEM"
     OPTS+=" $VMEXTRA "
@@ -167,34 +169,35 @@ mainHandlerVM() {
         OPTS+=" -cpu host"
     fi
     doOut "clear"
+    doOut "showlog" &
     reloadPCIDevices $VMPCIDEVICE
     vCPUpin "$VMCORELIST" &
     #IRQAffinity "$VMCORELIST" &
     #realTimeTune
+    echo "Starting qemu..." | doOut
     eval qemu-system-x86_64 $OPTS
-    PIDOFQEMU=$?!
     doOut showlog
 }
 
 reloadPCIDevices() {
-    local VMPCIDEVICE="$1"
-    for PCIDEVICE in $VMPCIDEVICE; do
+    local VMPCIDEVICE="$@"
+    for PCIDEVICE in $(echo "$VMPCIDEVICE" | tr ' ' '\n') ; do
         VENDOR=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/vendor)
         DEVICE=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/device)
 
         if [ -e /sys/bus/pci/devices/0000:${PCIDEVICE}/driver ]; then
-            echo "0000:${PCIDEVICE}" > /sys/bus/pci/devices/0000:${PCIDEVICE}/driver/unbind 2>/dev/null
-            echo "Unloaded $PCIDEVICE"
+            echo "0000:${PCIDEVICE}" > /sys/bus/pci/devices/0000:${PCIDEVICE}/driver/unbind 2>&1 | doOut
+            echo "Unloaded $PCIDEVICE" | doOut
         fi
         sleep 1
         if [ -e "/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" ]; then
-            echo "Resetting $PCIDEVICE"
-            echo 1 > "/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" 2>/dev/null
+            echo "Resetting $PCIDEVICE" | doOut
+            echo 1 > "/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" 2>&1 | doOut
         fi
         sleep 1
 
-        echo "Registrating vfio-pci on ${VENDOR}:${DEVICE}"
-        echo "$VENDOR $DEVICE" > /sys/bus/pci/drivers/vfio-pci/new_id
+        echo "Registrating vfio-pci on ${VENDOR}:${DEVICE}" | doOut
+        echo "$VENDOR $DEVICE" > /sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
         sleep 1
     done
 }
@@ -214,24 +217,21 @@ getConfigItem() {
 
 
 vCPUpin() {
-    sleep 2 # Give QEMU time to start the threads
+    sleep 10 # Give QEMU time to start the threads
     local CORELIST="$1"
     echo "Setting CPU affinity using cores: $CORELIST" | doOut
     if timeout --help 2>&1 | grep -q BusyBox; then
-        TIMEOUT="-t 2"
+        TIMEOUT="-t2"
     else
-        TIMEOUT="2"
+        TIMEOUT=2
     fi
-    if [ -f ./chrt ]; then
-        CHRTCMD=./chrt
+    if [ -f /media/usb/custom/chrt ]; then
+        CHRTCMD=/media/usb/custom/chrt
     else
         CHRTCMD=chrt
     fi
 
     local THREADS=`( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n' ) | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g'`
-    THREADS="100 
-200 
-300"
 
     echo "Threads: $THREADS" | doOut
 
