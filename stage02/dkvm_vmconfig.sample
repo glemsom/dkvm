@@ -1,0 +1,31 @@
+# Sample VM config
+# Rename this to dkvm_vmconfig.X (Where is is a numeric number from 0 to 9)
+
+NAME=Ubuntu
+
+# Harddisk
+HARDDISK=/media/storage01/disks/ubuntu_system.raw
+
+# Graphics 
+PCIDEVICE=02:00.0
+# HDMI audio
+PCIDEVICE=02:00.1
+# USB Controller
+PCIDEVICE=03:00.0
+
+# BIOS
+BIOS=/usr/share/OVMF/OVMF/OVMF.fd
+BIOS_VARS=/usr/share/OVMF/OVMF/OVMF_VARS.fd
+
+#CPU
+SOCKETS=1
+CORES=3
+THREADS=1
+CORELIST=3 9 4 10 5 11
+
+# Memory
+MEM=8192
+
+MAC="DE:AD:BE:EF:66:60"
+EXTRA= -nographic -vga none
+
