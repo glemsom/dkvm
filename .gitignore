@@ -1,0 +1,8 @@
+alpine-standard-3.8.0-x86_64.iso
+OVMF.fd
+stage01.iso
+stage02.iso
+usbdisk.img
+dkvm_vmconfig.*
+.PKGINFO
+*rsa.pub
