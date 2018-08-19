@@ -38,7 +38,7 @@ echo '
 * mkdir /media/sr1 && mount /dev/sr1 /media/sr1 && sh /media/sr1/runme.sh /dev/sda)
 '
 
-sudo qemu-system-x86_64 -m 2G -machine q35 -cpu host -enable-kvm \
+sudo qemu-system-x86_64 -m 1G -machine q35  \
 	-drive if=none,format=raw,id=usbstick,file="$diskfile" \
 	-usb -device usb-storage,drive=usbstick \
 	-drive format=raw,media=cdrom,readonly,file="$iso" \
@@ -57,7 +57,7 @@ echo '
 * Config: usb (should be autoselected)
 * apk cache: /media/usb/cache
 '
-sudo qemu-system-x86_64 -m 2G -machine q35 -cpu host -enable-kvm \
+sudo qemu-system-x86_64 -m 1G -machine q35 \
         -drive if=none,format=raw,id=usbstick,file="$diskfile" \
         -usb -device usb-storage,drive=usbstick \
 	-drive format=raw,media=cdrom,readonly,file=stage02.iso \
@@ -67,9 +67,37 @@ sudo qemu-system-x86_64 -m 2G -machine q35 -cpu host -enable-kvm \
 
 clear
 
+# Stage03 : Build custom DKVM kernel
+sudo stage03/runme.sh
+
+loopDevice=$(sudo losetup --show -f -P "$diskfile" 2>&1)
+mkdir tmp_dkvm
+sudo mount -o loop ${loopDevice}p1 tmp_dkvm
+
+#Inject new kernel
+sudo cp stage03/kernel_files/dkvm_kernel/*vanilla tmp_dkvm/boot/
+
+# Cleanup mount
+sudo umount tmp_dkvm
+sudo umount ${loopDevice}p1
+sudo rm tmp_dkvm
+sudo losetup -D
+rm -rf stage03/kernel_files/dkvm_kernel
+rm -rf tmp_dkvm/boot
+sleep 5
+
+while mount | grep ${loopDevice}p1 -q; do
+	echo " ${loopDevice}p1 still mounted - trying to cleanup"
+	mountPoint=$(mount | grep "${loopDevice}p1" | awk '{print $3}')
+	sudo umount ${loopDevice}p1
+	sudo umount "$mountPoint"
+	sudo losetup -D
+	sleep 5
+done
+
 echo '* Test boot - make sure you can login with root'
 
-sudo qemu-system-x86_64 -m 2G -machine q35 -cpu host -enable-kvm \
+sudo qemu-system-x86_64 -m 1G -machine q35 \
         -drive if=none,format=raw,id=usbstick,file="$diskfile" \
         -usb -device usb-storage,drive=usbstick \
         -netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \

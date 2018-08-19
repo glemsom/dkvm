@@ -35,7 +35,7 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils ovmf@community qemu-img mdadm bcache-tools qemu-system-x86_64 bash
+apk add util-linux bridge bridge-utils ovmf@community qemu-img mdadm bcache-tools qemu-system-x86_64 bash dialog
 rc-update add mdadm-raid
 
 echo "Patching openssh for root login"
@@ -102,9 +102,21 @@ mount -t hugetlbfs -o pagesize=1G none /dev/hugepages
 chmod +x /etc/local.d/mount.start
 
 cp /media/cdrom/vm_start.sh /root/vm_start.sh
-chmod +x /root/vm_start.sh
+cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
 
-lbu include /root/vm_start.sh
+# Copy any VM config
+cp /media/cdrom/dkvm_* /root/
+
+# Rename files
+for f in /root/dkvm_vmc*; do
+    mv "$f" `echo $f | sed 's/vmc/vmconfig/g'`
+done
+
+
+chmod +x /root/vm_start.sh
+chmod +x /root/dkvmmenu.sh
+
+lbu include /root
 
 # Patch inittab to start vm_start.sh
 cp /etc/inittab /etc/inittab.bak
@@ -117,8 +129,6 @@ apk -v cache clean
 lbu commit -v
 lbu commit -d -v
 
-echo "Rebooting on usbdisk"
-sleep 5
-
+echo "Exiting stage02"
+sleep 2
 poweroff
-

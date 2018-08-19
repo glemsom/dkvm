@@ -3,6 +3,9 @@
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 # Version 0.1 Initial release
 
+# Change to script directory
+cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 IFS="
 "
 declare -a menuItems
