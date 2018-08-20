@@ -1,8 +1,9 @@
 #!/bin/bash
 # DKVM Menu
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
-# Version 0.1 Initial release
 
+
+version="0.1.1"
 # Change to script directory
 cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -39,7 +40,7 @@ doOut() {
         # When exited, kill any remaining qemu
         killall qemu-system-x86_64
         sleep 2
-        kill -9 qemu-system-x86_64
+        killall -9 qemu-system-x86_64
         reset
         clear
         killall dkvmmenu.sh
@@ -69,12 +70,14 @@ buildItems() {
 
 showMainMenu() {
     local title="DKVM Main menu"
+    menuStr=""
     # build menu
     for i in `seq 0 $(( ${#menuItems[@]} - 1 ))`; do
-        menuStr="$menuStr ${menuItemsType[$i]}-${i} '${menuItems[$i]}'"
+        local menuStr="$menuStr ${menuItemsType[$i]}-${i} '${menuItems[$i]}'"
     done
-    backtitle=$(ip a | grep "inet " | grep -v "inet 127" | awk '{print "DKVM          ip: "$2 " nic: " $7}')
-    menuStr="--title '$title' --backtitle '$backtitle' --no-tags --no-cancel --menu 'Select option' 20 50 20 $menuStr --stdout"
+    local ip=$(ip a | grep "inet " | grep -v "inet 127" | awk '{print $2}')
+    backtitle="DKVM @ $ip   Version: $version"
+    local menuStr="--title '$title' --backtitle '$backtitle' --no-tags --no-cancel --menu 'Select option' 20 50 20 $menuStr --stdout"
     menuAnswer=$(eval "dialog $menuStr")
     if [ $? -eq 1 ]; then
         err "Main dialog cancled ?!"
@@ -96,8 +99,28 @@ doSelect() {
 
 mainHandlerInternal() {
     local item="$1"
-    [ "$1" == "INT_SHELL" ] && /bin//bash
-    dialog --msgbox "TODO: Make this work..." 6 60
+    if [ "$1" == "INT_SHELL" ]; then
+        /bin/bash
+    elif [ "$1" == "INT_POWEROFF" ]; then
+        local menuStr="--title '$title' --backtitle '$backtitle' --no-tags --menu 'Select option' 20 50 20 1 Reboot 2 PowerOFF --stdout"
+        local menuAnswer=$(eval "dialog $menuStr")
+        if [ "$menuAnswer" == "1" ]; then
+            echo "Reboot"
+        elif [ "$menuAnswer" == "2" ]; then
+            echo "PowerOFF"
+        else
+            showMainMenu && doSelect
+        fi
+    elif [ "$1" == "INT_CONFIG" ]; then
+        local menuStr="--title '$title' --backtitle '$backtitle' --no-tags --menu 'Select option' 20 50 20 1 'Add new VM' 2 'Edit VM' --stdout"
+        local menuAnswer=$(eval "dialog $menuStr")
+
+        if [ "$menuAnswer" == "1" ]; then
+            doAddVM
+        fi
+    else
+        dialog --msgbox "TODO: Make this work..." 6 60
+    fi
 }
 
 realTimeTune() {
