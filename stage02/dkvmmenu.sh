@@ -145,9 +145,9 @@ mainHandlerInternal() {
         local menuStr="--title '$title' --backtitle '$backtitle' --no-tags --menu 'Select option' 20 50 20 1 Reboot 2 PowerOFF --stdout"
         local menuAnswer=$(eval "dialog $menuStr")
         if [ "$menuAnswer" == "1" ]; then
-            echo "Reboot"
+            reboot
         elif [ "$menuAnswer" == "2" ]; then
-            echo "PowerOFF"
+            poweroff
         else
             showMainMenu && doSelect
         fi
