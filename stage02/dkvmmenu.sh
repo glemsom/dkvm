@@ -21,7 +21,7 @@ err() {
 
 buildMenuItemVMs() {
     menuItemsVMs=""
-    for cfile in dkvm_vmconfig.*; do
+    for cfile in dkvm_vmconfig.[0-9]; do
         if [ "$cfile" == "dkvm_vmconfig.*" ]; then
             err "No VM configs found. Look at dkvm_vmconfig.sam"
         fi
@@ -118,7 +118,7 @@ doAddVM() {
     local lastVMConfig=$(getLastVMConfig)
     let "lastVMConfig++"
     cp dkvm_vmconfig.sam dkvm_vmconfig.${lastVMConfig}
-    vim dkvm_vmconfig.${lastVMConfig}
+    vi dkvm_vmconfig.${lastVMConfig}
 
     showMainMenu && doSelect
 }
@@ -132,7 +132,7 @@ doEditVM() {
     done
     local menuAnswer=$(eval "dialog --backtitle "'$backtitle'" --menu 'Choose VM' 20 30 20 $menuStr" --stdout)
 
-    vim dkvm_vmconfig.${menuAnswer}
+    vi dkvm_vmconfig.${menuAnswer}
 
     showMainMenu && doSelect
 
