@@ -19,16 +19,19 @@ err() {
     exit 1
 }
 
-for cfile in dkvm_vmconfig.*; do
-    if [ "$cfile" == "dkvm_vmconfig.*" ]; then
-        err "No VM configs found. Look at dkvm_vmconfig.sample"
-    fi
+buildMenuItemVMs() {
+    menuItemsVMs=""
+    for cfile in dkvm_vmconfig.*; do
+        if [ "$cfile" == "dkvm_vmconfig.*" ]; then
+            err "No VM configs found. Look at dkvm_vmconfig.sam"
+        fi
 
-    # Build VM items for menu
-    itemNumber=$(echo "$cfile" | sed 's/.*\.//')
-    itemName=$(cat "$cfile" | grep ^NAME | sed 's/NAME=//')
-    menuItemsVMs[$itemNumber]="$itemName"
-done
+        # Build VM items for menu
+        itemNumber=$(echo "$cfile" | sed 's/.*\.//')
+        itemName=$(cat "$cfile" | grep ^NAME | sed 's/NAME=//')
+        menuItemsVMs[$itemNumber]="$itemName"
+    done
+}
 
 doOut() {
     local TAILFILE=dkvm.log
@@ -51,6 +54,12 @@ doOut() {
 }
 
 buildItems() {
+
+    buildMenuItemVMs
+
+    menuItems=()
+    menuItemsType=()
+
     for vm in ${menuItemsVMs[*]}; do
         menuItems+=("Start $vm")
         menuItemsType+=("VM")
@@ -69,8 +78,11 @@ buildItems() {
 
 
 showMainMenu() {
+
+    buildItems
+
     local title="DKVM Main menu"
-    menuStr=""
+    local menuStr=""
     # build menu
     for i in `seq 0 $(( ${#menuItems[@]} - 1 ))`; do
         local menuStr="$menuStr ${menuItemsType[$i]}-${i} '${menuItems[$i]}'"
@@ -97,6 +109,34 @@ doSelect() {
     fi
 }
 
+getLastVMConfig() {
+    echo "$(ls -1 dkvm_vmconfig.[0-9] | sed 's/.*\.//' | tail -n 1)"
+}
+
+doAddVM() {
+    # Find next dkvm_vmconfig.X
+    local lastVMConfig=$(getLastVMConfig)
+    let "lastVMConfig++"
+    cp dkvm_vmconfig.sam dkvm_vmconfig.${lastVMConfig}
+    vim dkvm_vmconfig.${lastVMConfig}
+
+    showMainMenu && doSelect
+}
+
+doEditVM() {
+    local lastVMConfig=$(getLastVMConfig)
+    menuStr=""
+    for i in `seq 0 $lastVMConfig`; do
+        local name=$(grep NAME dkvm_vmconfig.${i} | sed 's/NAME=//')
+        local menuStr="$menuStr $i '$name'"
+    done
+    local menuAnswer=$(eval "dialog --backtitle "'$backtitle'" --menu 'Choose VM' 20 30 20 $menuStr" --stdout)
+
+    vim dkvm_vmconfig.${menuAnswer}
+
+    showMainMenu && doSelect
+
+}
 mainHandlerInternal() {
     local item="$1"
     if [ "$1" == "INT_SHELL" ]; then
@@ -117,9 +157,13 @@ mainHandlerInternal() {
 
         if [ "$menuAnswer" == "1" ]; then
             doAddVM
+        elif [ "$menuAnswer" == "2" ]; then
+            doEditVM
         fi
+        showMainMenu && doSelect
     else
         dialog --msgbox "TODO: Make this work..." 6 60
+        showMainMenu && doSelect
     fi
 }
 
@@ -178,7 +222,6 @@ mainHandlerVM() {
     fi
     if [ ! -z "$VMCDROM" ]; then
         for CD in $VMCDROM; do
-
             OPTS+=" -drive file=${VMCDROM},media=cdrom"
         done
     fi
@@ -311,6 +354,6 @@ IRQAffinity() {
     done
 }
 
-buildItems
+#buildItems
 showMainMenu
 doSelect
