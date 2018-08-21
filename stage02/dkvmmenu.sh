@@ -22,7 +22,7 @@ err() {
 buildMenuItemVMs() {
     menuItemsVMs=""
     for cfile in dkvm_vmconfig.[0-9]; do
-        if [ "$cfile" == "dkvm_vmconfig.*" ]; then
+        if [ "$cfile" == "dkvm_vmconfig.[0-9]" ]; then
             err "No VM configs found. Look at dkvm_vmconfig.sam"
         fi
 

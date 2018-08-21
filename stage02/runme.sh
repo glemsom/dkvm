@@ -107,6 +107,10 @@ mount -t hugetlbfs -o pagesize=1G none /dev/hugepages
 ' >> /etc/local.d/mount.start
 chmod +x /etc/local.d/mount.start
 
+echo '#!/bin/sh
+apk add /root/glibc-*apk' >> /etc/local.d/glibc.start
+chmod +x /etc/local.d/glibc.start
+
 cp /media/cdrom/vm_start.sh /root/vm_start.sh
 cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
 
