@@ -250,9 +250,9 @@ mainHandlerVM() {
 reloadPCIDevices() {
     local VMPCIDEVICE="$@"
     for PCIDEVICE in $(echo "$VMPCIDEVICE" | tr ' ' '\n') ; do
+        PCIDEVICE=$(echo $PCIDEVICE | sed 's/,.*//') # Strip options
         VENDOR=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/vendor)
         DEVICE=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/device)
-
         if [ -e /sys/bus/pci/devices/0000:${PCIDEVICE}/driver ]; then
             echo "0000:${PCIDEVICE}" > /sys/bus/pci/devices/0000:${PCIDEVICE}/driver/unbind 2>&1 | doOut
             echo "Unloaded $PCIDEVICE" | doOut
