@@ -27,10 +27,6 @@ mkdir -p ${chroot_dir}/root
 mkdir -p ${chroot_dir}/etc/apk
 echo "${mirror}/${branch}/main" > ${chroot_dir}/etc/apk/repositories
 
-# HACK ##########
-#rm -rf "${chroot_dir}"
-#cp -rp "${chroot_dir}-save" "${chroot_dir}"
-#################
 mount -t proc none ${chroot_dir}/proc
 mount -o bind /sys ${chroot_dir}/sys
 mount -o bind /dev ${chroot_dir}/dev
@@ -74,7 +70,7 @@ cd main/linux-vanilla
 # Get current kernel version
 KERNELVER=\$(grep pkgver APKBUILD | head -n 1 | cut -d = -f 2)
 PKGREL=\$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)
-/bin/bash
+#/bin/bash
 abuild -r || err
 
 sudo apk add /home/alpine/packages/main/x86_64/linux-vanilla-\${KERNELVER}-r\${PKGREL}.apk

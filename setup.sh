@@ -89,7 +89,7 @@ fi
 sudo umount tmp_dkvm
 sudo umount ${loopDevice}p1
 sudo losetup -D
-rm -rf stage03/kernel_files/dkvm_kernel
+rm -rf stage03/kernel_files
 rm -rf tmp_dkvm
 sleep 5
 
