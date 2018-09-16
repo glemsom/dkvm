@@ -75,6 +75,7 @@ rmmod pcspkr
 chmod +x /etc/local.d/modules.start
 
 rc-update add local default
+rc-update add ntpd default
 
 # keep .ssh under lbu version control
 lbu include /root/.ssh
