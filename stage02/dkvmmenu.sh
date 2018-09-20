@@ -137,6 +137,16 @@ doEditVM() {
     showMainMenu && doSelect
 
 }
+
+doSaveChanges() {
+    local changesTxt="Changes saved...
+$(lbu diff)
+$(lbu commit)"
+
+    dialog --backtitle "$backtitle" --msgbox "$changesTxt" 30 80
+
+    showMainMenu && doSelect
+}
 mainHandlerInternal() {
     local item="$1"
     if [ "$1" == "INT_SHELL" ]; then
@@ -152,13 +162,15 @@ mainHandlerInternal() {
             showMainMenu && doSelect
         fi
     elif [ "$1" == "INT_CONFIG" ]; then
-        local menuStr="--title '$title' --backtitle '$backtitle' --no-tags --menu 'Select option' 20 50 20 1 'Add new VM' 2 'Edit VM' --stdout"
+        local menuStr="--title '$title' --backtitle '$backtitle' --no-tags --menu 'Select option' 20 50 20 1 'Add new VM' 2 'Edit VM' 3 'Save Changes' --stdout"
         local menuAnswer=$(eval "dialog $menuStr")
 
         if [ "$menuAnswer" == "1" ]; then
             doAddVM
         elif [ "$menuAnswer" == "2" ]; then
             doEditVM
+        elif [ "$menuAnswer" == "3" ]; then
+            doSaveChanges
         fi
         showMainMenu && doSelect
     else
