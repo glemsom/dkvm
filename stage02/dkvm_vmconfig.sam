@@ -1,5 +1,6 @@
 # Sample DKVM Config
-# Rename this to dkvm_vmconfig.X (Where X is the next numeric value)
+# Rename this to dkvm_vmconfig.0 
+# If you have more than one configuered vm, continue with dkvm_vmconfig.1,2,3...9
 
 NAME=VM Name
 
