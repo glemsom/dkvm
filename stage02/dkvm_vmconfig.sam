@@ -36,7 +36,7 @@ THREADS=1
 # use `cat /proc/cpuinfo | grep "processor\|core id"` to find core siblings
 CORELIST=2 8 3 9 4 10 5 11
 
-# Memory in GB
+# Memory in megabyes
 MEM=12288
 
 # MAC Address
