@@ -59,10 +59,14 @@ buildItems() {
 
     menuItems=()
     menuItemsType=()
+    VMMenuIndex=()
 
-    for vm in ${menuItemsVMs[*]}; do
-        menuItems+=("Start $vm")
-        menuItemsType+=("VM")
+    for i in "${!menuItemsVMs[@]}"; do
+        if [ ! -z "${menuItemsVMs[$i]}" ]; then
+            VMMenuIndex+=($i)
+            menuItems+=("Start ${menuItemsVMs[$i]}")
+            menuItemsType+=("VM")
+        fi
     done
 
     # Preconfigured items
@@ -85,7 +89,7 @@ showMainMenu() {
     local menuStr=""
     # build menu
     for i in `seq 0 $(( ${#menuItems[@]} - 1 ))`; do
-        local menuStr="$menuStr ${menuItemsType[$i]}-${i} '${menuItems[$i]}'"
+        local menuStr="$menuStr ${menuItemsType[$i]}-${VMMenuIndex[$i]} '${menuItems[$i]}'"
     done
     local ip=$(ip a | grep "inet " | grep -v "inet 127" | awk '{print $2}')
     backtitle="DKVM @ $ip   Version: $version"
