@@ -259,7 +259,7 @@ mainHandlerVM() {
     #IRQAffinity "$VMCORELIST" &
     #realTimeTune
     echo "Starting qemu..." | doOut
-    eval qemu-system-x86_64 $OPTS | doOut
+    eval qemu-system-x86_64 $OPTS 2>&1 | doOut
     doOut showlog
 }
 
