@@ -44,7 +44,7 @@ addgroup alpine wheel
 EOF
 
 # Enter chroot
-chroot ${chroot_dir} /bin/sh /runme.sh
+chroot ${chroot_dir} /bin/sh --login /runme.sh
 
 cat <<EOF > ${chroot_dir}/home/alpine/runme.sh
 #!/bin/bash
@@ -55,7 +55,7 @@ function err() {
 }
 
 cd /home/alpine
-export PATH=/sbin:/usr/sbin:${PATH}
+export PATH=/sbin:/usr/sbin:/bin:/usr/sbin:${PATH}
 # REPLACE ME !!
 git config --global user.name "Glenn Sommer"
 git config --global user.email "glemsom@gmail.com"
