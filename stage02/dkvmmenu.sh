@@ -5,7 +5,7 @@
 version="0.1.1"
 # Change to script directory
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
+OLDIFS=$IFS
 IFS="
 "
 declare -a menuItems
@@ -32,13 +32,99 @@ buildMenuItemVMs() {
   done
 }
 
+doShowLog() {
+  #dialog --backtitle "$backtitle" --tailbox "$TAILFILE" 25 75
+  # CPU monitor
+  (
+    logFreq=cpu-freq.log
+    IFS="
+"
+    >$logFreq
+    while [ true ]; do
+      # Get current Mhz for all cores
+      MHz=$(grep -i MHz /proc/cpuinfo)
+      coreCount=0
+      for line in $MHz; do
+        freq=$(echo "$line" | awk '{print $4}')
+        echo "Core $coreCount @ $freq" >>$logFreq
+        let coreCount++
+      done
+      sleep 5
+      >$logFreq
+    done
+  ) &
+  pidofFreq=$!
+
+  (
+    IFS=$OLDIFS
+    logUtil=cpu-util.log
+    CPUs=$(cat /proc/stat | grep ^cpu | awk '{print $1}')
+    getCounter() {
+      local counters="$1"
+      local counter="$2"
+      echo $(echo $counters | awk "{print \$$counter"})
+    }
+
+    counterName=(user nice system idle iowait irq softirq steal guest guest_nice)
+    declare -A lastCounters
+
+    while :; do
+      headerStr="CPU"
+      for name in ${counterName[@]}; do
+        headerStr+="\t${name}"
+      done
+      echo -e $headerStr >$logUtil
+      first=1
+      for CPU in $CPUs; do
+        echo -en "$CPU" >>$logUtil
+        counters=$(grep ^$CPU /proc/stat | head -n 1 | sed "s/$CPU//" | awk '{$1=$1};1')
+        counterSum=$(echo -e "$counters" | sed 's/ /+/g' | bc -l)
+        tmpLastCounters=(${lastCounters[$CPU]})
+
+        lastCountersSum=$(echo -e "${tmpLastCounters[@]}" | sed 's/ /+/g' | bc -l)
+        sumDelta=$(echo "$counterSum - $lastCountersSum" | bc -l)
+
+        # Loop over counters
+        tmpCountNr=0
+        for counter in $counters; do
+          # Get counter delta
+
+          tmpCounterDelta=$(echo "$counter - ${tmpLastCounters[$tmpCountNr]}" | bc -l)
+          tmpCounterDeltaPercent=$(LC_NUMERIC="en_US.UTF-8" printf %0.2f $(echo "100 * ($tmpCounterDelta / $sumDelta)" | bc -l))
+          echo -en "\t$tmpCounterDeltaPercent" >>$logUtil
+
+          let tmpCountNr++
+        done
+
+        # Remember counters for next iteration
+        lastCounters[$CPU]="$counters"
+        first=0
+        echo >>$logUtil
+      done
+      sleep 5
+    done
+  ) 2>/dev/null &
+  pidofCpuUtil=$!
+
+  echo "PID $pidofCpuUtil / $pidofFreq" >> dkvm.log
+  dialog --backtitle "$backtitle" \
+    --title Log --begin 2 2 --tailboxbg dkvm.log 12 124 \
+    --and-widget --begin 15 2 --tailboxbg cpu-freq.log 20 22 \
+    --and-widget --begin 15 26 --tailboxbg cpu-util.log 20 100 \
+    --and-widget --begin 2 115 --keep-window --msgbox "Exit" 5 10
+
+  kill -9 $pidofFreq $pidofCpuUtil
+
+}
+
 doOut() {
   local TAILFILE=dkvm.log
   if [ "$1" == "clear" ]; then
     rm -f "$TAILFILE"
     touch "$TAILFILE"
   elif [ "$1" == "showlog" ]; then
-    dialog --backtitle "$backtitle" --tailbox "$TAILFILE" 25 75
+    #dialog --backtitle "$backtitle" --tailbox "$TAILFILE" 25 75
+    doShowLog
     # When exited, kill any remaining qemu
     killall qemu-system-x86_64
     sleep 2
@@ -250,13 +336,10 @@ mainHandlerVM() {
     OPTS+=" -cpu host"
   fi
   doOut "clear"
-  doOut "showlog" &
-  reloadPCIDevices $VMPCIDEVICE
+  reloadPCIDevices $VMPCIDEVICE ; sleep 2 && eval qemu-system-x86_64 $OPTS 2>&1 | doOut &
   vCPUpin "$VMCORELIST" &
   #IRQAffinity "$VMCORELIST" &
   #realTimeTune
-  echo "Starting qemu..." | doOut
-  eval qemu-system-x86_64 $OPTS 2>&1 | doOut
   doOut showlog
 }
 
@@ -264,21 +347,25 @@ reloadPCIDevices() {
   local VMPCIDEVICE="$@"
   for PCIDEVICE in $(echo "$VMPCIDEVICE" | tr ' ' '\n'); do
     PCIDEVICE=$(echo $PCIDEVICE | sed 's/,.*//') # Strip options
-    VENDOR=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/vendor)
-    DEVICE=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/device)
-    if [ -e /sys/bus/pci/devices/0000:${PCIDEVICE}/driver ]; then
-      echo "0000:${PCIDEVICE}" >/sys/bus/pci/devices/0000:${PCIDEVICE}/driver/unbind 2>&1 | doOut
-      echo "Unloaded $PCIDEVICE" | doOut
-    fi
-    sleep 0.5
-    if [ -e "/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" ]; then
-      echo "Resetting $PCIDEVICE" | doOut
-      echo 1 >"/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" 2>&1 | doOut
-    fi
-    sleep 0.5
+    if [ -e /sys/bus/pci/devices/0000:${PCIDEVICE}/vendor ]; then
+      VENDOR=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/vendor)
+      DEVICE=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/device)
+      if [ -e /sys/bus/pci/devices/0000:${PCIDEVICE}/driver ]; then
+        echo "0000:${PCIDEVICE}" >/sys/bus/pci/devices/0000:${PCIDEVICE}/driver/unbind 2>&1 | doOut
+        echo "Unloaded $PCIDEVICE" | doOut
+      fi
+      sleep 0.5
+      if [ -e "/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" ]; then
+        echo "Resetting $PCIDEVICE" | doOut
+        echo 1 >"/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" 2>&1 | doOut
+      fi
+      sleep 0.5
 
-    echo "Registrating vfio-pci on ${VENDOR}:${DEVICE}" | doOut
-    echo "$VENDOR $DEVICE" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
+      echo "Registrating vfio-pci on ${VENDOR}:${DEVICE}" | doOut
+      echo "$VENDOR $DEVICE" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
+    else
+      echo "Device not found: ${PCIDEVICE}" | doOut
+    fi
     sleep 0.5
   done
 }
@@ -314,7 +401,12 @@ vCPUpin() {
 
   while [ -z "$THREADS" ]; do
     sleep 5
-    THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g')
+    if hash nc 2>/dev/null; then 
+      THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g') | doOut
+    else
+      echo "ERROR: nc not found !" | doOut
+      continue
+    fi
   done
 
   echo Threads: $THREADS | doOut
