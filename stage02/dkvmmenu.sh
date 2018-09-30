@@ -108,10 +108,10 @@ doShowLog() {
 
   echo "PID $pidofCpuUtil / $pidofFreq" >> dkvm.log
   dialog --backtitle "$backtitle" \
-    --title Log --begin 2 2 --tailboxbg dkvm.log 12 124 \
-    --and-widget --begin 15 2 --tailboxbg cpu-freq.log 20 22 \
-    --and-widget --begin 15 26 --tailboxbg cpu-util.log 20 100 \
-    --and-widget --begin 2 115 --keep-window --msgbox "Exit" 5 10
+    --title Log --begin 2 2 --tailboxbg dkvm.log 18 124 \
+    --and-widget --begin 22 2 --tailboxbg cpu-freq.log 20 22 \
+    --and-widget --begin 22 26 --tailboxbg cpu-util.log 20 100 \
+    --and-widget --begin 2 114 --keep-window --msgbox "Exit" 5 10
 
   kill -9 $pidofFreq $pidofCpuUtil
 
@@ -384,7 +384,7 @@ getConfigItem() {
 }
 
 vCPUpin() {
-  #sleep 20 # Give QEMU time to start the threads
+  sleep 10 # Give QEMU time to start the threads
   local CORELIST="$1"
   echo "Setting CPU affinity using cores: $CORELIST" | doOut
   if timeout --help 2>&1 | grep -q BusyBox; then
@@ -402,7 +402,8 @@ vCPUpin() {
   while [ -z "$THREADS" ]; do
     sleep 5
     if hash nc 2>/dev/null; then 
-      THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g') | doOut
+      echo "Trying to find threads on QEMU" | doOut
+      THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g')
     else
       echo "ERROR: nc not found !" | doOut
       continue
