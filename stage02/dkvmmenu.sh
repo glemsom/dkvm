@@ -2,7 +2,7 @@
 # DKVM Menu
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 
-version="0.1.1"
+version="0.1.2"
 # Change to script directory
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OLDIFS=$IFS
@@ -45,8 +45,8 @@ doShowLog() {
       MHz=$(grep -i MHz /proc/cpuinfo)
       coreCount=0
       for line in $MHz; do
-        freq=$(echo "$line" | awk '{print $4}')
-        echo "Core $coreCount @ $freq" >>$logFreq
+        freq=$(echo "$line" | awk '{print $4}' | sed 's/\..*//')
+        echo "Core $coreCount @ $freq Mhz" >>$logFreq
         let coreCount++
       done
       sleep 5
@@ -111,7 +111,7 @@ doShowLog() {
     --title Log --begin 2 2 --tailboxbg dkvm.log 18 124 \
     --and-widget --begin 22 2 --tailboxbg cpu-freq.log 20 22 \
     --and-widget --begin 22 26 --tailboxbg cpu-util.log 20 100 \
-    --and-widget --begin 2 114 --keep-window --msgbox "Exit" 5 10
+    --and-widget --begin 3 114 --keep-window --msgbox "Exit" 5 10
 
   kill -9 $pidofFreq $pidofCpuUtil
 
