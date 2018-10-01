@@ -2,7 +2,7 @@
 # DKVM Menu
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 
-version="0.1.2"
+version="0.1.3"
 # Change to script directory
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OLDIFS=$IFS
@@ -42,10 +42,10 @@ doShowLog() {
     >$logFreq
     while [ true ]; do
       # Get current Mhz for all cores
-      MHz=$(grep -i MHz /proc/cpuinfo)
+      MHz=$(grep -i MHz /proc/cpuinfo | sed 's/\..*//g')
       coreCount=0
       for line in $MHz; do
-        freq=$(echo "$line" | awk '{print $4}' | sed 's/\..*//')
+        freq=$(echo "$line" | awk '{print $4}')
         echo "Core $coreCount @ $freq Mhz" >>$logFreq
         let coreCount++
       done
@@ -106,14 +106,14 @@ doShowLog() {
   ) 2>/dev/null &
   pidofCpuUtil=$!
 
-  echo "PID $pidofCpuUtil / $pidofFreq" >> dkvm.log
   dialog --backtitle "$backtitle" \
     --title Log --begin 2 2 --tailboxbg dkvm.log 18 124 \
     --and-widget --begin 22 2 --tailboxbg cpu-freq.log 20 22 \
     --and-widget --begin 22 26 --tailboxbg cpu-util.log 20 100 \
-    --and-widget --begin 3 114 --keep-window --msgbox "Exit" 5 10
+    --and-widget --begin 2 114 --keep-window --msgbox "Exit" 5 10
 
-  kill -9 $pidofFreq $pidofCpuUtil
+  kill -9 $pidofFreq $pidofCpuUtil 2>&1 > /dev/null
+  clear
 
 }
 
@@ -336,9 +336,9 @@ mainHandlerVM() {
     OPTS+=" -cpu host"
   fi
   doOut "clear"
-  reloadPCIDevices $VMPCIDEVICE ; sleep 2 && eval qemu-system-x86_64 $OPTS 2>&1 | doOut &
+  ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" | doOut; eval qemu-system-x86_64 $OPTS 2>&1 | doOut ) &
   vCPUpin "$VMCORELIST" &
-  #IRQAffinity "$VMCORELIST" &
+  IRQAffinity "$VMCORELIST" &
   #realTimeTune
   doOut showlog
 }
@@ -384,7 +384,7 @@ getConfigItem() {
 }
 
 vCPUpin() {
-  sleep 10 # Give QEMU time to start the threads
+  sleep 2 # Give QEMU time to start the threads
   local CORELIST="$1"
   echo "Setting CPU affinity using cores: $CORELIST" | doOut
   if timeout --help 2>&1 | grep -q BusyBox; then
@@ -428,9 +428,9 @@ vCPUpin() {
       CURCORE=$(echo $CORELIST | cut -d " " -f $COUNT)
       COUNTUP=1
     fi
-    echo "Binding $THREAD_ID to $CURCORE" | doOut
+    #echo "Binding $THREAD_ID to $CURCORE" | doOut
     taskset -pc $CURCORE $THREAD_ID 2>&1 | doOut
-    echo "Setting SCHED_FIFO priority to $THREAD_ID" | doOut
+    #echo "Setting SCHED_FIFO priority to $THREAD_ID" | doOut
     $CHRTCMD -pf 10 $THREAD_ID | doOut
     COUNT=$(($COUNT + $COUNTUP))
   done
@@ -453,13 +453,13 @@ IRQAffinity() {
   # Move all irq away from VM CPUs
   for IRQ in $(ls -1 /proc/irq/); do
     if [ -d /proc/irq/${IRQ} ]; then
-      echo "$IRQCORE" >/proc/irq/${IRQ}/smp_affinity_list
+      echo "$IRQCORE" >/proc/irq/${IRQ}/smp_affinity_list 2>/dev/null
     fi
   done
 
   # service interrupts coming from vfio devices on the VM's cores
   for IRQ in $(cat /proc/interrupts | grep vfio | awk '{print $1}' | tr -d :); do
-    echo $CORELISTCOMMA >/proc/irq/${IRQ}/smp_affinity_list
+    echo $CORELISTCOMMA >/proc/irq/${IRQ}/smp_affinity_list 2>/dev/null
   done
 }
 
