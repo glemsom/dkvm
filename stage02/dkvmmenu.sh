@@ -2,7 +2,7 @@
 # DKVM Menu
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 
-version="0.1.3"
+version="0.1.1"
 # Change to script directory
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OLDIFS=$IFS
@@ -338,7 +338,7 @@ mainHandlerVM() {
   doOut "clear"
   ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" | doOut; eval qemu-system-x86_64 $OPTS 2>&1 | doOut ) &
   vCPUpin "$VMCORELIST" &
-  IRQAffinity "$VMCORELIST" &
+  #IRQAffinity "$VMCORELIST" &
   #realTimeTune
   doOut showlog
 }
@@ -384,7 +384,7 @@ getConfigItem() {
 }
 
 vCPUpin() {
-  sleep 2 # Give QEMU time to start the threads
+  sleep 5 # Give QEMU time to start the threads
   local CORELIST="$1"
   echo "Setting CPU affinity using cores: $CORELIST" | doOut
   if timeout --help 2>&1 | grep -q BusyBox; then
@@ -400,7 +400,7 @@ vCPUpin() {
   local THREADS=""
 
   while [ -z "$THREADS" ]; do
-    sleep 5
+    sleep 1
     if hash nc 2>/dev/null; then 
       echo "Trying to find threads on QEMU" | doOut
       THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g')
