@@ -273,6 +273,7 @@ realTimeTune() {
   echo 300 >/proc/sys/vm/stat_interval
   echo 0 >/proc/sys/kernel/watchdog_thresh
   echo 0 >/proc/sys/kernel/watchdog
+  echo 1 > /sys/devices/virtual/workqueue/cpumask
 }
 mainHandlerVM() {
   clear
