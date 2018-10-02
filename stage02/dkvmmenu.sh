@@ -294,8 +294,8 @@ mainHandlerVM() {
   local VMEXTRA=$(getConfigItem $configFile EXTRA)
 
   # Build qemu command
-  OPTS="-enable-kvm -nodefaults -machine q35,accel=kvm,kernel_irqchip=on,mem-merge=off -qmp tcp:localhost:4444,server,nowait"
-  OPTS+=" -mem-prealloc -realtime mlock=off -rtc base=localtime,clock=host"
+  OPTS="-enable-kvm -nodefaults -accel accel=kvm,thread=multi -machine q35,accel=kvm,kernel_irqchip=on,mem-merge=off -qmp tcp:localhost:4444,server,nowait "
+  OPTS+=" -mem-prealloc -rtc base=localtime,clock=host,driftfix=none "
   #OPTS+=" -device virtio-net-pci,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
   #OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
   OPTS+=" -device e1000,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
@@ -339,7 +339,7 @@ mainHandlerVM() {
   ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" | doOut; eval qemu-system-x86_64 $OPTS 2>&1 | doOut ) &
   vCPUpin "$VMCORELIST" &
   #IRQAffinity "$VMCORELIST" &
-  #realTimeTune
+  #realTimeTune &
   doOut showlog
 }
 
