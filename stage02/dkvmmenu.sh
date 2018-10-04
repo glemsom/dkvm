@@ -106,10 +106,10 @@ doShowLog() {
   pidofCpuUtil=$!
 
   dialog --backtitle "$backtitle" \
-    --title Log --begin 3 2 --tailboxbg dkvm.log 18 124 \
-    --and-widget --begin 23 2 --tailboxbg cpu-freq.log 20 22 \
-    --and-widget --begin 23 26 --tailboxbg cpu-util.log 20 100 \
-    --and-widget --begin 5 114 --keep-window --msgbox "Exit" 5 10
+    --title Log --begin 2 2 --tailboxbg dkvm.log 18 124 \
+    --and-widget --begin 22 2 --tailboxbg cpu-freq.log 20 22 \
+    --and-widget --begin 22 26 --tailboxbg cpu-util.log 20 100 \
+    --and-widget --begin 3 112 --keep-window --msgbox "Exit" 5 10
 
   kill -9 $pidofFreq $pidofCpuUtil 2>&1 > /dev/null
   clear
@@ -293,11 +293,10 @@ mainHandlerVM() {
 
   # Build qemu command
   OPTS="-enable-kvm -nodefaults -nodefconfig -no-user-config -accel accel=kvm,thread=multi -machine q35,accel=kvm,kernel_irqchip=on,mem-merge=off -qmp tcp:localhost:4444,server,nowait "
-  OPTS+=" -mem-prealloc -realtime mlock=on -rtc base=localtime,clock=host,driftfix=none -serial none -parallel none -balloon none "
+  OPTS+=" -mem-prealloc -realtime mlock=on -rtc base=localtime,clock=host,driftfix=none -serial none -parallel none "
   #OPTS+=" -device virtio-net-pci,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
   #OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
   OPTS+=" -device e1000,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
-  #OPTS+=" -name $VMNAME"
   OPTS+=" -mem-path /dev/hugepages -m $VMMEM"
   OPTS+=" $VMEXTRA "
   if [ ! -z "$VMSOCKETS" ] && [ ! -z "$VMTHREADS" ] && [ ! -z "$VMCORES" ]; then
@@ -334,10 +333,10 @@ mainHandlerVM() {
     OPTS+=" -cpu host"
   fi
   doOut "clear"
+  IRQAffinity "$VMCORELIST"
+  realTimeTune
   ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" | doOut; eval qemu-system-x86_64 $OPTS 2>&1 | doOut ) &
   vCPUpin "$VMCORELIST" &
-  #IRQAffinity "$VMCORELIST" &
-  #realTimeTune &
   doOut showlog
 }
 
@@ -396,18 +395,18 @@ vCPUpin() {
   fi
   local THREADS=""
 
+  echo "Trying to find QEMU vCPU threads..." | doOut
   while [ -z "$THREADS" ]; do
-    sleep 1
+    sleep 0.5
     if hash nc 2>/dev/null; then 
-      echo "Trying to find threads on QEMU" | doOut
+      #echo -n "." | doOut
       THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g')
     else
       echo "ERROR: nc not found !" | doOut
       continue
     fi
   done
-
-  echo Threads: $THREADS | doOut
+  echo "QEMU Threads found: $THREADS" | doOut
 
   if [ "$(echo $CORELIST | tr -cd ' ' | wc -c)" -gt $(echo "$THREADS" | wc -l) ]; then
     local USEHT=yes
@@ -440,8 +439,7 @@ IRQAffinity() {
   local ALLCORES=$(cat /proc/cpuinfo | grep processor | awk '{print $3}')
 
   for CORE in $ALLCORES; do
-    if [[ $CORELISTCOMMA =~ (^|,)"$CORE"(,|$) ]]; then
-    #if echo "$CORELIST" | grep $CORE -q; then
+    if [[ ! $CORELISTCOMMA =~ (^|,)"$CORE"(,|$) ]]; then
       IRQCORE="${IRQCORE},${CORE}"
     fi
   done
