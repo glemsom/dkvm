@@ -48,6 +48,14 @@ doShowLog() {
         echo "Core $coreCount @ $freq Mhz" >>$logFreq
         let coreCount++
       done
+      # Also write qemu status
+>qemu-running.log
+      if pgrep -f qemu-system-x86_64; then
+        echo "Running @ $(pgrep qemu-system-x86_64)" > qemu-running.log
+      else
+        echo "Stopped" > qemu-running.log
+      fi
+
       sleep 5
       >$logFreq
     done
@@ -107,9 +115,11 @@ doShowLog() {
 
   dialog --backtitle "$backtitle" \
     --title Log --begin 2 2 --tailboxbg dkvm.log 18 124 \
-    --and-widget --begin 22 2 --tailboxbg cpu-freq.log 20 22 \
-    --and-widget --begin 22 26 --tailboxbg cpu-util.log 20 100 \
+    --and-widget --title "CPU" --begin 21 2 --tailboxbg cpu-freq.log 20 22 \
+    --and-widget --title "System load" --begin 21 26 --tailboxbg cpu-util.log 20 100 \
+    --and-widget --title "Qemu status" --begin 42 2 --tailboxbg qemu-running.log 3 30 \
     --and-widget --begin 3 112 --keep-window --msgbox "Exit" 5 10
+    sleep 20
 
   kill -9 $pidofFreq $pidofCpuUtil 2>&1 > /dev/null
   clear
