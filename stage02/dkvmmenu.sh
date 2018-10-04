@@ -408,20 +408,30 @@ vCPUpin() {
   while [ -z "$THREADS" ]; do
     sleep 0.5
     if hash nc 2>/dev/null; then 
-      #echo -n "." | doOut
+      #echo "." | doOut
       THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g')
     else
       echo "ERROR: nc not found !" | doOut
       continue
     fi
   done
-  echo "QEMU Threads found: $THREADS" | doOut
+  echo QEMU Threads found: $THREADS | doOut
 
   if [ "$(echo $CORELIST | tr -cd ' ' | wc -c)" -gt $(echo "$THREADS" | wc -l) ]; then
     local USEHT=yes
   else
     local USEHT=no
   fi
+
+  # Find QEMU threads, and give them all FIFO/90           
+  QEMU_PID=$(pgrep qemu-system-x86_64)
+  QEMU_ALL_THREADS=$(ls -1 /proc/${QEMU_PID}/task)
+  for THREAD in $QEMU_ALL_THREADS; do
+    echo "QEMU thread $THREAD moved to FIFO 90 priority" | doOut
+    $CHRTCMD -pf 90 $THREAD | doOut
+  done
+
+  sleep 5
 
   local COUNT=1
   for THREAD_ID in $THREADS; do
@@ -433,10 +443,11 @@ vCPUpin() {
       CURCORE=$(echo $CORELIST | cut -d " " -f $COUNT)
       COUNTUP=1
     fi
+
     #echo "Binding $THREAD_ID to $CURCORE" | doOut
     taskset -pc $CURCORE $THREAD_ID 2>&1 | doOut
     #echo "Setting SCHED_FIFO priority to $THREAD_ID" | doOut
-    $CHRTCMD -pf 40 $THREAD_ID | doOut
+    $CHRTCMD -pf 80 $THREAD_ID | doOut
     COUNT=$(($COUNT + $COUNTUP))
   done
 
