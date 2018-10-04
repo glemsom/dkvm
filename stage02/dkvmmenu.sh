@@ -2,7 +2,7 @@
 # DKVM Menu
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 
-version="0.1.1"
+version="0.1.4"
 # Change to script directory
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OLDIFS=$IFS
@@ -33,7 +33,6 @@ buildMenuItemVMs() {
 }
 
 doShowLog() {
-  #dialog --backtitle "$backtitle" --tailbox "$TAILFILE" 25 75
   # CPU monitor
   (
     logFreq=cpu-freq.log
@@ -107,14 +106,14 @@ doShowLog() {
   pidofCpuUtil=$!
 
   dialog --backtitle "$backtitle" \
-    --title Log --begin 2 2 --tailboxbg dkvm.log 18 124 \
-    --and-widget --begin 22 2 --tailboxbg cpu-freq.log 20 22 \
-    --and-widget --begin 22 26 --tailboxbg cpu-util.log 20 100 \
-    --and-widget --begin 2 114 --keep-window --msgbox "Exit" 5 10
+    --title Log --begin 3 2 --tailboxbg dkvm.log 18 124 \
+    --and-widget --begin 23 2 --tailboxbg cpu-freq.log 20 22 \
+    --and-widget --begin 23 26 --tailboxbg cpu-util.log 20 100 \
+    --and-widget --begin 5 114 --keep-window --msgbox "Exit" 5 10
 
   kill -9 $pidofFreq $pidofCpuUtil 2>&1 > /dev/null
   clear
-
+  exit
 }
 
 doOut() {
@@ -268,12 +267,9 @@ mainHandlerInternal() {
 }
 
 realTimeTune() {
-  #echo -1 >/proc/sys/kernel/sched_rt_period_us
-  #echo -1 >/proc/sys/kernel/sched_rt_runtime_us
-  echo 300 >/proc/sys/vm/stat_interval
-  echo 0 >/proc/sys/kernel/watchdog_thresh
-  echo 0 >/proc/sys/kernel/watchdog
-  echo 1 > /sys/devices/virtual/workqueue/cpumask
+  echo 300 >/proc/sys/vm/stat_interval 2>/dev/null
+  echo 0   >/proc/sys/kernel/watchdog 2>/dev/null
+  echo 1   >/sys/devices/virtual/workqueue/cpumask 2>/dev/null
 }
 mainHandlerVM() {
   clear
@@ -341,7 +337,7 @@ mainHandlerVM() {
   ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" | doOut; eval qemu-system-x86_64 $OPTS 2>&1 | doOut ) &
   vCPUpin "$VMCORELIST" &
   #IRQAffinity "$VMCORELIST" &
-  realTimeTune &
+  #realTimeTune &
   doOut showlog
 }
 
@@ -386,7 +382,6 @@ getConfigItem() {
 }
 
 vCPUpin() {
-  sleep 5 # Give QEMU time to start the threads
   local CORELIST="$1"
   echo "Setting CPU affinity using cores: $CORELIST" | doOut
   if timeout --help 2>&1 | grep -q BusyBox; then
@@ -433,38 +428,34 @@ vCPUpin() {
     #echo "Binding $THREAD_ID to $CURCORE" | doOut
     taskset -pc $CURCORE $THREAD_ID 2>&1 | doOut
     #echo "Setting SCHED_FIFO priority to $THREAD_ID" | doOut
-    $CHRTCMD -pf 10 $THREAD_ID | doOut
+    $CHRTCMD -pf 40 $THREAD_ID | doOut
     COUNT=$(($COUNT + $COUNTUP))
   done
 
 }
 
 IRQAffinity() {
-  sleep 5
   local CORELIST="$1"
   local CORELISTCOMMA=$(echo $CORELIST | sed 's/ /,/g')
   local ALLCORES=$(cat /proc/cpuinfo | grep processor | awk '{print $3}')
 
   for CORE in $ALLCORES; do
-    if echo "$CORELIST" | grep $CORE -q; then
+    if [[ $CORELISTCOMMA =~ (^|,)"$CORE"(,|$) ]]; then
+    #if echo "$CORELIST" | grep $CORE -q; then
       IRQCORE="${IRQCORE},${CORE}"
     fi
   done
   IRQCORE="${IRQCORE:1}" # Remove first ,
+  echo "IRQ Cores: $IRQCORE" | doOut
 
   # Move all irq away from VM CPUs
-  for IRQ in $(ls -1 /proc/irq/); do
+  for IRQ in $(cat /proc/interrupts | grep "^ ..:" | grep -v "vfio\|timer\|rtc\|acpi\|dmar\|mei_me" | awk '{print $1}' | tr -d ':'); do
     if [ -d /proc/irq/${IRQ} ]; then
-      echo "$IRQCORE" >/proc/irq/${IRQ}/smp_affinity_list 2>/dev/null
+      echo "Moving $IRQ to $IRQCORE" | doOut
+      ( echo "$IRQCORE" > /proc/irq/${IRQ}/smp_affinity_list 2>&1 ) | doOut
     fi
-  done
-
-  # service interrupts coming from vfio devices on the VM's cores
-  for IRQ in $(cat /proc/interrupts | grep vfio | awk '{print $1}' | tr -d :); do
-    echo $CORELISTCOMMA >/proc/irq/${IRQ}/smp_affinity_list 2>/dev/null
   done
 }
 
-#buildItems
 showMainMenu
 doSelect
