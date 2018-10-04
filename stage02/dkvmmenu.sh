@@ -423,12 +423,12 @@ vCPUpin() {
     local USEHT=no
   fi
 
-  # Find QEMU threads, and give them all FIFO/90           
+  # Find QEMU threads, and give them all FIFO/80           
   QEMU_PID=$(pgrep qemu-system-x86_64)
   QEMU_ALL_THREADS=$(ls -1 /proc/${QEMU_PID}/task)
   for THREAD in $QEMU_ALL_THREADS; do
     echo "QEMU thread $THREAD moved to FIFO 90 priority" | doOut
-    $CHRTCMD -pf 90 $THREAD | doOut
+    $CHRTCMD -pf 80 $THREAD | doOut
   done
 
   sleep 5
@@ -447,7 +447,7 @@ vCPUpin() {
     #echo "Binding $THREAD_ID to $CURCORE" | doOut
     taskset -pc $CURCORE $THREAD_ID 2>&1 | doOut
     #echo "Setting SCHED_FIFO priority to $THREAD_ID" | doOut
-    $CHRTCMD -pf 80 $THREAD_ID | doOut
+    $CHRTCMD -pf 99 $THREAD_ID | doOut
     COUNT=$(($COUNT + $COUNTUP))
   done
 
@@ -467,7 +467,7 @@ IRQAffinity() {
   echo "IRQ Cores: $IRQCORE" | doOut
 
   # Move all irq away from VM CPUs
-  for IRQ in $(cat /proc/interrupts | grep "^ ..:" | grep -v "vfio\|timer\|rtc\|acpi\|dmar\|mei_me" | awk '{print $1}' | tr -d ':'); do
+  for IRQ in $(cat /proc/interrupts | grep "^ ..:" | grep -v "timer\|rtc\|acpi\|dmar\|mei_me" | awk '{print $1}' | tr -d ':'); do
     if [ -d /proc/irq/${IRQ} ]; then
       echo "Moving $IRQ to $IRQCORE" | doOut
       ( echo "$IRQCORE" > /proc/irq/${IRQ}/smp_affinity_list 2>&1 ) | doOut
