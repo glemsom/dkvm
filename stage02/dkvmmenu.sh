@@ -38,7 +38,7 @@ doShowLog() {
     logFreq=cpu-freq.log
     IFS="
 "
-    >$logFreq
+>$logFreq
     while [ true ]; do
       # Get current Mhz for all cores
       MHz=$(grep -i MHz /proc/cpuinfo | sed 's/\..*//g')
@@ -112,7 +112,10 @@ doShowLog() {
     done
   ) 2>/dev/null &
   pidofCpuUtil=$!
-
+  # Reset logfiles
+>cpu-freq.log
+>cpu-util.log
+>qemu-running.log
   dialog --backtitle "$backtitle" \
     --title Log --begin 2 2 --tailboxbg dkvm.log 18 124 \
     --and-widget --title "CPU" --begin 21 2 --tailboxbg cpu-freq.log 20 22 \
@@ -339,12 +342,12 @@ mainHandlerVM() {
     OPTS+=" -cpu host,${VMCPUOPTS}"
 
   else
-    OPTS+=" -cpu host"
+    OPTS+=" -cpu host "
   fi
   doOut "clear"
   IRQAffinity "$VMCORELIST"
   realTimeTune
-  ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" | doOut; eval qemu-system-x86_64 $OPTS 2>&1 | doOut ) &
+  ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
   vCPUpin "$VMCORELIST" &
   doOut showlog
 }
