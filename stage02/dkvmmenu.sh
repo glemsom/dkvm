@@ -118,7 +118,7 @@ doShowLog() {
     --and-widget --title "CPU" --begin 21 2 --tailboxbg cpu-freq.log 20 22 \
     --and-widget --title "System load" --begin 21 26 --tailboxbg cpu-util.log 20 100 \
     --and-widget --title "Qemu status" --begin 42 2 --tailboxbg qemu-running.log 4 22 \
-    --and-widget --begin 3 112 --keep-window --msgbox "Exit" 5 10
+    --and-widget --begin 3 112 --keep-window --msgbox "Exit" 5 10 2>dialog.err
 
   kill -9 $pidofFreq $pidofCpuUtil 2>&1 > /dev/null
   clear
@@ -374,6 +374,7 @@ reloadPCIDevices() {
     fi
     sleep 0.5
   done
+  sleep 2
 }
 getConfigItem() {
   local configFile="$1"
@@ -427,7 +428,7 @@ vCPUpin() {
   QEMU_PID=$(pgrep qemu-system-x86_64)
   QEMU_ALL_THREADS=$(ls -1 /proc/${QEMU_PID}/task)
   for THREAD in $QEMU_ALL_THREADS; do
-    echo "QEMU thread $THREAD moved to FIFO 90 priority" | doOut
+    echo "QEMU thread $THREAD moved to FIFO 80 priority" | doOut
     $CHRTCMD -pf 80 $THREAD | doOut
   done
 
@@ -469,7 +470,7 @@ IRQAffinity() {
   # Move all irq away from VM CPUs
   for IRQ in $(cat /proc/interrupts | grep "^ ..:" | grep -v "timer\|rtc\|acpi\|dmar\|mei_me" | awk '{print $1}' | tr -d ':'); do
     if [ -d /proc/irq/${IRQ} ]; then
-      echo "Moving $IRQ to $IRQCORE" | doOut
+      echo "Moving IRQ $IRQ to $IRQCORE" | doOut
       ( echo "$IRQCORE" > /proc/irq/${IRQ}/smp_affinity_list 2>&1 ) | doOut
     fi
   done

@@ -14,11 +14,11 @@ extraArgs="intel_pstate=disable intel_iommu=on iommu=pt transparent_hugepage=nev
 
 # Patch syslinux (legacy boot)
 cp /media/usb/boot/syslinux/syslinux.cfg /media/usb/boot/syslinux/syslinux.cfg.old
-cat /media/usb/boot/syslinux/syslinux.cfg.old | sed "/^APPEND/ s/$/ $extraArgs /" | sed 's/quiet//g' > /media/usb/boot/syslinux/syslinux.cfg
+cat /media/usb/boot/syslinux/syslinux.cfg.old | sed 's/Linux vanilla/DKVM/g' | sed "/^APPEND/ s/$/ $extraArgs /" | sed 's/quiet//g' > /media/usb/boot/syslinux/syslinux.cfg
 
 # Patch grub2 (uefi boot)
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
-cat /media/usb/boot/grub/grub.cfg.old | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' > /media/usb/boot/grub/grub.cfg
+cat /media/usb/boot/grub/grub.cfg.old | sed 's/Linux vanilla/DKVM/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' > /media/usb/boot/grub/grub.cfg
 
 mount -o remount,ro /media/usb
 ln -s /media/usb/cache /etc/apk/cache
