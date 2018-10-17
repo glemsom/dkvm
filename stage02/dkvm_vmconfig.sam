@@ -34,16 +34,18 @@ THREADS=1
 # If hyperthreading is enabled - for best realtime performance, use both the physical and the "hyperthreading" core to back the vCPU core.
 # ex. configure QEMU for 4 cores with 1 thread - but PIN on both the "real" core, and the "hyperthreaded core".
 # use `cat /proc/cpuinfo | grep "processor\|core id"` to find core siblings
-CORELIST=2 8 3 9 4 10 5 11
 
-# Memory in megabyes
+CORELIST=2 7 3 8 4 9 5 10 6 11
+
+# Memory in MB
 MEM=12288
 
 # MAC Address
 MAC=DE:AD:BE:EF:66:61
 
 # Extra options to qemu
-EXTRA= -nographic -vga none
+EXTRA= -nographic -vga none -display none
 
 # Extra CPU options to qemu
-CPUOPTS=kvm=off,hv_time,hv_relaxed,hv_spinlocks=0x1fff,hv_vpindex,hv_reset,hv_runtime,hv_vapic,hv_vendor_id=blows
+CPUOPTS=kvm=off,hv_synic,hv_time,hv_stimer,hv_relaxed,hv_spinlocks=0x1fff,hv_vpindex,hv_reset,hv_runtime,hv_vapic,hv_vendor_id=blows,kvm=off,l3-cache=on,-hypervisor,migratable=no,+invtsc
+
