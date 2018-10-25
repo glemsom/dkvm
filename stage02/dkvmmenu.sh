@@ -304,12 +304,13 @@ mainHandlerVM() {
   local VMEXTRA=$(getConfigItem $configFile EXTRA)
 
   # Build qemu command
-  OPTS="-enable-kvm -nodefaults -nodefconfig -no-user-config -accel accel=kvm,thread=multi -machine q35,accel=kvm,kernel_irqchip=on,mem-merge=off -qmp tcp:localhost:4444,server,nowait "
-  OPTS+=" -mem-prealloc -realtime mlock=on -rtc base=localtime,clock=host,driftfix=none -serial none -parallel none "
+  OPTS="-enable-kvm -nodefaults -nodefconfig -no-user-config -accel accel=kvm,thread=multi -machine q35,accel=kvm,kernel_irqchip=on,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
+  OPTS+=" -mem-prealloc -realtime mlock=on -rtc base=localtime,clock=host,driftfix=slew -serial none -parallel none "
   #OPTS+=" -device virtio-net-pci,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
   #OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
   OPTS+=" -device e1000,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
   OPTS+=" -mem-path /dev/hugepages -m $VMMEM"
+  OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -no-hpet -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" $VMEXTRA "
   if [ ! -z "$VMSOCKETS" ] && [ ! -z "$VMTHREADS" ] && [ ! -z "$VMCORES" ]; then
     OPTS+=" -smp sockets=${VMSOCKETS},cores=${VMCORES},threads=${VMTHREADS}"
@@ -334,6 +335,7 @@ mainHandlerVM() {
     done
   fi
   if [ ! -z "$VMPCIDEVICE" ]; then
+    OPTS+=" -device ioh3420,id=root_port1,chassis=0,slot=0,bus=pcie.0"
     for PCIDEVICE in $VMPCIDEVICE; do
       OPTS+=" -device vfio-pci,host=${PCIDEVICE}"
     done
