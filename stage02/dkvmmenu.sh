@@ -279,7 +279,11 @@ mainHandlerInternal() {
 }
 
 realTimeTune() {
+  # Move dirty page writeback to CPU0 only
+  echo 1 > /sys/devices/virtual/workqueue/cpumask
+  # Reduce vmstat collection
   echo 300 >/proc/sys/vm/stat_interval 2>/dev/null
+  # Disable watchdog
   echo 0   >/proc/sys/kernel/watchdog 2>/dev/null
   echo 1   >/sys/devices/virtual/workqueue/cpumask 2>/dev/null
 }
