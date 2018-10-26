@@ -86,7 +86,7 @@ cp /boot/*vanilla . || err "Cannot copy kernel"
 
 mkdir -p modloop_files/modules
 
-sudo cp -rp /lib/modules/${KERNELNAME} modloop_files/modules || err "Cannot copy modules"
+sudo cp -rp /lib/modules/\${KERNELNAME} modloop_files/modules || err "Cannot copy modules"
 sudo cp -rp /lib/firmware modloop_files/modules || err "Cannot copy firmware"
 
 mksquashfs modloop_files modloop-vanilla
