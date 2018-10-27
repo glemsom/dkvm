@@ -10,7 +10,7 @@ mkdir /media/usb/cache
 
 # Extra arguments for Linux kernel
 #TODO : Get this from a config file instead?
-extraArgs="intel_pstate=disable intel_iommu=on iommu=pt transparent_hugepage=never vfio-pci.ids=10de:13c2,10de:0fbb,1106:3483 elevator=noop default_hugepagesz=2M hugepagesz=2M hugepages=7680 isolcpus=2-11 nohz_full=2-11 rcu_nocbs=2-11"
+extraArgs="intel_pstate=disable intel_iommu=on iommu=pt transparent_hugepage=never vfio-pci.ids=10de:13c2,10de:0fbb,1106:3483 elevator=noop default_hugepagesz=2M hugepagesz=2M isolcpus=2-11 nohz_full=2-11 rcu_nocbs=2-11"
 
 # Patch syslinux (legacy boot)
 cp /media/usb/boot/syslinux/syslinux.cfg /media/usb/boot/syslinux/syslinux.cfg.old
