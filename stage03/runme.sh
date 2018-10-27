@@ -75,18 +75,15 @@ PKGREL=\$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)
 
 abuild -r || err
 
-sudo apk add /home/alpine/packages/main/x86_64/linux-vanilla-\${KERNELVER}-r\${PKGREL}.apk || err "Cannot install kernel"
+sudo apk add /home/alpine/packages/main/x86_64/linux-vanilla-\${KERNELVER}-r\${PKGREL}.apk
 mkdir /home/alpine/dkvm_kernel && cd /home/alpine/dkvm_kernel
 
 sudo sed -i 's/usb/usb squashfs/' /etc/mkinitfs/mkinitfs.conf || err
-
-KERNELNAME=$(ls -1 /lib/modules/)
-sudo mkinitfs \${KERNELNAME} || err "Cannot build initrd"
+sudo mkinitfs \${KERNELVER}-\${PKGREL}-vanilla || err "Cannot build initrd"
 cp /boot/*vanilla .
 
 mkdir -p modloop_files/modules
-
-sudo cp -rp /lib/modules/${KERNELNAME} modloop_files/modules || err "Cannot copy modules"
+sudo cp -rp /lib/modules/\${KERNELVER}-\${PKGREL}-vanilla modloop_files/modules || err "Cannot copy modules"
 sudo cp -rp /lib/firmware modloop_files/modules || err "Cannot copy firmware"
 
 mksquashfs modloop_files modloop-vanilla
