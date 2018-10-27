@@ -2,7 +2,7 @@
 # DKVM Menu
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 
-version="0.1.4"
+version="0.1.5"
 # Change to script directory
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OLDIFS=$IFS
@@ -278,6 +278,19 @@ mainHandlerInternal() {
   fi
 }
 
+setupHugePages() {
+  local mem=$1
+  local memInKB=$(echo "$mem * 1024" | bc)
+
+  # Get page size
+  local pageSize=$(grep Hugepagesize /proc/meminfo | awk '{print $2}')
+
+  # Calculate pages required
+  local required=$(echo "$memInKB / $pageSize" | bc)
+
+  echo $required > /proc/sys/vm/nr_hugepages
+}
+
 realTimeTune() {
   # Move dirty page writeback to CPU0 only
   echo 1 > /sys/devices/virtual/workqueue/cpumask
@@ -351,6 +364,7 @@ mainHandlerVM() {
     OPTS+=" -cpu host "
   fi
   doOut "clear"
+  setupHugePages $VMMEM
   IRQAffinity "$VMCORELIST"
   realTimeTune
   ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
