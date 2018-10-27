@@ -364,7 +364,7 @@ mainHandlerVM() {
     OPTS+=" -cpu host "
   fi
   doOut "clear"
-  setupHugePages $VMMEM
+  setupHugePages $VMMEM |& doOut
   IRQAffinity "$VMCORELIST"
   realTimeTune
   ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
