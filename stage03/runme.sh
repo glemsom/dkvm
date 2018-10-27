@@ -80,9 +80,9 @@ mkdir /home/alpine/dkvm_kernel && cd /home/alpine/dkvm_kernel
 
 sudo sed -i 's/usb/usb squashfs/' /etc/mkinitfs/mkinitfs.conf || err
 
-KERNELNAME=\$(ls -1 /lib/modules/)
+KERNELNAME=$(ls -1 /lib/modules/)
 sudo mkinitfs \${KERNELNAME} || err "Cannot build initrd"
-cp /boot/*vanilla . || err "Cannot copy kernel"
+cp /boot/*vanilla .
 
 mkdir -p modloop_files/modules
 
