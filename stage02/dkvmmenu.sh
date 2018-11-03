@@ -416,6 +416,7 @@ getConfigItem() {
 vCPUpin() {
   local CORELIST="$1"
   echo "Setting CPU affinity using cores: $CORELIST" | doOut
+
   if timeout --help 2>&1 | grep -q BusyBox; then
     TIMEOUT="-t2"
   else
@@ -430,7 +431,7 @@ vCPUpin() {
 
   echo "Trying to find QEMU vCPU threads..." | doOut
   while [ -z "$THREADS" ]; do
-    sleep 0.5
+    sleep 2
     if hash nc 2>/dev/null; then 
       #echo "." | doOut
       THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g')
@@ -447,15 +448,16 @@ vCPUpin() {
     local USEHT=no
   fi
 
-  # Find QEMU threads, and give them all FIFO/80           
+  # Find QEMU threads, and give them a lower nice value
   QEMU_PID=$(pgrep qemu-system-x86_64)
   QEMU_ALL_THREADS=$(ls -1 /proc/${QEMU_PID}/task)
   for THREAD in $QEMU_ALL_THREADS; do
-    echo "QEMU thread $THREAD moved to FIFO 80 priority" | doOut
-    $CHRTCMD -pf 80 $THREAD | doOut
+    echo "Change to nice -5 for qemu thread $THREAD" | doOut
+    renice -5 -p $THREAD |& doOut
   done
 
-  sleep 5
+  # Let the VM start before assigning realtime threads
+  sleep 20
 
   local COUNT=1
   for THREAD_ID in $THREADS; do
@@ -470,8 +472,8 @@ vCPUpin() {
 
     #echo "Binding $THREAD_ID to $CURCORE" | doOut
     taskset -pc $CURCORE $THREAD_ID 2>&1 | doOut
-    #echo "Setting SCHED_FIFO priority to $THREAD_ID" | doOut
-    $CHRTCMD -pf 99 $THREAD_ID | doOut
+    echo "Setting realtime SCHED_FIFO priority 99 to $THREAD_ID" | doOut
+    $CHRTCMD -pf 99 $THREAD_ID |& doOut
     COUNT=$(($COUNT + $COUNTUP))
   done
 
@@ -496,6 +498,12 @@ IRQAffinity() {
       echo "Moving IRQ $IRQ to $IRQCORE" | doOut
       ( echo "$IRQCORE" > /proc/irq/${IRQ}/smp_affinity_list 2>&1 ) | doOut
     fi
+  done
+
+  # Also move all other threads we can away from the VM CPUs
+  echo "Moving non-vm relates tasks to $IRQCORE" | doOut
+  for PID in $(ps | awk '{print $1}' | grep -v PID); do
+    taskset -pc $IRQCORE $PID 2>/dev/null | doOut
   done
 }
 
