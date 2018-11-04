@@ -431,7 +431,7 @@ vCPUpin() {
 
   echo "Trying to find QEMU vCPU threads..." | doOut
   while [ -z "$THREADS" ]; do
-    sleep 2
+    sleep 0.5
     if hash nc 2>/dev/null; then 
       #echo "." | doOut
       THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g')
@@ -448,17 +448,6 @@ vCPUpin() {
     local USEHT=no
   fi
 
-  # Find QEMU threads, and give them a lower nice value
-  QEMU_PID=$(pgrep qemu-system-x86_64)
-  QEMU_ALL_THREADS=$(ls -1 /proc/${QEMU_PID}/task)
-  for THREAD in $QEMU_ALL_THREADS; do
-    echo "Change to nice -5 for qemu thread $THREAD" | doOut
-    renice -5 -p $THREAD |& doOut
-  done
-
-  # Let the VM start before assigning realtime threads
-  sleep 20
-
   local COUNT=1
   for THREAD_ID in $THREADS; do
     if [ $USEHT == yes ]; then
@@ -472,9 +461,25 @@ vCPUpin() {
 
     #echo "Binding $THREAD_ID to $CURCORE" | doOut
     taskset -pc $CURCORE $THREAD_ID 2>&1 | doOut
-    echo "Setting realtime SCHED_FIFO priority 99 to $THREAD_ID" | doOut
-    $CHRTCMD -pf 99 $THREAD_ID |& doOut
     COUNT=$(($COUNT + $COUNTUP))
+  done
+
+  # Let the VM start first
+  sleep 30
+
+  # Find QEMU threads, and give them a lower nice value
+  QEMU_PID=$(pgrep qemu-system-x86_64)
+  QEMU_ALL_THREADS=$(ls -1 /proc/${QEMU_PID}/task)
+  for THREAD in $QEMU_ALL_THREADS; do
+    if echo "$THREADS" | grep ^${THREAD}; then
+      # This is a VM thread
+      echo "Change VM thread to nice -10, and set FIFO/80" | doOut
+      renice -10 -p $THREAD |& doOut
+      $CHRTCMD -pf 80 $THREAD_ID |& doOut
+    else
+      echo "Change QEMU thread to nice -5" | doOut
+      renice -5 -p $THREAD |& doOut
+    fi
   done
 
 }
