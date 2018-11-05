@@ -460,7 +460,7 @@ vCPUpin() {
     fi
 
     #echo "Binding $THREAD_ID to $CURCORE" | doOut
-    taskset -pc $CURCORE $THREAD_ID 2>&1 | doOut
+    taskset -pc $CURCORE $THREAD_ID |& doOut
     COUNT=$(($COUNT + $COUNTUP))
   done
 
