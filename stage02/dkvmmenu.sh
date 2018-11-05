@@ -188,7 +188,8 @@ showMainMenu() {
   done
   local ip=$(ip a | grep "inet " | grep -v "inet 127" | awk '{print $2}')
   backtitle="DKVM @ $ip   Version: $version"
-  local menuStr="--title '$title' --backtitle '$backtitle' --no-tags --no-cancel --menu 'Select option' 20 50 20 $menuStr --stdout"
+  local tmpFix=" --begin 50 50 --infobox 'Starting Menu' 2 2 --and-widget "
+  local menuStr="$tmpFix --title '$title' --backtitle '$backtitle' --no-tags --no-cancel --menu 'Select option' 20 50 20 $menuStr --stdout"
   menuAnswer=$(eval "dialog $menuStr")
   if [ $? -eq 1 ]; then
     err "Main dialog cancled ?!"
