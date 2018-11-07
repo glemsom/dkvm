@@ -142,6 +142,8 @@ doOut() {
     killall -9 qemu-system-x86_64
     reset
     clear
+    # Reset hugepages
+    echo 0 > /proc/sys/vm/nr_hugepages
     killall dkvmmenu.sh
     exit
   else
