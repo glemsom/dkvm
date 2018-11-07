@@ -1,5 +1,5 @@
 #!/bin/bash
-disksize=300 #Disk size in MB
+disksize=512 #Disk size in MB
 diskfile="usbdisk.img"
 iso="alpine-standard-3.8.1-x86_64.iso"
 bios=OVMF.fd
