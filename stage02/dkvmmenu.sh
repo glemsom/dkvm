@@ -464,6 +464,7 @@ vCPUpin() {
 
     #echo "Binding $THREAD_ID to $CURCORE" | doOut
     taskset -pc $CURCORE $THREAD_ID |& doOut
+    sleep 0.5
     COUNT=$(($COUNT + $COUNTUP))
   done
 
@@ -483,6 +484,7 @@ vCPUpin() {
       echo "Change QEMU thread to nice -5" | doOut
       renice -5 -p $THREAD |& doOut
     fi
+    sleep 0.5
   done
 
 }
