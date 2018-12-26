@@ -1,7 +1,7 @@
 #!/bin/bash
 disksize=512 #Disk size in MB
 diskfile="usbdisk.img"
-iso="alpine-standard-3.8.1-x86_64.iso"
+iso="alpine-standard-3.8.2-x86_64.iso"
 bios=OVMF.fd
 err() {
 	echo "Error occured $@"
