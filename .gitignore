@@ -1,4 +1,4 @@
-alpine-standard-3.8.1-x86_64.iso
+alpine-standard-*-x86_64.iso
 OVMF.fd
 stage01.iso
 stage02.iso
