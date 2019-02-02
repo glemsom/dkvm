@@ -22,8 +22,8 @@ TIMEZONEOPTS="-z Europe/Copenhagen"
 # set http/ftp proxy
 PROXYOPTS="none"
 
-# Add random mirror
-APKREPOSOPTS="-r"
+# Add first mirror
+APKREPOSOPTS="-1"
 
 # Install Openssh
 SSHDOPTS="-c openssh"
