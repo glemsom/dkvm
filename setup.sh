@@ -1,7 +1,7 @@
 #!/bin/bash
 disksize=512 #Disk size in MB
 diskfile="usbdisk.img"
-iso="alpine-standard-3.8.2-x86_64.iso"
+iso="alpine-standard-3.9.0-x86_64.iso"
 bios=OVMF.fd
 err() {
 	echo "Error occured $@"
@@ -10,7 +10,7 @@ err() {
 
 if [ ! -f "$iso" ]; then
 	echo "Downloading Alpine Linux ISO"
-	wget http://dl-cdn.alpinelinux.org/alpine/v3.8/releases/x86_64/${iso} || err "Cannot download iso"
+	wget http://dl-cdn.alpinelinux.org/alpine/v3.9/releases/x86_64/${iso} || err "Cannot download iso"
 fi
 
 if [ ! -f "$bios" ]; then
