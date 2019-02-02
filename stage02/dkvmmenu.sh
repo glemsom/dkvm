@@ -2,7 +2,7 @@
 # DKVM Menu
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 
-version="0.1.5"
+version="0.1.6"
 # Change to script directory
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OLDIFS=$IFS
@@ -469,7 +469,7 @@ vCPUpin() {
   done
 
   # Let the VM start first
-  sleep 30
+  sleep 120
 
   # Find QEMU threads, and give them a lower nice value
   QEMU_PID=$(pgrep qemu-system-x86_64)
