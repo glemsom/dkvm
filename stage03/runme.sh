@@ -64,11 +64,11 @@ git clone https://github.com/glemsom/aports.git
 abuild-keygen -a -i -n
 
 cd /home/alpine/aports
-git checkout 3.8-stable
+git checkout 3.9-stable
 cd main/linux-vanilla
 
 
-#/bin/bash
+/bin/bash
 # Get current kernel version
 KERNELVER=\$(grep pkgver APKBUILD | head -n 1 | cut -d = -f 2)
 PKGREL=\$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)
