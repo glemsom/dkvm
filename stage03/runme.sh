@@ -8,7 +8,7 @@ fi
 workdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 chroot_dir=${workdir}/Alpine_chroot
 mirror=http://nl.alpinelinux.org/alpine/
-branch=v3.8
+branch=v3.9
 
 ( umount ${chroot_dir}/dev/pts; sudo umount ${chroot_dir}/dev/; sudo umount ${chroot_dir}/sys; sudo umount ${chroot_dir}/proc ) 2>/dev/null
 rm -rf "$chroot_dir"
