@@ -7,7 +7,7 @@ fi
 
 workdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 chroot_dir=${workdir}/Alpine_chroot
-mirror=http://nl.alpinelinux.org/alpine/
+mirror=http://dl-cdn.alpinelinux.org/alpine/
 branch=v3.9
 
 ( umount ${chroot_dir}/dev/pts; sudo umount ${chroot_dir}/dev/; sudo umount ${chroot_dir}/sys; sudo umount ${chroot_dir}/proc ) 2>/dev/null
@@ -56,6 +56,7 @@ function err() {
 
 cd /home/alpine
 export PATH=/sbin:/usr/sbin:/bin:/usr/sbin:${PATH}
+### Build custom kernel ###
 # REPLACE ME !!
 git config --global user.name "Glenn Sommer"
 git config --global user.email "glemsom@gmail.com"
@@ -68,12 +69,12 @@ git checkout 3.9-stable
 cd main/linux-vanilla
 
 
-/bin/bash
+#/bin/bash
 # Get current kernel version
 KERNELVER=\$(grep pkgver APKBUILD | head -n 1 | cut -d = -f 2)
 PKGREL=\$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)
 
-abuild -r || err
+abuild -r || err "Cannot build Linux kernel"
 
 sudo apk add /home/alpine/packages/main/x86_64/linux-vanilla-\${KERNELVER}-r\${PKGREL}.apk
 mkdir /home/alpine/dkvm_kernel && cd /home/alpine/dkvm_kernel
@@ -88,13 +89,21 @@ sudo cp -rp /lib/firmware modloop_files/modules || err "Cannot copy firmware"
 
 mksquashfs modloop_files modloop-vanilla
 
+### Build custom OVMF package ###
+cd /home/alpine/aports/community/edk2
+
+abuild -r || err "Cannot build OVMF package"
+
 EOF
 chmod +x ${chroot_dir}/home/alpine/runme.sh
 
 chroot ${chroot_dir} /bin/su - alpine -c "/home/alpine/runme.sh"
 
 mkdir ${workdir}/kernel_files
+mkdir ${workdir}/dkvm_files
+
 cp -r ${chroot_dir}/home/alpine/dkvm_kernel ${workdir}/kernel_files
+cp -r ${chroot_dir}/home/alpine/packages/community/x86_64/*apk ${workdir}/dkvm_files
 
 umount ${chroot_dir}/dev/pts
 umount ${chroot_dir}/dev

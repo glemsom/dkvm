@@ -110,10 +110,9 @@ mount -t hugetlbfs none /dev/hugepages
 chmod +x /etc/local.d/mount.start
 
 echo '#!/bin/sh
-apk add /root/glibc-*apk' >> /etc/local.d/glibc.start
-chmod +x /etc/local.d/glibc.start
+apk add /root/*.apk' >> /etc/local.d/custom-apk.start
+chmod +x /etc/local.d/custom-apk.start
 
-cp /media/cdrom/vm_start.sh /root/vm_start.sh
 cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
 
 # Copy any VM config
@@ -125,7 +124,6 @@ for f in /root/dkvm_vmc*; do
 done
 
 
-chmod +x /root/vm_start.sh
 chmod +x /root/dkvmmenu.sh
 
 lbu include /root

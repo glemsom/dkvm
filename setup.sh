@@ -75,7 +75,11 @@ mkdir tmp_dkvm
 sudo mount -o loop ${loopDevice}p1 tmp_dkvm
 
 # Inject new kernel
+# TODO: Move this to dkvm_files
 sudo cp stage03/kernel_files/dkvm_kernel/*vanilla tmp_dkvm/boot/
+
+# Inject custom OVMF package
+sudo cp stage03/dkvm_files/*apk tmp_dkvm/root/
 
 sudo mkdir tmp_dkvm/custom
 # Copy chrt from host OS
@@ -90,6 +94,7 @@ sudo umount tmp_dkvm
 sudo umount ${loopDevice}p1
 sudo losetup -D
 rm -rf stage03/kernel_files
+rm -rf stage03/dkvm_files
 rm -rf tmp_dkvm
 sleep 5
 
