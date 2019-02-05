@@ -35,7 +35,7 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils ovmf@community qemu-img mdadm bcache-tools qemu-system-x86_64 bash dialog bc
+apk add util-linux bridge bridge-utils qemu-img mdadm bcache-tools qemu-system-x86_64 bash dialog bc
 
 apk --no-cache add ca-certificates wget
 wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
