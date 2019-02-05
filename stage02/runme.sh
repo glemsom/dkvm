@@ -39,8 +39,10 @@ apk add util-linux bridge bridge-utils ovmf@community qemu-img mdadm bcache-tool
 
 apk --no-cache add ca-certificates wget
 wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
-wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk
-apk add glibc-2.28-r0.apk
+mount -o remount,rw /media/usb
+wget -O /media/usb/custom/glibc-2.28-r0.apk https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk
+apk add /media/usb/custom/glibc-2.28-r0.apk
+mount -o remount,ro /media/usb
 
 rc-update add mdadm-raid
 
@@ -110,7 +112,7 @@ mount -t hugetlbfs none /dev/hugepages
 chmod +x /etc/local.d/mount.start
 
 echo '#!/bin/sh
-apk add /root/*.apk' >> /etc/local.d/custom-apk.start
+apk add /media/usb/custom/*.apk' >> /etc/local.d/custom-apk.start
 chmod +x /etc/local.d/custom-apk.start
 
 cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh

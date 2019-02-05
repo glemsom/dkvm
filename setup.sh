@@ -74,14 +74,15 @@ loopDevice=$(sudo losetup --show -f -P "$diskfile" 2>&1)
 mkdir tmp_dkvm
 sudo mount -o loop ${loopDevice}p1 tmp_dkvm
 
+sudo mkdir tmp_dkvm/custom
+
 # Inject new kernel
-# TODO: Move this to dkvm_files
 sudo cp stage03/kernel_files/dkvm_kernel/*vanilla tmp_dkvm/boot/
 
 # Inject custom OVMF package
-sudo cp stage03/dkvm_files/*apk tmp_dkvm/root/
+#sudo cp stage03/dkvm_files/*apk tmp_dkvm/root/
+sudo cp stage03/dkvm_files/*apk tmp_dkvm/custom/
 
-sudo mkdir tmp_dkvm/custom
 # Copy chrt from host OS
 if [ ! -z "`which chrt`" ]; then
 	sudo cp `which chrt` tmp_dkvm/custom/
