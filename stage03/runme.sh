@@ -103,7 +103,7 @@ mkdir ${workdir}/kernel_files
 mkdir ${workdir}/dkvm_files
 
 cp -r ${chroot_dir}/home/alpine/dkvm_kernel ${workdir}/kernel_files
-cp -r ${chroot_dir}/home/alpine/packages/community/x86_64/*apk ${workdir}/dkvm_files
+cp -r ${chroot_dir}/home/alpine/packages/community/x86_64/ovmf*apk ${workdir}/dkvm_files
 
 umount ${chroot_dir}/dev/pts
 umount ${chroot_dir}/dev
