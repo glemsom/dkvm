@@ -1,5 +1,10 @@
 #!/bin/sh
 
+err() {
+	echo "ERROR $@"
+	/bin/bash
+}
+
 # Patch lbu.conf for USB media
 echo "Patching /etc/lbu/lbu.conf for usb storage"
 sed -i 's/.*LBU_MEDIA.*/LBU_MEDIA=usb/g' /etc/lbu/lbu.conf
@@ -38,11 +43,14 @@ apk upgrade
 apk add util-linux bridge bridge-utils qemu-img mdadm bcache-tools qemu-system-x86_64 bash dialog bc
 
 apk --no-cache add ca-certificates wget
-wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
-mount -o remount,rw /media/usb
-wget -O /media/usb/custom/glibc-2.28-r0.apk https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk
-apk add /media/usb/custom/glibc-2.28-r0.apk
-mount -o remount,ro /media/usb
+wget -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
+mount -o remount,rw /media/usb || err "Cannot remount /media/usb to readwrite"
+mkdir -p /media/usb/custom
+wget -O /media/usb/custom/glibc-2.28-r0.apk https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk || err "Cannot download glibc"
+
+apk add /media/usb/custom/glibc-2.28-r0.apk || err "Cannot install glibc"
+
+mount -o remount,ro /media/usb || err "Cannot remount /media/usb"
 
 rc-update add mdadm-raid
 
