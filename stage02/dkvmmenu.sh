@@ -2,7 +2,7 @@
 # DKVM Menu
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 
-version="0.1.6"
+version=$(cat /media/usb/dkvm-release)
 # Change to script directory
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OLDIFS=$IFS

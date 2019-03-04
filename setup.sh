@@ -3,6 +3,8 @@ disksize=512 #Disk size in MB
 diskfile="usbdisk.img"
 iso="alpine-standard-3.9.0-x86_64.iso"
 bios=OVMF.fd
+version=0.2.0
+
 err() {
 	echo "Error occured $@"
 	exit 1
@@ -28,6 +30,8 @@ echo "Recreate stage01 and stage02 iso"
 mkisofs -o stage01.iso stage01 || err "Cannot make stage01 iso"
 mkisofs -o stage02.iso stage02 || err "Cannot make stage02 iso"
 
+sudo rm -rf stage03/release*
+sudo rm -rf stage03/sbin
 
 clear
 
@@ -67,8 +71,23 @@ sudo qemu-system-x86_64 -m 1G -machine q35 \
 
 clear
 
-# Stage03 : Build custom DKVM kernel
-sudo stage03/runme.sh
+if [ "$1" = "rebuild" ]; then
+	# Stage03 : Build custom DKVM kernel
+	sudo stage03/runme.sh
+	mkdir stage03/release_${version}
+
+	sudo cp -r stage03/kernel_files/dkvm_kernel stage03/release_${version}
+	sudo cp -r stage03/dkvm_files/ stage03/release_${version}
+
+	# Copy chrt from host OS
+	if [ ! -z "`which chrt`" ]; then
+		sudo cp `which chrt` stage03/release_${version}
+	fi
+
+else
+	echo "fetch from github"
+	#TODO populate stage03 with files
+fi
 
 loopDevice=$(sudo losetup --show -f -P "$diskfile" 2>&1)
 mkdir tmp_dkvm
@@ -80,7 +99,6 @@ sudo mkdir tmp_dkvm/custom
 sudo cp stage03/kernel_files/dkvm_kernel/*vanilla tmp_dkvm/boot/
 
 # Inject custom OVMF package
-#sudo cp stage03/dkvm_files/*apk tmp_dkvm/root/
 sudo cp stage03/dkvm_files/*apk tmp_dkvm/custom/
 
 # Copy chrt from host OS
@@ -88,6 +106,8 @@ if [ ! -z "`which chrt`" ]; then
 	sudo cp `which chrt` tmp_dkvm/custom/
 fi
 
+# Write version
+echo $version > tmp_dkvm/dkvm-release
 
 
 # Cleanup mount
