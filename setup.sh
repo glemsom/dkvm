@@ -1,22 +1,31 @@
 #!/bin/bash
+version=0.2.5
 disksize=512 #Disk size in MB
-diskfile="usbdisk.img"
-iso="alpine-standard-3.9.2-x86_64.iso"
+alpineVersion=3.10
+alpineVersionMinor=2
+alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
 bios=OVMF.fd
-version=0.2.0
+
+diskfile="usbdisk.img"
 
 err() {
 	echo "Error occured $@"
 	exit 1
 }
 
-if [ ! -f "$iso" ]; then
+if [ ! -f "$alpineISO" ]; then
 	echo "Downloading Alpine Linux ISO"
-	wget http://dl-cdn.alpinelinux.org/alpine/v3.9/releases/x86_64/${iso} || err "Cannot download iso"
+	wget http://dl-cdn.alpinelinux.org/alpine/v${alpineVersion}/releases/x86_64/${alpineISO} -O ${alpineISO} || err "Cannot download ISO"
 fi
 
 if [ ! -f "$bios" ]; then
-	cp /usr/share/ovmf/OVMF.fd OVMF.fd || err "Cannot find OVMF.fd. Place this in the root folder"
+	if [ -f /usr/share/ovmf/OVMF.fd ]; then
+		cp /usr/share/ovmf/OVMF.fd $bios || err "Cannot find OVMF.fd. Place this in the root folder"
+	elif [ -f /usr/share/ovmf/x64/OVMF_CODE.fd ]; then
+		cp /usr/share/ovmf/x64/OVMF_CODE.fd $bios || err "Cannot find OVMF_CODE.fd. Place this in the root folder, and rename it to $bios"
+	else
+		err "Unable to find OVMF.fd. Please place this in the root folder"
+	fi
 fi
 
 clear
@@ -45,7 +54,7 @@ echo '
 sudo qemu-system-x86_64 -m 1G -machine q35  \
 	-drive if=none,format=raw,id=usbstick,file="$diskfile" \
 	-usb -device usb-storage,drive=usbstick \
-	-drive format=raw,media=cdrom,readonly,file="$iso" \
+	-drive format=raw,media=cdrom,readonly,file="$alpineISO" \
 	-drive format=raw,media=cdrom,readonly,file=stage01.iso \
 	-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
 	-device e1000,netdev=mynet0 \
@@ -82,10 +91,13 @@ if [ "$1" = "rebuild" ]; then
 	# Copy chrt from host OS
 	if [ ! -z "`which chrt`" ]; then
 		sudo cp `which chrt` stage03/release_${version}
+	else
+		err "Cannot find chrt. Please install this in your OS"
 	fi
 
 else
 	echo "fetch from github"
+	exit 1
 	#TODO populate stage03 with files
 fi
 
@@ -103,7 +115,7 @@ sudo cp stage03/dkvm_files/*apk tmp_dkvm/custom/
 
 # Copy chrt from host OS
 if [ ! -z "`which chrt`" ]; then
-	sudo cp `which chrt` tmp_dkvm/custom/
+	sudo cp `which chrt` tmp_dkvm/custom/ || err "Cannot find chrt. Please install this in your OS"
 fi
 
 # Write version

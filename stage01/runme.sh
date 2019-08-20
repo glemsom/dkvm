@@ -36,10 +36,6 @@ echo "Choose none for disks to use, and store configs"
 
 setup-alpine -e -f /media/sr1/answer.txt
 
-#clear
-#echo "Adding syslinux"
-#apk add syslinux
-
 modprobe vfat
 echo "Formatting usb disk"
 mkdosfs ${installDisk}1
