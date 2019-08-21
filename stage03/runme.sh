@@ -8,7 +8,7 @@ fi
 workdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 chroot_dir=${workdir}/Alpine_chroot
 mirror=http://dl-cdn.alpinelinux.org/alpine/
-branch=v3.9
+branch=v3.10
 
 ( umount ${chroot_dir}/dev/pts; sudo umount ${chroot_dir}/dev/; sudo umount ${chroot_dir}/sys; sudo umount ${chroot_dir}/proc ) 2>/dev/null
 rm -rf "$chroot_dir"
@@ -65,7 +65,7 @@ git clone https://github.com/glemsom/aports.git
 abuild-keygen -a -i -n
 
 cd /home/alpine/aports
-git checkout 3.9-stable
+git checkout 3.10-stable
 cd main/linux-vanilla
 
 
