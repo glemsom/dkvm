@@ -108,10 +108,10 @@ sudo mount -o loop ${loopDevice}p1 tmp_dkvm
 sudo mkdir tmp_dkvm/custom
 
 # Inject new kernel
-sudo cp stage03/kernel_files/dkvm_kernel/*vanilla tmp_dkvm/boot/
+sudo cp stage03/kernel_files/dkvm_kernel/*dkvm tmp_dkvm/boot/ || err "Cannot inject DKVM kernel"
 
 # Inject custom OVMF package
-sudo cp stage03/dkvm_files/*apk tmp_dkvm/custom/
+sudo cp stage03/dkvm_files/*apk tmp_dkvm/custom/ || err "Cannot inject OVMF"
 
 # Copy chrt from host OS
 if [ ! -z "`which chrt`" ]; then

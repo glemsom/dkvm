@@ -66,7 +66,7 @@ abuild-keygen -a -i -n
 
 cd /home/alpine/aports
 git checkout 3.10-stable
-cd main/linux-vanilla
+cd main/linux-dkvm
 
 
 #/bin/bash
@@ -74,20 +74,20 @@ cd main/linux-vanilla
 KERNELVER=\$(grep pkgver APKBUILD | head -n 1 | cut -d = -f 2)
 PKGREL=\$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)
 
-abuild -r || err "Cannot build Linux kernel"
+abuild -r || err "Cannot build DKVM Linux kernel"
 
-sudo apk add /home/alpine/packages/main/x86_64/linux-vanilla-\${KERNELVER}-r\${PKGREL}.apk
+sudo apk add /home/alpine/packages/main/x86_64/linux-dkvm-\${KERNELVER}-r\${PKGREL}.apk
 mkdir /home/alpine/dkvm_kernel && cd /home/alpine/dkvm_kernel
 
 sudo sed -i 's/usb/usb squashfs/' /etc/mkinitfs/mkinitfs.conf || err
-sudo mkinitfs \${KERNELVER}-\${PKGREL}-vanilla || err "Cannot build initrd"
-cp /boot/*vanilla .
+sudo mkinitfs \${KERNELVER}-\${PKGREL}-dkvm || err "Cannot build initrd"
+cp /boot/*dkvm . || err "Cannot copy DKVM kernel"
 
 mkdir -p modloop_files/modules
-sudo cp -rp /lib/modules/\${KERNELVER}-\${PKGREL}-vanilla modloop_files/modules || err "Cannot copy modules"
+sudo cp -rp /lib/modules/\${KERNELVER}-\${PKGREL}-dkvm modloop_files/modules || err "Cannot copy modules"
 sudo cp -rp /lib/firmware modloop_files/modules || err "Cannot copy firmware"
 
-mksquashfs modloop_files modloop-vanilla
+mksquashfs modloop_files modloop-dkvm
 
 ### Build custom OVMF package ###
 cd /home/alpine/aports/community/edk2
