@@ -76,7 +76,7 @@ PKGREL=\$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)
 
 abuild -r || err "Cannot build DKVM Linux kernel"
 
-sudo apk add /home/alpine/packages/main/x86_64/linux-dkvm-\${KERNELVER}-r\${PKGREL}.apk
+sudo apk add /home/alpine/packages/main/x86_64/linux-dkvm-\${KERNELVER}-r\${PKGREL}.apk || err "Cannot install DKVM kernel"
 mkdir /home/alpine/dkvm_kernel && cd /home/alpine/dkvm_kernel
 
 sudo sed -i 's/usb/usb squashfs/' /etc/mkinitfs/mkinitfs.conf || err
@@ -87,7 +87,7 @@ mkdir -p modloop_files/modules
 sudo cp -rp /lib/modules/\${KERNELVER}-\${PKGREL}-dkvm modloop_files/modules || err "Cannot copy modules"
 sudo cp -rp /lib/firmware modloop_files/modules || err "Cannot copy firmware"
 
-mksquashfs modloop_files modloop-dkvm
+mksquashfs modloop_files modloop-dkvm || err "Cannot make squashfs"
 
 ### Build custom OVMF package ###
 cd /home/alpine/aports/community/edk2

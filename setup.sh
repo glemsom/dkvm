@@ -121,6 +121,10 @@ fi
 # Write version
 echo $version > tmp_dkvm/dkvm-release
 
+# TEST
+echo "Did it work?"
+/bin/sh
+
 
 # Cleanup mount
 sudo umount tmp_dkvm
