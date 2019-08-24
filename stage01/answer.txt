@@ -5,7 +5,7 @@
 KEYMAPOPTS="dk dk"
 
 # Set hostname to alpine-test
-HOSTNAMEOPTS="-n dkvm01"
+HOSTNAMEOPTS="-n dkvm"
 
 # Contents of /etc/network/interfaces
 INTERFACESOPTS="auto lo

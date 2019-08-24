@@ -45,6 +45,6 @@ echo "Making usb disk bootable"
 setup-bootable /media/cdrom ${installDisk}1
 
 echo "System will now poweroff, and restart with stage02 iso"
-sleep 10
+sleep 2
 
 poweroff

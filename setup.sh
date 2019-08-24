@@ -39,9 +39,6 @@ echo "Recreate stage01 and stage02 iso"
 mkisofs -o stage01.iso stage01 || err "Cannot make stage01 iso"
 mkisofs -o stage02.iso stage02 || err "Cannot make stage02 iso"
 
-sudo rm -rf stage03/release*
-sudo rm -rf stage03/sbin
-
 clear
 
 echo "Starting qemu..."
@@ -153,3 +150,7 @@ sudo qemu-system-x86_64 -m 1G -machine q35 \
         -device e1000,netdev=mynet0 \
         -bios "$bios" || err "Cannot start qemu"
 
+# Cleanup
+sudo rm -rf stage03/release*
+sudo rm -rf stage03/sbin
+sudo rm -rf stage03/dl-cdl*
