@@ -420,11 +420,8 @@ vCPUpin() {
   local CORELIST="$1"
   echo "Setting CPU affinity using cores: $CORELIST" | doOut
 
-  if timeout --help 2>&1 | grep -q BusyBox; then
-    TIMEOUT="-t2"
-  else
-    TIMEOUT=2
-  fi
+  TIMEOUT=2
+
   if [ -f /media/usb/custom/chrt ]; then
     CHRTCMD=/media/usb/custom/chrt
   else
