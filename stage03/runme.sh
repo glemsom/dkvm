@@ -91,9 +91,9 @@ sudo cp -rp /lib/firmware modloop_files/modules || err "Cannot copy firmware"
 mksquashfs modloop_files modloop-dkvm || err "Cannot make squashfs"
 
 ### Build custom OVMF package ###
-cd /home/alpine/aports/community/edk2
+#cd /home/alpine/aports/community/edk2
 
-abuild -r || err "Cannot build OVMF package"
+#abuild -r || err "Cannot build OVMF package"
 
 EOF
 chmod +x ${chroot_dir}/home/alpine/runme.sh
@@ -104,7 +104,7 @@ mkdir ${workdir}/kernel_files
 mkdir ${workdir}/dkvm_files
 
 cp -r ${chroot_dir}/home/alpine/dkvm_kernel ${workdir}/kernel_files
-cp -r ${chroot_dir}/home/alpine/packages/community/x86_64/ovmf*apk ${workdir}/dkvm_files
+#cp -r ${chroot_dir}/home/alpine/packages/community/x86_64/ovmf*apk ${workdir}/dkvm_files
 
 umount ${chroot_dir}/dev/pts
 umount ${chroot_dir}/dev
