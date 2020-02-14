@@ -108,7 +108,7 @@ sudo mkdir tmp_dkvm/custom
 sudo cp stage03/kernel_files/dkvm_kernel/*dkvm tmp_dkvm/boot/ || err "Cannot inject DKVM kernel"
 
 # Inject custom OVMF package
-sudo cp stage03/dkvm_files/*apk tmp_dkvm/custom/ || err "Cannot inject OVMF"
+#sudo cp stage03/dkvm_files/*apk tmp_dkvm/custom/ || err "Cannot inject OVMF"
 
 # Copy chrt from host OS
 if [ ! -z "`which chrt`" ]; then
