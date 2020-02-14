@@ -8,7 +8,7 @@ fi
 workdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 chroot_dir=${workdir}/Alpine_chroot
 mirror=http://dl-cdn.alpinelinux.org/alpine/
-branch=v3.10
+branch=v3.11
 
 ( umount ${chroot_dir}/dev/pts; sudo umount ${chroot_dir}/dev/; sudo umount ${chroot_dir}/sys; sudo umount ${chroot_dir}/proc ) 2>/dev/null
 rm -rf "$chroot_dir"
@@ -65,11 +65,11 @@ git clone https://github.com/glemsom/aports.git
 abuild-keygen -a -i -n
 
 cd /home/alpine/aports
-git checkout 3.10-stable
+git checkout 3.11-stable
 cd main/linux-dkvm
 
 
-#/bin/bash
+/bin/bash
 # Get current kernel version
 KERNELVER=\$(grep pkgver APKBUILD | head -n 1 | cut -d = -f 2)
 PKGREL=\$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)
