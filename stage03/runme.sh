@@ -81,6 +81,7 @@ mkdir /home/alpine/dkvm_kernel && cd /home/alpine/dkvm_kernel
 
 sudo sed -i 's/usb/usb squashfs/' /etc/mkinitfs/mkinitfs.conf || err
 sudo mkinitfs \${KERNELVER}-\${PKGREL}-dkvm || err "Cannot build initrd"
+sudo chmod o+r /boot/*dkvm
 cp /boot/*dkvm . || err "Cannot copy DKVM kernel"
 
 mkdir -p modloop_files/modules
