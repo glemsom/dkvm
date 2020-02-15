@@ -325,7 +325,7 @@ mainHandlerVM() {
 
   # Build qemu command
   OPTS="-enable-kvm -nodefaults -no-user-config -accel accel=kvm,thread=multi -machine q35,accel=kvm,kernel_irqchip=on,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
-  OPTS+=" -mem-prealloc -realtime mlock=on -rtc base=localtime,clock=host,driftfix=slew -serial none -parallel none "
+  OPTS+=" -mem-prealloc -overcommit mem-lock=on -overcommit cpu-pm=on -rtc base=localtime,clock=host,driftfix=slew -serial none -parallel none "
   #OPTS+=" -device virtio-net-pci,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
   #OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
   OPTS+=" -device e1000,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
