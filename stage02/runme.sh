@@ -15,15 +15,15 @@ mkdir /media/usb/cache
 
 # Extra arguments for Linux kernel
 #TODO : Get this from a config file instead?
-extraArgs="nouveau.modeset=0 pti=off spectre_v2=off l1tf=off nospec_store_bypass_disable no_stf_barrier kvm-intel.vmentry_l1d_flush=never intel_pstate=disable intel_iommu=on iommu=pt transparent_hugepage=never vfio-pci.ids=10de:13c2,10de:0fbb,1106:3483 elevator=noop default_hugepagesz=2M hugepagesz=2M isolcpus=2-11 nohz_full=2-11 rcu_nocbs=2-11"
+extraArgs="nouveau.modeset=0 mitigations=off intel_pstate=disable intel_iommu=on iommu=pt transparent_hugepage=never vfio-pci.ids=10de:13c2,10de:0fbb,1106:3483 elevator=noop default_hugepagesz=2M hugepagesz=2M isolcpus=2-11 nohz_full=2-11 rcu_nocbs=2-11"
 
 # Patch syslinux (legacy boot)
 cp /media/usb/boot/syslinux/syslinux.cfg /media/usb/boot/syslinux/syslinux.cfg.old
-cat /media/usb/boot/syslinux/syslinux.cfg.old | sed 's/Linux vanilla/DKVM/g' | sed 's/vanilla/dkvm/g' | sed "/^APPEND/ s/$/ $extraArgs /" | sed 's/quiet//g' > /media/usb/boot/syslinux/syslinux.cfg
+cat /media/usb/boot/syslinux/syslinux.cfg.old | sed 's/^MENU LABEL.*/MENU LABEL DKVM/g' | sed 's/lts/dkvm/g' | sed "/^APPEND/ s/$/ $extraArgs /" | sed 's/quiet//g' > /media/usb/boot/syslinux/syslinux.cfg
 
 # Patch grub2 (uefi boot)
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
-cat /media/usb/boot/grub/grub.cfg.old | sed 's/Linux vanilla/DKVM/g' | sed 's/vanilla/dkvm/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' > /media/usb/boot/grub/grub.cfg
+cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed 's/lts/dkvm/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' > /media/usb/boot/grub/grub.cfg
 
 mount -o remount,ro /media/usb
 ln -s /media/usb/cache /etc/apk/cache
@@ -40,15 +40,15 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils qemu-img mdadm bcache-tools qemu-system-x86_64 bash dialog bc
+apk add util-linux bridge bridge-utils qemu-img@community mdadm bcache-tools qemu-system-x86_64@community bash dialog bc
 
 apk --no-cache add ca-certificates wget
 wget -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
 mount -o remount,rw /media/usb || err "Cannot remount /media/usb to readwrite"
 mkdir -p /media/usb/custom
-wget -O /media/usb/custom/glibc-2.28-r0.apk https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk || err "Cannot download glibc"
+wget -O /media/usb/custom/glibc-2.30-r0.apk https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.30-r0/glibc-2.30-r0.apk || err "Cannot download glibc"
 
-apk add /media/usb/custom/glibc-2.28-r0.apk || err "Cannot install glibc"
+apk add /media/usb/custom/glibc-2.30-r0.apk || err "Cannot install glibc"
 
 mount -o remount,ro /media/usb || err "Cannot remount /media/usb"
 
