@@ -15,9 +15,9 @@ CDROM=/media/storage01/iso/alpinelinux.iso
 
 # Configure PCI Passthrough
 # Graphics 
-PCIDEVICE=02:00.0
+PCIEDEVICE=02:00.0
 # HDMI audio
-PCIDEVICE=02:00.1
+PCIEDEVICE=02:00.1
 # USB Controller
 PCIDEVICE=03:00.0
 
@@ -45,4 +45,4 @@ MAC=DE:AD:BE:EF:66:61
 EXTRA= -nographic -vga none
 
 # Extra CPU options to qemu
-CPUOPTS=kvm=off,hv_time,hv_relaxed,hv_spinlocks=0x1fff,hv_vpindex,hv_reset,hv_runtime,hv_vapic,hv_vendor_id=blows
+CPUOPTS=kvm=off,hv_synic,hv_time,hv_stimer,hv_relaxed,hv_spinlocks=0x1fff,hv_vpindex,hv_reset,hv_runtime,hv_vapic,hv_vendor_id=blows,kvm=off,l3-cache=on,-hypervisor,migratable=no,+invtsc
