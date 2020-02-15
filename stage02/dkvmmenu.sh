@@ -356,7 +356,7 @@ mainHandlerVM() {
     done
   fi
   if [ ! -z "$VMPCIEDEVICE" ]; then
-    OPTS+= "-device pcie-root-port,id=root_port1,chassis=0,slot=0,bus=pcie.0"
+    OPTS+=" -device pcie-root-port,id=root_port1,chassis=0,slot=0,bus=pcie.0"
     for PCIEDEVICE in $VMPCIEDEVICE; do
       OPTS+=" -device vfio-pci,host=${PCIEDEVICE},bus=root_port1"
     done
