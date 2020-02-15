@@ -312,6 +312,7 @@ mainHandlerVM() {
   local VMHARDDISK=$(getConfigItem $configFile HARDDISK)
   local VMCDROM=$(getConfigItem $configFile CDROM)
   local VMPCIDEVICE=$(getConfigItem $configFile PCIDEVICE)
+  local VMPCIEDEVICE=$(getConfigItem $configFile PCIEDEVICE)
   local VMBIOS=$(getConfigItem $configFile BIOS)
   local VMBIOS_VARS=$(getConfigItem $configFile BIOS_VARS)
   local VMSOCKETS=$(getConfigItem $configFile SOCKETS)
@@ -354,10 +355,15 @@ mainHandlerVM() {
       OPTS+=" -drive file=${VMCDROM},media=cdrom"
     done
   fi
-  if [ ! -z "$VMPCIDEVICE" ]; then
+  if [ ! -z "$VMPCIEDEVICE" ]; then
     OPTS+= "-device pcie-root-port,id=root_port1,chassis=0,slot=0,bus=pcie.0"
+    for PCIEDEVICE in $VMPCIEDEVICE; do
+      OPTS+=" -device vfio-pci,host=${PCIEDEVICE},bus=root_port1"
+    done
+  fi
+  if [ ! -z "$VMPCIDEVICE" ]; then
     for PCIDEVICE in $VMPCIDEVICE; do
-      OPTS+=" -device vfio-pci,host=${PCIDEVICE},bus=root_port1"
+      OPTS+=" -device vfio-pci,host=${PCIDEVICE}"
     done
   fi
   if [ ! -z "$VMCPUOPTS" ]; then
