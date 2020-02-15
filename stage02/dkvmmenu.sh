@@ -355,9 +355,9 @@ mainHandlerVM() {
     done
   fi
   if [ ! -z "$VMPCIDEVICE" ]; then
-    OPTS+=" -device ioh3420,id=root_port1,chassis=0,slot=0,bus=pcie.0"
+    OPTS+= "-device pcie-root-port,id=root_port1,chassis=0,slot=0,bus=pcie.0"
     for PCIDEVICE in $VMPCIDEVICE; do
-      OPTS+=" -device vfio-pci,host=${PCIDEVICE}"
+      OPTS+=" -device vfio-pci,host=${PCIDEVICE},bus=root_port1"
     done
   fi
   if [ ! -z "$VMCPUOPTS" ]; then
