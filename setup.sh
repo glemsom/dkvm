@@ -91,11 +91,9 @@ if [ "$1" = "rebuild" ]; then
 	else
 		err "Cannot find chrt. Please install this in your OS"
 	fi
-
 else
-	echo "fetch from github"
-	exit 1
-	#TODO populate stage03 with files
+	#wget https://srv-file8.gofile.io/download/WbufzP/release_${version}.zip -O stage03/release_${version}
+	unzip stage03/release_${version}.zip -d stage03
 fi
 
 loopDevice=$(sudo losetup --show -f -P "$diskfile" 2>&1)
@@ -105,15 +103,19 @@ sudo mount -o loop ${loopDevice}p1 tmp_dkvm
 sudo mkdir tmp_dkvm/custom
 
 # Inject new kernel
-sudo cp stage03/kernel_files/dkvm_kernel/*dkvm tmp_dkvm/boot/ || err "Cannot inject DKVM kernel"
+sudo cp stage03/release_0.2.6/dkvm_kernel/*dkvm tmp_dkvm/boot/ || err "Cannot inject DKVM kernel"
 
 # Inject custom OVMF package
 #sudo cp stage03/dkvm_files/*apk tmp_dkvm/custom/ || err "Cannot inject OVMF"
 
-# Copy chrt from host OS
-if [ ! -z "`which chrt`" ]; then
+if [ -f stage03/release_${version}/chrt ]; then
+	sudo cp stage03/release_${version}/chrt tmp_dkvm/custom/ || err
+elif [ ! -z "`which chrt`" ]; then
 	sudo cp `which chrt` tmp_dkvm/custom/ || err "Cannot find chrt. Please install this in your OS"
+else
+	err "Cannot find any chrt package"
 fi
+
 
 # Write version
 echo $version > tmp_dkvm/dkvm-release
@@ -146,6 +148,6 @@ sudo qemu-system-x86_64 -m 1G -machine q35 \
         -bios "$bios" || err "Cannot start qemu"
 
 # Cleanup
-sudo rm -rf stage03/release*
-sudo rm -rf stage03/sbin
-sudo rm -rf stage03/dl-cdl*
+#sudo rm -rf stage03/release*
+#sudo rm -rf stage03/sbin
+#sudo rm -rf stage03/dl-cdn*
