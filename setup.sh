@@ -1,5 +1,5 @@
 #!/bin/bash
-version=0.2.6
+version=0.2.7
 disksize=512 #Disk size in MB
 alpineVersion=3.11
 alpineVersionMinor=3
@@ -103,7 +103,7 @@ sudo mount -o loop ${loopDevice}p1 tmp_dkvm
 sudo mkdir tmp_dkvm/custom
 
 # Inject new kernel
-sudo cp stage03/release_0.2.6/dkvm_kernel/*dkvm tmp_dkvm/boot/ || err "Cannot inject DKVM kernel"
+sudo cp stage03/release_${version}/dkvm_kernel/*dkvm tmp_dkvm/boot/ || err "Cannot inject DKVM kernel"
 
 # Inject custom OVMF package
 #sudo cp stage03/dkvm_files/*apk tmp_dkvm/custom/ || err "Cannot inject OVMF"
@@ -148,6 +148,6 @@ sudo qemu-system-x86_64 -m 1G -machine q35 \
         -bios "$bios" || err "Cannot start qemu"
 
 # Cleanup
-#sudo rm -rf stage03/release*
-#sudo rm -rf stage03/sbin
-#sudo rm -rf stage03/dl-cdn*
+sudo rm -rf stage03/release*
+sudo rm -rf stage03/sbin
+sudo rm -rf stage03/dl-cdn*
