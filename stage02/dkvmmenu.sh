@@ -331,7 +331,8 @@ mainHandlerVM() {
   #OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
   OPTS+=" -device e1000,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
   OPTS+=" -mem-path /dev/hugepages -m $VMMEM"
-  OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -no-hpet -global kvm-pit.lost_tick_policy=discard "
+  #OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -no-hpet -global kvm-pit.lost_tick_policy=discard "
+  OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" $VMEXTRA "
   if [ ! -z "$VMSOCKETS" ] && [ ! -z "$VMTHREADS" ] && [ ! -z "$VMCORES" ]; then
     OPTS+=" -smp sockets=${VMSOCKETS},cores=${VMCORES},threads=${VMTHREADS}"
@@ -480,14 +481,15 @@ vCPUpin() {
   for THREAD in $QEMU_ALL_THREADS; do
     if echo "$THREADS" | grep ^${THREAD}; then
       # This is a VM thread
-      echo "Change VM thread to nice -10, and set FIFO/80" | doOut
+      #echo "Change VM thread to nice -10, and set FIFO/80" | doOut
+      echo "Change VM thread to nice -10" | doOut
       renice -10 -p $THREAD |& doOut
-      $CHRTCMD -pf 80 $THREAD_ID |& doOut
+      #$CHRTCMD -pf 80 $THREAD_ID |& doOut
     else
       echo "Change QEMU thread to nice -5" | doOut
       renice -5 -p $THREAD |& doOut
     fi
-    sleep 0.5
+    sleep 0.2
   done
 
 }
