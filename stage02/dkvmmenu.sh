@@ -301,7 +301,6 @@ realTimeTune() {
   echo 300 >/proc/sys/vm/stat_interval 2>/dev/null
   # Disable watchdog
   echo 0   >/proc/sys/kernel/watchdog 2>/dev/null
-  echo 1   >/sys/devices/virtual/workqueue/cpumask 2>/dev/null
 }
 mainHandlerVM() {
   clear
@@ -328,8 +327,8 @@ mainHandlerVM() {
   OPTS="-enable-kvm -nodefaults -no-user-config -accel accel=kvm,thread=multi -machine q35,accel=kvm,kernel_irqchip=on,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
   OPTS+=" -mem-prealloc -overcommit mem-lock=on -overcommit cpu-pm=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
   #OPTS+=" -device virtio-net-pci,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
-  #OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
-  OPTS+=" -device e1000,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
+  OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
+  #OPTS+=" -device e1000,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
   OPTS+=" -mem-path /dev/hugepages -m $VMMEM"
   #OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -no-hpet -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
@@ -346,7 +345,9 @@ mainHandlerVM() {
     for DISK in $VMHARDDISK; do
       # Do we need virtio,id=driveX here ?
       #OPTS+=" -drive if=virtio,cache=none,aio=native,format=raw,file=${DISK}"
-      OPTS+=" -drive if=virtio,format=raw,file=${DISK}"
+      #OPTS+=" -drive if=virtio,format=raw,file=${DISK}"
+      OPTS+=" -drive if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK}"
+      #
       #OPTS+=" -drive if=none,id=drive${COUNT},cache=directsync,aio=native,format=raw,file=${DISK} -device virtio-blk-pci,drive=drive${COUNT},scsi=off"
       let COUNT=COUNT+1
     done
