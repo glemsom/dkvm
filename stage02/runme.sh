@@ -91,9 +91,9 @@ rc-update add ntpd default
 lbu include /root/.ssh
 
 ######### CUSTOM STUFF ##################
-echo "options vfio-pci ids=10de:13c2,10de:0fbb,1106:3483
+echo "options vfio-pci ids=10de:13c2,10de:0fbb,1106:3483 disable_vga=1
 options kvm-intel nested=1 enable_apicv=1
-#options kvm ignore_msrs=1
+options kvm ignore_msrs=1
 " > /etc/modprobe.d/vfio.conf
 
 echo '#!/bin/sh
