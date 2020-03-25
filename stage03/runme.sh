@@ -69,7 +69,7 @@ git checkout 3.11-stable
 cd main/linux-dkvm
 
 
-#/bin/bash
+/bin/bash
 # Get current kernel version
 KERNELVER=\$(grep pkgver APKBUILD | head -n 1 | cut -d = -f 2)
 PKGREL=\$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)

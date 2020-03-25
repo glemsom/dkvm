@@ -1,8 +1,8 @@
 #!/bin/bash
-version=0.2.7
+version=0.2.8
 disksize=512 #Disk size in MB
 alpineVersion=3.11
-alpineVersionMinor=3
+alpineVersionMinor=5
 alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
 bios=OVMF.fd
 
@@ -104,18 +104,6 @@ sudo mkdir tmp_dkvm/custom
 
 # Inject new kernel
 sudo cp stage03/release_${version}/dkvm_kernel/*dkvm tmp_dkvm/boot/ || err "Cannot inject DKVM kernel"
-
-# Inject custom OVMF package
-#sudo cp stage03/dkvm_files/*apk tmp_dkvm/custom/ || err "Cannot inject OVMF"
-
-if [ -f stage03/release_${version}/chrt ]; then
-	sudo cp stage03/release_${version}/chrt tmp_dkvm/custom/ || err
-elif [ ! -z "`which chrt`" ]; then
-	sudo cp `which chrt` tmp_dkvm/custom/ || err "Cannot find chrt. Please install this in your OS"
-else
-	err "Cannot find any chrt package"
-fi
-
 
 # Write version
 echo $version > tmp_dkvm/dkvm-release
