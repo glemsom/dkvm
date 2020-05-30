@@ -8,7 +8,7 @@ fi
 workdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 chroot_dir=${workdir}/Alpine_chroot
 mirror=http://dl-cdn.alpinelinux.org/alpine/
-branch=v3.11
+branch=v3.12
 
 ( umount ${chroot_dir}/dev/pts; sudo umount ${chroot_dir}/dev/; sudo umount ${chroot_dir}/sys; sudo umount ${chroot_dir}/proc ) 2>/dev/null
 rm -rf "$chroot_dir"
@@ -34,7 +34,7 @@ mount -o bind /dev/pts ${chroot_dir}/dev/pts
 
 cat <<EOF > $chroot_dir/runme.sh
 #!/bin/sh
-apk add alpine-sdk bash squashfs-tools
+apk add alpine-sdk bash squashfs-tools sudo
 adduser alpine -D
 echo alpine:alpine | chpasswd
 echo "alpine	ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
@@ -65,7 +65,7 @@ git clone https://github.com/glemsom/aports.git
 abuild-keygen -a -i -n
 
 cd /home/alpine/aports
-git checkout 3.11-stable
+git checkout 3.12-stable
 cd main/linux-dkvm
 
 

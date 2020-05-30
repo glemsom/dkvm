@@ -1,8 +1,8 @@
 #!/bin/bash
-version=0.2.8
+version=0.3.0
 disksize=512 #Disk size in MB
-alpineVersion=3.11
-alpineVersionMinor=5
+alpineVersion=3.12
+alpineVersionMinor=0
 alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
 bios=OVMF.fd
 
