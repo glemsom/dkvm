@@ -324,7 +324,7 @@ mainHandlerVM() {
   local VMEXTRA=$(getConfigItem $configFile EXTRA)
 
   # Build qemu command
-  OPTS="-enable-kvm -nodefaults -no-user-config -accel accel=kvm,thread=multi -machine q35,accel=kvm,kernel_irqchip=on,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
+  OPTS="-nodefaults -no-user-config -accel accel=kvm,kernel-irqchip=on -machine q35,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
   OPTS+=" -mem-prealloc -overcommit mem-lock=on -overcommit cpu-pm=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
   #OPTS+=" -device virtio-net-pci,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
