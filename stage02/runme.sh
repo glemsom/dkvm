@@ -40,15 +40,13 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils qemu-img@community mdadm bcache-tools qemu-system-x86_64@community bash dialog bc
+apk add util-linux bridge bridge-utils qemu-img@community mdadm bcache-tools qemu-system-x86_64@community bash dialog bc nettle
+
 
 apk --no-cache add ca-certificates wget
 wget -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
 mount -o remount,rw /media/usb || err "Cannot remount /media/usb to readwrite"
 mkdir -p /media/usb/custom
-#wget -O /media/usb/custom/glibc-2.30-r0.apk https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.30-r0/glibc-2.30-r0.apk || err "Cannot download glibc"
-
-#apk add /media/usb/custom/glibc-2.30-r0.apk || err "Cannot install glibc"
 
 mount -o remount,ro /media/usb || err "Cannot remount /media/usb"
 
