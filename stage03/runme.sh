@@ -8,7 +8,8 @@ fi
 workdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 chroot_dir=${workdir}/Alpine_chroot
 mirror=http://dl-cdn.alpinelinux.org/alpine/
-branch=v3.12
+alpineVersion=$(cat ${workdir}/../setup.sh|grep alpineVersion= | sed 's/alpineVersion=//')
+branch=v${alpineVersion}
 
 ( umount ${chroot_dir}/dev/pts; sudo umount ${chroot_dir}/dev/; sudo umount ${chroot_dir}/sys; sudo umount ${chroot_dir}/proc ) 2>/dev/null
 rm -rf "$chroot_dir"
@@ -65,7 +66,7 @@ git clone https://github.com/glemsom/aports.git
 abuild-keygen -a -i -n
 
 cd /home/alpine/aports
-git checkout 3.12-stable
+git checkout ${alpineVersion}-stable
 cd main/linux-dkvm
 
 
@@ -104,7 +105,6 @@ mkdir ${workdir}/kernel_files
 mkdir ${workdir}/dkvm_files
 
 cp -r ${chroot_dir}/home/alpine/dkvm_kernel ${workdir}/kernel_files
-#cp -r ${chroot_dir}/home/alpine/packages/community/x86_64/ovmf*apk ${workdir}/dkvm_files
 
 umount ${chroot_dir}/dev/pts
 umount ${chroot_dir}/dev

@@ -1,7 +1,7 @@
 #!/bin/bash
-version=0.3.0
+version=0.3.5
 disksize=512 #Disk size in MB
-alpineVersion=3.12
+alpineVersion=3.13
 alpineVersionMinor=0
 alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
 bios=OVMF.fd
@@ -41,39 +41,94 @@ mkisofs -o stage02.iso stage02 || err "Cannot make stage02 iso"
 
 clear
 
-echo "Starting qemu..."
 
-echo '
-* Login as root (no password)
-* mkdir /media/sr1 && mount /dev/sr1 /media/sr1 && sh /media/sr1/runme.sh /dev/sda)
-'
+echo "Patching stock Alpine ISO"
+# Patch ISO to support console output
+mkdir tmp_iso
+mkdir tmp_iso_readonly
+sudo mount -t iso9660 -o loop $alpineISO tmp_iso_readonly || err "Cannot mount Alpine ISO"
+cd tmp_iso_readonly && tar cf - . | (cd ../tmp_iso; tar xfp -) || err "Cannot copy Alpine ISO content"
+cd ../tmp_iso
+chmod +xw boot/grub/ || err "Cannot modify permissions for grub"
+chmod +w boot/syslinux/isolinux.bin || err "Cannot modify permissions for isolinux.bin"
+sed -i 's/quiet/console=ttyS0,9600 quiet/' boot/grub/grub.cfg || err "Cannot patch grub.cfg"
+cd .. && xorriso -as mkisofs -o ${alpineISO}.patched -isohybrid-mbr tmp_iso/boot/syslinux/isohdpfx.bin -c boot/syslinux/boot.cat  -b boot/syslinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/grub/efi.img  -no-emul-boot -isohybrid-gpt-basdat  tmp_iso || err "Cannot build custom ISO"
 
-sudo qemu-system-x86_64 -m 1G -machine q35  \
-	-drive if=none,format=raw,id=usbstick,file="$diskfile" \
-	-usb -device usb-storage,drive=usbstick \
-	-drive format=raw,media=cdrom,readonly,file="$alpineISO" \
-	-drive format=raw,media=cdrom,readonly,file=stage01.iso \
-	-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
-	-device e1000,netdev=mynet0 \
-	-bios "$bios" || err "Cannot start qemu"
+echo "Starting stage01..."
+
+sudo expect -c "set timeout -1
+spawn qemu-system-x86_64 -m 1G -machine q35 -drive if=none,format=raw,id=usbstick,file=$diskfile \
+-usb -device usb-storage,drive=usbstick \
+-drive format=raw,media=cdrom,readonly,file=${alpineISO}.patched \
+-drive format=raw,media=cdrom,readonly,file=stage01.iso \
+-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
+-device e1000,netdev=mynet0 \
+-nographic \
+-bios $bios
+expect \"login: \"
+send \"root\n\"
+expect \"localhost:~# \"
+send whoami\n
+send \"mkdir /media/sr1\n\"
+send \"mount /dev/sr1 /media/sr1\n\"
+send \"sh /media/sr1/runme.sh /dev/sda\n\"
+send \"echo ALL DONE\n\"
+expect \"ALL DONE\"
+" || err "Error in stage01"
 
 clear
 
-echo '
-* Login as root (no password)
-* mount /media/cdrom && /media/cdrom/runme.sh
-* Network: br0 (use first adapter as member of the bridge-adapter)
-* Disks to use: none
-* Config: usb (should be autoselected)
-* apk cache: /media/usb/cache
-'
-sudo qemu-system-x86_64 -m 1G -machine q35 \
-        -drive if=none,format=raw,id=usbstick,file="$diskfile" \
-        -usb -device usb-storage,drive=usbstick \
-	-drive format=raw,media=cdrom,readonly,file=stage02.iso \
-	-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
-	-device e1000,netdev=mynet0 \
-	-bios "$bios" || err "Cannot start qemu"
+echo "Starting stage02..."
+
+sudo expect -c "set timeout -1
+spawn qemu-system-x86_64 -m 1G -machine q35 \
+-drive if=none,format=raw,id=usbstick,file=$diskfile \
+-usb -device usb-storage,drive=usbstick \
+-drive format=raw,media=cdrom,readonly,file=stage02.iso \
+-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
+-device e1000,netdev=mynet0 \
+-bios $bios \
+-nographic
+expect \"login: \"
+send root\n
+expect \"localhost:~# \"
+send whoami\n
+send \"mount /media/cdrom\n\"
+send \"/media/cdrom/runme.sh\n\"
+expect \"Select keyboard layout:\"
+send dk\n
+expect \"Select variant\"
+send dk\n
+expect \"Enter system hostname\"
+send dkvm\n
+expect \"Which one do you want to initialize\"
+send br0\n
+expect \"do you want add to bridge br0?\"
+send eth0\n
+expect \"Ip address for br0\"
+send dhcp\n
+expect \"Do you want to do any manual network configuration\"
+send n\n
+expect \"New password: \"
+send dkvm4ever!\n
+expect \"Retype password: \"
+send dkvm4ever!\n
+expect \"Which timezone are you in\"
+send Europe/Copenhagen\n
+expect \"HTTP/FTP proxy URL\"
+send none\n
+expect \"Enter mirror number\"
+send f\n
+expect \"Which SSH server? \"
+send openssh\n
+expect \"Which disk(s) would you like to use?\"
+send none\n
+expect \"Enter where to store configs \"
+send usb\n
+expect \"Enter apk cache directory \"
+send /media/usb/cache\n
+expect \"Requesting system poweroff\"
+" || err "Error in stage02"
 
 clear
 
@@ -91,8 +146,12 @@ if [ "$1" = "rebuild" ]; then
 	else
 		err "Cannot find chrt. Please install this in your OS"
 	fi
+	cd stage03
+	zip -r release_${version}.zip release_${version} || err "Unable to create release zip file"
+	cd ..
 else
 	#wget https://srv-file8.gofile.io/download/WbufzP/release_${version}.zip -O stage03/release_${version}
+	mkdir stage03/release_${version}
 	unzip stage03/release_${version}.zip -d stage03
 fi
 
@@ -106,15 +165,15 @@ sudo mkdir tmp_dkvm/custom
 sudo cp stage03/release_${version}/dkvm_kernel/*dkvm tmp_dkvm/boot/ || err "Cannot inject DKVM kernel"
 
 # Write version
-echo $version > tmp_dkvm/dkvm-release
+echo $version | sudo tee tmp_dkvm/dkvm-release
 
 # Cleanup mount
 sudo umount tmp_dkvm
 sudo umount ${loopDevice}p1
 sudo losetup -D
-rm -rf stage03/kernel_files
-rm -rf stage03/dkvm_files
-rm -rf tmp_dkvm
+sudo rm -rf stage03/kernel_files
+sudo rm -rf stage03/dkvm_files
+sudo rm -rf tmp_dkvm
 sleep 5
 
 while mount | grep ${loopDevice}p1 -q; do
@@ -136,6 +195,8 @@ sudo qemu-system-x86_64 -m 1G -machine q35 \
         -bios "$bios" || err "Cannot start qemu"
 
 # Cleanup
-sudo rm -rf stage03/release*
+#sudo rm -rf stage03/release*
 sudo rm -rf stage03/sbin
 sudo rm -rf stage03/dl-cdn*
+sudo rm -rf tmp_iso
+sudo umount tmp_iso_readonly

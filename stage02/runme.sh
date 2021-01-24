@@ -23,7 +23,7 @@ cat /media/usb/boot/syslinux/syslinux.cfg.old | sed 's/^MENU LABEL.*/MENU LABEL 
 
 # Patch grub2 (uefi boot)
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
-cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed 's/lts/dkvm/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' > /media/usb/boot/grub/grub.cfg
+cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed 's/lts/dkvm/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g'> /media/usb/boot/grub/grub.cfg
 
 mount -o remount,ro /media/usb
 ln -s /media/usb/cache /etc/apk/cache
