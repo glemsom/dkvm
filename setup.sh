@@ -1,6 +1,6 @@
 #!/bin/bash
 version=0.3.5
-disksize=512 #Disk size in MB
+disksize=1024 #Disk size in MB
 alpineVersion=3.13
 alpineVersionMinor=0
 alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
