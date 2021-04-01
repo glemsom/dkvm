@@ -2,9 +2,11 @@
 version=0.3.5
 disksize=1024 #Disk size in MB
 alpineVersion=3.13
-alpineVersionMinor=0
+alpineVersionMinor=4
 alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
 bios=OVMF.fd
+# qemu binary, might differ on other distrobutions
+qemu=/usr/libexec/qemu-kvm
 
 diskfile="usbdisk.img"
 
@@ -12,6 +14,13 @@ err() {
 	echo "Error occured $@"
 	exit 1
 }
+
+# Check dependencies
+deps="expect mkisofs dd xorriso $qemu"
+
+for dep in $deps; do
+	which $dep || err "Missing $dep"
+done
 
 if [ ! -f "$alpineISO" ]; then
 	echo "Downloading Alpine Linux ISO"
@@ -23,6 +32,8 @@ if [ ! -f "$bios" ]; then
 		cp /usr/share/ovmf/OVMF.fd $bios || err "Cannot find OVMF.fd. Place this in the root folder"
 	elif [ -f /usr/share/ovmf/x64/OVMF_CODE.fd ]; then
 		cp /usr/share/ovmf/x64/OVMF_CODE.fd $bios || err "Cannot find OVMF_CODE.fd. Place this in the root folder, and rename it to $bios"
+	elif [ -f /usr/share/edk2/ovmf/OVMF_CODE.secboot.fd ]; then
+		cp /usr/share/edk2/ovmf/OVMF_CODE.secboot.fd $bios || err "Cannot find OVMF_CODE.fd. Place this in the root folder, and rename it to $bios"
 	else
 		err "Unable to find OVMF.fd. Please place this in the root folder"
 	fi
@@ -57,7 +68,7 @@ cd .. && xorriso -as mkisofs -o ${alpineISO}.patched -isohybrid-mbr tmp_iso/boot
 echo "Starting stage01..."
 
 sudo expect -c "set timeout -1
-spawn qemu-system-x86_64 -m 1G -machine q35 -drive if=none,format=raw,id=usbstick,file=$diskfile \
+spawn $qemu -m 1G -machine q35 -drive if=none,format=raw,id=usbstick,file=$diskfile \
 -usb -device usb-storage,drive=usbstick \
 -drive format=raw,media=cdrom,readonly,file=${alpineISO}.patched \
 -drive format=raw,media=cdrom,readonly,file=stage01.iso \
@@ -81,7 +92,7 @@ clear
 echo "Starting stage02..."
 
 sudo expect -c "set timeout -1
-spawn qemu-system-x86_64 -m 1G -machine q35 \
+spawn $qemu -m 1G -machine q35 \
 -drive if=none,format=raw,id=usbstick,file=$diskfile \
 -usb -device usb-storage,drive=usbstick \
 -drive format=raw,media=cdrom,readonly,file=stage02.iso \
