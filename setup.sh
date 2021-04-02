@@ -168,7 +168,7 @@ fi
 
 loopDevice=$(sudo losetup --show -f -P "$diskfile" 2>&1)
 mkdir tmp_dkvm
-sudo mount -o loop ${loopDevice}p1 tmp_dkvm
+sudo mount -o loop ${loopDevice}p1 tmp_dkvm || err "Cannot mount ${loopDevice}p1"
 
 sudo mkdir tmp_dkvm/custom
 

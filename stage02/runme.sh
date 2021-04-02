@@ -40,7 +40,7 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils qemu-img@community mdadm bcache-tools qemu-system-x86_64@community bash dialog bc nettle
+apk add util-linux bridge bridge-utils qemu-img mdadm bcache-tools qemu-system-x86_64 bash dialog bc nettle
 
 
 apk --no-cache add ca-certificates wget
