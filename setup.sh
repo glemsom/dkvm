@@ -39,6 +39,7 @@ if [ ! -f "$bios" ]; then
 	fi
 fi
 
+chown $SUDO_USER $bios
 clear
 
 # Creating disk
