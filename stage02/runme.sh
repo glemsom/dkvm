@@ -2,7 +2,7 @@
 
 err() {
 	echo "ERROR $@"
-	/bin/bash
+	/bin/sh
 }
 
 # Patch lbu.conf for USB media
@@ -15,7 +15,7 @@ mkdir /media/usb/cache
 
 # Extra arguments for Linux kernel
 #TODO : Get this from a config file instead?
-extraArgs="nouveau.modeset=0 mitigations=off intel_iommu=on iommu=pt transparent_hugepage=never vfio-pci.ids=10de:13c2,10de:0fbb,1106:3483 elevator=noop default_hugepagesz=2M hugepagesz=2M isolcpus=2-11 nohz_full=2-11 rcu_nocbs=2-11"
+extraArgs="nouveau.modeset=0 mitigations=off intel_iommu=on iommu=pt transparent_hugepage=never vfio-pci.ids=10de:13c2,10de:0fbb,1106:3483 elevator=noop waitusb=5 default_hugepagesz=2M hugepagesz=2M isolcpus=2-11 nohz_full=2-11 rcu_nocbs=2-11"
 
 # Patch syslinux (legacy boot)
 cp /media/usb/boot/syslinux/syslinux.cfg /media/usb/boot/syslinux/syslinux.cfg.old
@@ -33,15 +33,16 @@ setup-alpine
 
 # Add extra repositories
 echo "Enable extra repositories"
-sed -i '/^#.*testing/s/^#/@testing /' /etc/apk/repositories
-sed -i '/^#.*community/s/^#/@community /' /etc/apk/repositories
+#sed -i '/^#.*testing/s/^#/@testing /' /etc/apk/repositories
+sed -i '/^#.*v3.*community/s/^#/@community /' /etc/apk/repositories
 
 apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils qemu-img mdadm bcache-tools qemu-system-x86_64 bash dialog bc nettle
+apk add util-linux bridge bridge-utils qemu-img@community mdadm bcache-tools qemu-system-x86_64@community bash dialog bc nettle || err "Cannot install packages"
 
+lbu commit || err "Cannot commit changes"
 
 apk --no-cache add ca-certificates wget
 wget -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
@@ -127,9 +128,9 @@ cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
 cp /media/cdrom/dkvm_* /root/
 
 # Rename files
-for f in /root/dkvm_vmc*; do
-    mv "$f" `echo $f | sed 's/vmc/vmconfig/g'`
-done
+#for f in /root/dkvm_vmc*; do
+#    mv "$f" `echo $f | sed 's/vmc/vmconfig/g'`
+#done
 
 
 chmod +x /root/dkvmmenu.sh
@@ -143,8 +144,8 @@ cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh#' > /etc/
 ########################################
 
 
-apk -v cache clean
-lbu commit -v
+#apk -v cache clean
+lbu commit
 lbu commit -d -v
 
 echo "Exiting stage02"

@@ -2,9 +2,10 @@
 version=0.3.5
 disksize=1024 #Disk size in MB
 alpineVersion=3.13
-alpineVersionMinor=4
+alpineVersionMinor=5
 alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
-bios=OVMF.fd
+ovmf_code=OVMF_CODE.fd
+ovmf_vars=OVMF_VARS.fd
 # qemu binary, might differ on other distrobutions
 qemu=/usr/libexec/qemu-kvm
 
@@ -26,20 +27,26 @@ if [ ! -f "$alpineISO" ]; then
 	echo "Downloading Alpine Linux ISO"
 	wget http://dl-cdn.alpinelinux.org/alpine/v${alpineVersion}/releases/x86_64/${alpineISO} -O ${alpineISO} || err "Cannot download ISO"
 fi
-
-if [ ! -f "$bios" ]; then
-	if [ -f /usr/share/ovmf/OVMF.fd ]; then
-		cp /usr/share/ovmf/OVMF.fd $bios || err "Cannot find OVMF.fd. Place this in the root folder"
-	elif [ -f /usr/share/ovmf/x64/OVMF_CODE.fd ]; then
-		cp /usr/share/ovmf/x64/OVMF_CODE.fd $bios || err "Cannot find OVMF_CODE.fd. Place this in the root folder, and rename it to $bios"
-	elif [ -f /usr/share/edk2/ovmf/OVMF_CODE.secboot.fd ]; then
-		cp /usr/share/edk2/ovmf/OVMF_CODE.secboot.fd $bios || err "Cannot find OVMF_CODE.fd. Place this in the root folder, and rename it to $bios"
-	else
-		err "Unable to find OVMF.fd. Please place this in the root folder"
-	fi
+if [ ! -f "$ovmf_code" ]; then
+	# Try to find OVMF_CODE
+	tmpPaths="/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd /usr/share/ovmf/x64/OVMF_CODE.fd"
+	for tmpPath in $tmpPaths; do
+		[ -f $tmpPath ] && cp "$tmpPath" $ovmf_code && foundCode=yes
+	done
+	# We did not find it
+	[ ! $foundCode ] && err "Cannot find $ovmf_code. Please place it in the root folder"
 fi
 
-chown $SUDO_USER $bios
+if [ ! -f "$ovmf_vars" ]; then
+	# Try to find OVMF_VARS
+	tmpPaths="/usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_CODE.fd"
+	for tmpPath in $tmpPaths; do
+		[ -f $tmpPath ] && cp "$tmpPath" $ovmf_vars && foundVars=yes
+	done
+	# We did not find it
+	[ ! $foundVars ] && err "Cannot find $ovmf_vars. Please place it in the root folder"
+fi
+
 clear
 
 # Creating disk
@@ -69,14 +76,19 @@ cd .. && xorriso -as mkisofs -o ${alpineISO}.patched -isohybrid-mbr tmp_iso/boot
 echo "Starting stage01..."
 
 sudo expect -c "set timeout -1
-spawn $qemu -m 1G -machine q35 -drive if=none,format=raw,id=usbstick,file=$diskfile \
+spawn $qemu -m 1G -machine q35 \
+-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
+-drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
+-drive if=none,format=raw,id=usbstick,file=$diskfile \
 -usb -device usb-storage,drive=usbstick \
 -drive format=raw,media=cdrom,readonly,file=${alpineISO}.patched \
 -drive format=raw,media=cdrom,readonly,file=stage01.iso \
 -netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
 -device e1000,netdev=mynet0 \
 -nographic \
--bios $bios
+-boot menu=on,splash-time=12000 \
+-global ICH9-LPC.disable_s3=0 \
+-global driver=cfi.pflash01,property=secure,value=off
 expect \"login: \"
 send \"root\n\"
 expect \"localhost:~# \"
@@ -94,13 +106,18 @@ echo "Starting stage02..."
 
 sudo expect -c "set timeout -1
 spawn $qemu -m 1G -machine q35 \
+-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
+-drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
+-global driver=cfi.pflash01,property=secure,value=off \
 -drive if=none,format=raw,id=usbstick,file=$diskfile \
 -usb -device usb-storage,drive=usbstick \
 -drive format=raw,media=cdrom,readonly,file=stage02.iso \
 -netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
 -device e1000,netdev=mynet0 \
--bios $bios \
--nographic
+-nographic \
+-boot menu=on,splash-time=12000 \
+-global ICH9-LPC.disable_s3=0 \
+-global driver=cfi.pflash01,property=secure,value=off
 expect \"login: \"
 send root\n
 expect \"localhost:~# \"
@@ -199,11 +216,17 @@ done
 
 echo '* Test boot - make sure you can login with root'
 
-sudo qemu-system-x86_64 -m 1G -machine q35 \
+sudo $qemu -m 1G -machine q35 \
+		-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
+		-drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
+		-global driver=cfi.pflash01,property=secure,value=off \
         -drive if=none,format=raw,id=usbstick,file="$diskfile" \
         -usb -device usb-storage,drive=usbstick \
         -netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
         -device e1000,netdev=mynet0 \
+		-boot menu=on,splash-time=12000 \
+		-global ICH9-LPC.disable_s3=0 \
+		-global driver=cfi.pflash01,property=secure,value=off \
         -bios "$bios" || err "Cannot start qemu"
 
 # Cleanup
