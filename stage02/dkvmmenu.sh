@@ -442,7 +442,7 @@ vCPUpin() {
     sleep 0.5
     if hash nc 2>/dev/null; then 
       #echo "." | doOut
-      THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep thread_id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g')
+      THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep arch | grep thread-id | cut -d : -f 2 | sed -e 's/}.*//g' -e 's/ //g')
     else
       echo "ERROR: nc not found !" | doOut
       continue
