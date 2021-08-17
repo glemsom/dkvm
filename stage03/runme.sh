@@ -70,7 +70,7 @@ git checkout ${alpineVersion}-stable
 cd main/linux-dkvm
 
 # DEBUG
-#/bin/bash
+/bin/bash
 # Get current kernel version
 KERNELVER=\$(grep pkgver APKBUILD | head -n 1 | cut -d = -f 2)
 PKGREL=\$(grep pkgrel APKBUILD | head -n 1 | cut -d = -f 2)

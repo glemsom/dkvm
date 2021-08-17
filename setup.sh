@@ -1,8 +1,8 @@
 #!/bin/bash
-version=0.3.5
+version=0.3.7
 disksize=1024 #Disk size in MB
-alpineVersion=3.13
-alpineVersionMinor=5
+alpineVersion=3.14
+alpineVersionMinor=1
 alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
 ovmf_code=OVMF_CODE.fd
 ovmf_vars=OVMF_VARS.fd
@@ -226,8 +226,7 @@ sudo $qemu -m 1G -machine q35 \
         -device e1000,netdev=mynet0 \
 		-boot menu=on,splash-time=12000 \
 		-global ICH9-LPC.disable_s3=0 \
-		-global driver=cfi.pflash01,property=secure,value=off \
-        -bios "$bios" || err "Cannot start qemu"
+		-global driver=cfi.pflash01,property=secure,value=off || err "Cannot start qemu"
 
 # Cleanup
 #sudo rm -rf stage03/release*
