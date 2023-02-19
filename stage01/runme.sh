@@ -42,7 +42,7 @@ mkdosfs ${installDisk}1
 mkfs.vfat -n dkvm ${installDisk}1
 
 echo "Making usb disk bootable"
-setup-bootable /media/cdrom ${installDisk}1
+setup-bootable /media/sr0 ${installDisk}1
 
 echo "System will now poweroff, and restart with stage02 iso"
 sleep 2

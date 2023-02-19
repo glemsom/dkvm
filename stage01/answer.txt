@@ -4,7 +4,7 @@
 # Use dk layout with dk variant
 KEYMAPOPTS="dk dk"
 
-# Set hostname to alpine-test
+# Set hostname
 HOSTNAMEOPTS="-n dkvm"
 
 # Contents of /etc/network/interfaces
@@ -21,6 +21,8 @@ TIMEZONEOPTS="-z Europe/Copenhagen"
 
 # set http/ftp proxy
 PROXYOPTS="none"
+
+USEROPTS=none
 
 # Add first mirror
 APKREPOSOPTS="-1"
