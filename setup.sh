@@ -7,7 +7,7 @@ alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
 ovmf_code=OVMF_CODE.fd
 ovmf_vars=OVMF_VARS.fd
 # qemu binary, might differ on other distrobutions
-qemu=/usr/libexec/qemu-kvm
+qemu=/usr/bin/qemu-system-x86_64
 
 diskfile="usbdisk.img"
 
@@ -17,7 +17,7 @@ err() {
 }
 
 # Check dependencies
-deps="expect mkisofs dd xorriso $qemu"
+deps="expect mkisofs dd xorriso zip $qemu"
 
 for dep in $deps; do
 	which $dep || err "Missing $dep"
@@ -29,7 +29,7 @@ if [ ! -f "$alpineISO" ]; then
 fi
 if [ ! -f "$ovmf_code" ]; then
 	# Try to find OVMF_CODE
-	tmpPaths="/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd /usr/share/ovmf/x64/OVMF_CODE.fd"
+	tmpPaths="/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd /usr/share/ovmf/x64/OVMF_CODE.fd /usr/share/OVMF/OVMF_CODE.fd"
 	for tmpPath in $tmpPaths; do
 		[ -f $tmpPath ] && cp "$tmpPath" $ovmf_code && foundCode=yes
 	done
@@ -39,7 +39,7 @@ fi
 
 if [ ! -f "$ovmf_vars" ]; then
 	# Try to find OVMF_VARS
-	tmpPaths="/usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_CODE.fd"
+	tmpPaths="/usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_CODE.fd /usr/share/OVMF/OVMF_VARS.fd"
 	for tmpPath in $tmpPaths; do
 		[ -f $tmpPath ] && cp "$tmpPath" $ovmf_vars && foundVars=yes
 	done

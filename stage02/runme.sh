@@ -128,9 +128,9 @@ cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
 cp /media/cdrom/dkvm_* /root/
 
 # Rename files
-#for f in /root/dkvm_vmc*; do
-#    mv "$f" `echo $f | sed 's/vmc/vmconfig/g'`
-#done
+for f in /root/dkvm_vmc*; do
+    mv "$f" `echo $f | sed 's/vmc/vmconfig/g'`
+done
 
 
 chmod +x /root/dkvmmenu.sh
