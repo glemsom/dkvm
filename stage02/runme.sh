@@ -144,7 +144,7 @@ cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh#' > /etc/
 ########################################
 
 
-#apk -v cache clean
+apk -v cache clean
 lbu commit
 lbu commit -d -v
 

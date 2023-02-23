@@ -5,7 +5,7 @@
 KEYMAPOPTS="dk dk"
 
 # Set hostname
-HOSTNAMEOPTS="-n dkvm"
+HOSTNAMEOPTS="dkvm"
 
 # Contents of /etc/network/interfaces
 INTERFACESOPTS="auto lo

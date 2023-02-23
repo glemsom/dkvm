@@ -105,6 +105,7 @@ clear
 echo "Starting stage02..."
 
 sudo expect -c "set timeout -1
+set log_user 1
 spawn $qemu -m 1G -machine q35 \
 -drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
 -drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
@@ -121,20 +122,15 @@ spawn $qemu -m 1G -machine q35 \
 expect \"login: \"
 send root\n
 expect \"localhost:~# \"
-send whoami\n
 send \"mount /media/cdrom\n\"
 send \"/media/cdrom/runme.sh\n\"
-expect \"Select keyboard layout:\"
-send dk\n
-expect \"Select variant\"
-send dk\n
 expect \"Enter system hostname\"
 send dkvm\n
 expect \"Which one do you want to initialize\"
 send br0\n
 expect \"do you want add to bridge br0?\"
 send eth0\n
-expect \"Ip address for br0\"
+expect \"Ip address for\"
 send dhcp\n
 expect \"Do you want to do any manual network configuration\"
 send n\n
@@ -146,20 +142,37 @@ expect \"Which timezone are you in\"
 send Europe/Copenhagen\n
 expect \"HTTP/FTP proxy URL\"
 send none\n
+expect \"Which NTP client to run\"
+sleep 2
+send busybox\n\n
+sleep 2
+send \n\n
+sleep 2
+expect -- More
+sleep 1
+send \" \n\n\"
+sleep 2
+send \" \n\n\"
 expect \"Enter mirror number\"
-send f\n
-expect \"Which SSH server? \"
+send 1\n
+expect \"Setup a user\"
+send no\n
+expect \"Which ssh server? \"
 send openssh\n
+expect \"Allow root ssh login\"
+send yes\n
+expect \"Enter ssh key or URL for root\"
+send none\n
 expect \"Which disk(s) would you like to use?\"
 send none\n
 expect \"Enter where to store configs \"
 send usb\n
 expect \"Enter apk cache directory \"
 send /media/usb/cache\n
-expect \"Requesting system poweroff\"
+expect \"Exiting stage02\"
 " || err "Error in stage02"
 
-clear
+#clear
 
 if [ "$1" = "rebuild" ]; then
 	# Stage03 : Build custom DKVM kernel
@@ -229,7 +242,7 @@ sudo $qemu -m 1G -machine q35 \
 		-global driver=cfi.pflash01,property=secure,value=off || err "Cannot start qemu"
 
 # Cleanup
-#sudo rm -rf stage03/release*
+sudo rm -rf stage03/release*
 sudo rm -rf stage03/sbin
 sudo rm -rf stage03/dl-cdn*
 sudo rm -rf tmp_iso

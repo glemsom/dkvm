@@ -27,7 +27,7 @@ mkdir -p ${chroot_dir}/root
 
 mkdir -p ${chroot_dir}/etc/apk
 echo "${mirror}/${branch}/main" > ${chroot_dir}/etc/apk/repositories
-
+echo "${mirror}/${branch}/community" >> ${chroot_dir}/etc/apk/repositories
 mount -t proc none ${chroot_dir}/proc
 mount -o bind /sys ${chroot_dir}/sys
 mount -o bind /dev ${chroot_dir}/dev
@@ -111,5 +111,5 @@ umount ${chroot_dir}/dev
 umount ${chroot_dir}/sys
 umount ${chroot_dir}/proc
 
-rm -rf "${chroot_dir}"
-rm -rf sbin
+#rm -rf "${chroot_dir}"
+#rm -rf sbin
