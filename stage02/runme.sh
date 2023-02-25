@@ -97,7 +97,7 @@ options kvm ignore_msrs=1
 
 echo '#!/bin/sh
 # Load require modules
-modprobe bcache
+#modprobe bcache
 modprobe raid5
 
 mkdir /media/storage01
@@ -106,11 +106,11 @@ mkdir /media/storage02
 mdadm --assemble /dev/md0 --uuid "66134aaa:cd2da0da:352dceec:21ec6aa9"
 mount /dev/md0p1 /media/storage01
 
-echo /dev/sda2 > /sys/fs/bcache/register
-echo /dev/sdb2 > /sys/fs/bcache/register
+#echo /dev/sda2 > /sys/fs/bcache/register
+#echo /dev/sdb2 > /sys/fs/bcache/register
 
 
-mount /dev/bcache0 /media/storage02/
+#mount /dev/bcache0 /media/storage02/
 
 mkdir /dev/hugepages
 
@@ -118,9 +118,9 @@ mount -t hugetlbfs none /dev/hugepages
 ' >> /etc/local.d/mount.start
 chmod +x /etc/local.d/mount.start
 
-echo '#!/bin/sh
-apk add /media/usb/custom/*.apk' >> /etc/local.d/custom-apk.start
-chmod +x /etc/local.d/custom-apk.start
+#echo '#!/bin/sh
+#apk add /media/usb/custom/*.apk' >> /etc/local.d/custom-apk.start
+#chmod +x /etc/local.d/custom-apk.start
 
 cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
 
@@ -131,7 +131,6 @@ cp /media/cdrom/dkvm_* /root/
 for f in /root/dkvm_vmc*; do
     mv "$f" `echo $f | sed 's/vmc/vmconfig/g'`
 done
-
 
 chmod +x /root/dkvmmenu.sh
 

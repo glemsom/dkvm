@@ -172,7 +172,7 @@ send /media/usb/cache\n
 expect \"Exiting stage02\"
 " || err "Error in stage02"
 
-#clear
+clear
 
 if [ "$1" = "rebuild" ]; then
 	# Stage03 : Build custom DKVM kernel
@@ -192,7 +192,6 @@ if [ "$1" = "rebuild" ]; then
 	zip -r release_${version}.zip release_${version} || err "Unable to create release zip file"
 	cd ..
 else
-	#wget https://srv-file8.gofile.io/download/WbufzP/release_${version}.zip -O stage03/release_${version}
 	mkdir stage03/release_${version}
 	unzip stage03/release_${version}.zip -d stage03
 fi
