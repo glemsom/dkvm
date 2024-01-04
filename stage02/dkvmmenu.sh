@@ -398,6 +398,8 @@ reloadPCIDevices() {
       if [ -e "/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" ]; then
         echo "Resetting $PCIDEVICE" | doOut
         echo 1 >"/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" 2>&1 | doOut
+        sleep 0.5
+        echo "$VENDOR $DEVICE" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1 | doOut
       fi
       sleep 0.5
 
