@@ -30,10 +30,6 @@ a
 w
 " | fdisk "$installDisk"
 
-clear
-
-echo "Choose none for disks to use, and store configs"
-
 setup-alpine -e -f /media/sr1/answer.txt
 
 modprobe vfat

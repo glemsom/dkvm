@@ -1,8 +1,8 @@
 #!/bin/bash
-version=0.4.0
+version=0.5.2
 disksize=1024 #Disk size in MB
-alpineVersion=3.17
-alpineVersionMinor=2
+alpineVersion=3.19
+alpineVersionMinor=0
 alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
 ovmf_code=OVMF_CODE.fd
 ovmf_vars=OVMF_VARS.fd
@@ -34,7 +34,7 @@ if [ ! -f "$ovmf_code" ]; then
 		[ -f $tmpPath ] && cp "$tmpPath" $ovmf_code && foundCode=yes
 	done
 	# We did not find it
-	[ ! $foundCode ] && err "Cannot find $ovmf_code. Please place it in the root folder"
+	[ ! $foundCode ] && err "Cannot find $ovmf_code. Please copy it to $ovmf_code"
 fi
 
 if [ ! -f "$ovmf_vars" ]; then
@@ -44,7 +44,7 @@ if [ ! -f "$ovmf_vars" ]; then
 		[ -f $tmpPath ] && cp "$tmpPath" $ovmf_vars && foundVars=yes
 	done
 	# We did not find it
-	[ ! $foundVars ] && err "Cannot find $ovmf_vars. Please place it in the root folder"
+	[ ! $foundVars ] && err "Cannot find $ovmf_vars. Please copy it to $ovmf_vars"
 fi
 
 clear
@@ -124,86 +124,14 @@ send root\n
 expect \"localhost:~# \"
 send \"mount /media/cdrom\n\"
 send \"/media/cdrom/runme.sh\n\"
-expect \"Enter system hostname\"
-send dkvm\n
-expect \"Which one do you want to initialize\"
-send br0\n
-expect \"do you want add to bridge br0?\"
-send eth0\n
-expect \"Ip address for\"
-send dhcp\n
-expect \"Do you want to do any manual network configuration\"
-send n\n
-expect \"New password: \"
-send dkvm4ever!\n
-expect \"Retype password: \"
-send dkvm4ever!\n
-expect \"Which timezone are you in\"
-send Europe/Copenhagen\n
-expect \"HTTP/FTP proxy URL\"
-send none\n
-expect \"Which NTP client to run\"
-sleep 2
-send busybox\n\n
-sleep 2
-send \n\n
-sleep 2
-expect -- More
-sleep 1
-send \" \n\n\"
-sleep 2
-send \" \n\n\"
-expect \"Enter mirror number\"
-send 1\n
-expect \"Setup a user\"
-send no\n
-expect \"Which ssh server? \"
-send openssh\n
-expect \"Allow root ssh login\"
-send yes\n
-expect \"Enter ssh key or URL for root\"
-send none\n
-expect \"Which disk(s) would you like to use?\"
-send none\n
-expect \"Enter where to store configs \"
-send usb\n
-expect \"Enter apk cache directory \"
-send /media/usb/cache\n
 expect \"Exiting stage02\"
 " || err "Error in stage02"
 
-clear
-
-if [ "$1" = "rebuild" ]; then
-	# Stage03 : Build custom DKVM kernel
-	sudo stage03/runme.sh
-	mkdir stage03/release_${version}
-
-	sudo cp -r stage03/kernel_files/dkvm_kernel stage03/release_${version}
-	sudo cp -r stage03/dkvm_files/ stage03/release_${version}
-
-	# Copy chrt from host OS
-	if [ ! -z "`which chrt`" ]; then
-		sudo cp `which chrt` stage03/release_${version}
-	else
-		err "Cannot find chrt. Please install this in your OS"
-	fi
-	cd stage03
-	zip -r release_${version}.zip release_${version} || err "Unable to create release zip file"
-	cd ..
-else
-	mkdir stage03/release_${version}
-	unzip stage03/release_${version}.zip -d stage03
-fi
+#clear
 
 loopDevice=$(sudo losetup --show -f -P "$diskfile" 2>&1)
 mkdir tmp_dkvm
 sudo mount -o loop ${loopDevice}p1 tmp_dkvm || err "Cannot mount ${loopDevice}p1"
-
-sudo mkdir tmp_dkvm/custom
-
-# Inject new kernel
-sudo cp stage03/release_${version}/dkvm_kernel/*dkvm tmp_dkvm/boot/ || err "Cannot inject DKVM kernel"
 
 # Write version
 echo $version | sudo tee tmp_dkvm/dkvm-release
@@ -212,9 +140,8 @@ echo $version | sudo tee tmp_dkvm/dkvm-release
 sudo umount tmp_dkvm
 sudo umount ${loopDevice}p1
 sudo losetup -D
-sudo rm -rf stage03/kernel_files
-sudo rm -rf stage03/dkvm_files
 sudo rm -rf tmp_dkvm
+
 sleep 5
 
 while mount | grep ${loopDevice}p1 -q; do
@@ -229,20 +156,18 @@ done
 echo '* Test boot - make sure you can login with root'
 
 sudo $qemu -m 1G -machine q35 \
-		-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
-		-drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
-		-global driver=cfi.pflash01,property=secure,value=off \
-        -drive if=none,format=raw,id=usbstick,file="$diskfile" \
-        -usb -device usb-storage,drive=usbstick \
-        -netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
-        -device e1000,netdev=mynet0 \
-		-boot menu=on,splash-time=12000 \
-		-global ICH9-LPC.disable_s3=0 \
-		-global driver=cfi.pflash01,property=secure,value=off || err "Cannot start qemu"
+	-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
+	-drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
+	-global driver=cfi.pflash01,property=secure,value=off \
+	-drive if=none,format=raw,id=usbstick,file="$diskfile" \
+	-usb -device usb-storage,drive=usbstick \
+	-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
+	-device e1000,netdev=mynet0 \
+	-boot menu=on,splash-time=12000 \
+	-global ICH9-LPC.disable_s3=0 \
+	-global driver=cfi.pflash01,property=secure,value=off || err "Cannot start qemu"
 
 # Cleanup
-sudo rm -rf stage03/release*
-sudo rm -rf stage03/sbin
-sudo rm -rf stage03/dl-cdn*
 sudo rm -rf tmp_iso
 sudo umount tmp_iso_readonly
+rm -rf tmp_iso_readonly
