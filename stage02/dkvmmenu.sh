@@ -190,7 +190,6 @@ showMainMenu() {
   done
   local ip=$(ip a | grep "inet " | grep -v "inet 127" | awk '{print $2}')
   backtitle="DKVM @ $ip   Version: $version"
-  #local tmpFix=" --begin 50 50 --infobox 'Starting Menu' 2 2 --and-widget "
   local menuStr="$tmpFix --title '$title' --backtitle '$backtitle' --no-tags --no-cancel --menu 'Select option' 20 50 20 $menuStr --stdout"
   menuAnswer=$(eval "dialog $menuStr")
   if [ $? -eq 1 ]; then
@@ -302,6 +301,7 @@ realTimeTune() {
   # Disable watchdog
   echo 0   >/proc/sys/kernel/watchdog 2>/dev/null
 }
+
 mainHandlerVM() {
   clear
   doOut "clear"
@@ -326,11 +326,8 @@ mainHandlerVM() {
   # Build qemu command
   OPTS="-nodefaults -no-user-config -accel accel=kvm,kernel-irqchip=on -machine q35,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
   OPTS+=" -mem-prealloc -overcommit mem-lock=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
-  #OPTS+=" -device virtio-net-pci,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
-  #OPTS+=" -device e1000,netdev=net0,mac=$VMMAC -netdev bridge,id=net0"
   OPTS+=" -mem-path /dev/hugepages -m $VMMEM"
-  #OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -no-hpet -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" $VMEXTRA "
   if [ ! -z "$VMSOCKETS" ] && [ ! -z "$VMTHREADS" ] && [ ! -z "$VMCORES" ]; then
@@ -376,10 +373,10 @@ mainHandlerVM() {
   fi
   doOut "clear"
   setupHugePages $VMMEM |& doOut
-  IRQAffinity "$VMCORELIST"
+  IRQAffinity
   realTimeTune
   ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
-  vCPUpin "$VMCORELIST" &
+  vCPUpin &
   doOut showlog
 }
 
@@ -426,7 +423,7 @@ getConfigItem() {
 
 }
 
-vCPUpin() {
+vCPUpinOld() {
   local CORELIST="$1"
   echo "Setting CPU affinity using cores: $CORELIST" | doOut
 
@@ -497,17 +494,87 @@ vCPUpin() {
 
 }
 
-IRQAffinity() {
-  local CORELIST="$1"
-  local CORELISTCOMMA=$(echo $CORELIST | sed 's/ /,/g')
-  local ALLCORES=$(cat /proc/cpuinfo | grep processor | awk '{print $3}')
+vCPUpin() {
+  sleep 10 # Let QEMU start threads
+  # Load topology setup
+  source cpuTopology
 
-  for CORE in $ALLCORES; do
-    if [[ ! $CORELISTCOMMA =~ (^|,)"$CORE"(,|$) ]]; then
-      IRQCORE="${IRQCORE},${CORE}"
-    fi
-  done
-  IRQCORE="${IRQCORE:1}" # Remove first ,
+  # Get QEMU threads
+  QEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 2 nc localhost 4444 )| tail -n1 | jq '.return[] | ."thread-id"' )
+  if [ $CPUTHREADS -gt 1 ]; then
+    # Group CPUs together
+    LOOPCOUNT=0
+    for tmpCPU in $(echo $VMCPU | tr , '\n'); do
+      if echo "$tmpCPUPROCESSED" | grep ",$tmpCPU" -q; then
+        continue
+      fi
+      # Find siblling
+      # First fine the physical core
+      PHYCORE=$(lscpu -p|grep ^$tmpCPU | cut -d , -f 2)
+      [ -z "$PHYCORE" ] && continue
+
+      # Find the sibling
+      CPUSIBLING=$(lscpu -p|grep -E "(^[0-9]+),$PHYCORE" | grep -v ^$tmpCPU | cut -d , -f 1)
+      [ -z "$CPUSIBLING" ] && continue
+      echo "CPU $tmpCPU + $CPUSIBLING"
+      
+      # Find QEMU theads for core
+      tmpQEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 2 nc localhost 4444 )| tail -n1 | jq ".return[] | select(.\"props\".\"core-id\" == $LOOPCOUNT) | .\"thread-id\"" )
+      for tmpQEMUTHREAD in $tmpQEMUTHREADS; do
+        echo taskset -pc ${tmpCPU},${CPUSIBLING} $tmpQEMUTHREAD
+      done
+
+      let LOOPCOUNT++
+      tmpCPUPROCESSED+=",$tmpCPU,"
+      tmpCPUPROCESSED+=",$CPUSIBLING,"
+
+
+    done
+
+    # Loop over cores in qemu, and associate with CPU map
+
+  else
+    err "Only SMT/HT is supported"
+  fi
+
+
+  
+}
+setupCPULayout() {
+  # Load current
+  # If no current, propose optimal
+  if [ ! -e cpuTopology ]; then
+    writeOptimalCPULayout
+  fi
+
+  #vCPUPin2
+  # Show options
+  # Save to default
+}
+
+writeOptimalCPULayout() {
+  # Pick first core, and any SMT as the host core
+  # TODO: What if we have more sockets / CCX?
+  HOSTCPU=$(lscpu -p| grep -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
+  VMCPU=$(lscpu -p| grep -v \# | grep -v -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
+  CPUTHREADS=$(lscpu |grep Thread | cut -d: -f2|tr -d ' ')
+  cat > cpuTopology <<EOF
+# Host CPUs reserves for Host OS.
+# Recommended is to use 1 CPU (inclusing SMT/Hyperthreading core)
+HOSTCPU=${HOSTCPU::-1}
+# CPUs reserved for VM
+# Recommended is all, expect for the CPUs for the host
+VMCPU=${VMCPU::-1}
+# Number of SMT/Hyperthreads to emulate in topology
+# Recommended is to keep the same as host topology
+CPUTHREADS=${CPUTHREADS}
+EOF || rm -f cpuTopology
+  # TODO: Write to cmdline
+}
+
+IRQAffinity() {
+  source cpuTopology
+  IRQCORE=$HOSTCPU
   echo "IRQ Cores: $IRQCORE" | doOut
 
   # Move all irq away from VM CPUs
@@ -524,6 +591,7 @@ IRQAffinity() {
     taskset -pc $IRQCORE $PID 2>/dev/null | doOut
   done
 }
+setupCPULayout
 
 showMainMenu
 doSelect
