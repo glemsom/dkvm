@@ -501,34 +501,39 @@ vCPUpin() {
 
   # Get QEMU threads
   QEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 2 nc localhost 4444 )| tail -n1 | jq '.return[] | ."thread-id"' )
+  echo "Found QEMU threads: $QEMUTHREADS" | doOut
   if [ $CPUTHREADS -gt 1 ]; then
     # Group CPUs together
     LOOPCOUNT=0
     for tmpCPU in $(echo $VMCPU | tr , '\n'); do
-      if echo "$tmpCPUPROCESSED" | grep ",$tmpCPU" -q; then
+      if echo "$tmpCPUPROCESSED" | grep ",${tmpCPU}," -q; then
         continue
       fi
       # Find siblling
       # First fine the physical core
-      PHYCORE=$(lscpu -p|grep ^$tmpCPU | cut -d , -f 2)
+      PHYCORE=$(lscpu -p|grep ^${tmpCPU}, | cut -d , -f 2)
       [ -z "$PHYCORE" ] && continue
 
       # Find the sibling
       CPUSIBLING=$(lscpu -p|grep -E "(^[0-9]+),$PHYCORE" | grep -v ^$tmpCPU | cut -d , -f 1)
       [ -z "$CPUSIBLING" ] && continue
-      echo "CPU $tmpCPU + $CPUSIBLING"
+      echo "Pinning for CPU Pair $tmpCPU + $CPUSIBLING" | doOut
       
       # Find QEMU theads for core
       tmpQEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 2 nc localhost 4444 )| tail -n1 | jq ".return[] | select(.\"props\".\"core-id\" == $LOOPCOUNT) | .\"thread-id\"" )
+      tmpThread=0
       for tmpQEMUTHREAD in $tmpQEMUTHREADS; do
-        echo taskset -pc ${tmpCPU},${CPUSIBLING} $tmpQEMUTHREAD
+        if [ "$tmpThread" == 1 ]; then
+          taskset -pc ${CPUSIBLING} $tmpQEMUTHREAD | doOut
+        else
+          taskset -pc ${tmpCPU} $tmpQEMUTHREAD | doOut
+        fi
+        tmpThread=1
       done
 
       let LOOPCOUNT++
       tmpCPUPROCESSED+=",$tmpCPU,"
       tmpCPUPROCESSED+=",$CPUSIBLING,"
-
-
     done
 
     # Loop over cores in qemu, and associate with CPU map
@@ -536,9 +541,6 @@ vCPUpin() {
   else
     err "Only SMT/HT is supported"
   fi
-
-
-  
 }
 setupCPULayout() {
   # Load current
@@ -558,6 +560,7 @@ writeOptimalCPULayout() {
   HOSTCPU=$(lscpu -p| grep -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
   VMCPU=$(lscpu -p| grep -v \# | grep -v -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
   CPUTHREADS=$(lscpu |grep Thread | cut -d: -f2|tr -d ' ')
+  if [ ! -z "$HOSTCPU" ] || [ ! -z "$VMCPU" ]; then  
   cat > cpuTopology <<EOF
 # Host CPUs reserves for Host OS.
 # Recommended is to use 1 CPU (inclusing SMT/Hyperthreading core)
@@ -568,7 +571,8 @@ VMCPU=${VMCPU::-1}
 # Number of SMT/Hyperthreads to emulate in topology
 # Recommended is to keep the same as host topology
 CPUTHREADS=${CPUTHREADS}
-EOF || rm -f cpuTopology
+EOF
+  fi
   # TODO: Write to cmdline
 }
 
