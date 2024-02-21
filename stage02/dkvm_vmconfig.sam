@@ -5,10 +5,9 @@
 NAME=VM Name
 
 # Harddisks - only raw devices are supported
-# Multible harddisk can be configured
+# Multiple harddisk can be configured
 HARDDISK=/media/storage01/disks/VM_NAME_system.raw
-#HARDDISK=/media/storage01/disks/winblows_disk2.raw
-#HARDDISK=/media/storage02/disks/winblows_disk3.raw
+HARDDISK=/media/storage01/disks/VM_NAME_data.raw
 
 # CDROM
 CDROM=/media/storage01/iso/alpinelinux.iso
@@ -24,18 +23,7 @@ PCIDEVICE=03:00.0
 # BIOS
 BIOS=/media/storage02/bios/ovmf/VM_NAME/OVMF.fd
 BIOS_VARS=/media/storage02/bios/ovmf/VM_NAME/OVMF_VARS.fd
-
-#CPU
-SOCKETS=1
-CORES=4
-THREADS=1
-
-# CPU Pinning
-# If hyperthreading is enabled - for best realtime performance, use both the physical and the "hyperthreading" core to back the vCPU core.
-# ex. configure QEMU for 4 cores with 1 thread - but PIN on both the "real" core, and the "hyperthreaded core".
-# use `cat /proc/cpuinfo | grep "processor\|core id"` to find core siblings
-CORELIST=2 7 3 8 4 9 5 10 6 11
-# Memory in megabyes
+# NOTE: You can copy a OVMF bios from /usr/share/OVMF/
 MEM=12288
 
 # MAC Address

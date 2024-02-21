@@ -153,7 +153,7 @@ while mount | grep ${loopDevice}p1 -q; do
 	sleep 5
 done
 
-echo '* Test boot - make sure you can login with root'
+echo '* Test boot - make sure the system can start. Then do a PowerOff'
 
 sudo $qemu -m 1G -machine q35 \
 	-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \

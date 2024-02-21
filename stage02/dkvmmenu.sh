@@ -193,7 +193,7 @@ showMainMenu() {
   local menuStr="$tmpFix --title '$title' --backtitle '$backtitle' --no-tags --no-cancel --menu 'Select option' 20 50 20 $menuStr --stdout"
   menuAnswer=$(eval "dialog $menuStr")
   if [ $? -eq 1 ]; then
-    err "Main dialog cancled ?!"
+    err "Main dialog canceled ?!"
   fi
 }
 
@@ -263,7 +263,7 @@ mainHandlerInternal() {
       showMainMenu && doSelect
     fi
   elif [ "$1" == "INT_CONFIG" ]; then
-    local menuStr="--title '$title' --backtitle '$backtitle' --no-tags --menu 'Select option' 20 50 20 1 'Add new VM' 2 'Edit VM' 3 'Save Changes' --stdout"
+    local menuStr="--title '$title' --backtitle '$backtitle' --no-tags --menu 'Select option' 20 50 20 1 'Add new VM' 2 'Edit VM' 3 'Edit CPU Topology' 4 'Save Changes' --stdout"
     local menuAnswer=$(eval "dialog $menuStr")
 
     if [ "$menuAnswer" == "1" ]; then
@@ -271,6 +271,10 @@ mainHandlerInternal() {
     elif [ "$menuAnswer" == "2" ]; then
       doEditVM
     elif [ "$menuAnswer" == "3" ]; then
+      writeOptimalCPULayout
+      vim cpuTopology
+      configureKernelCPUTopology
+    elif [ "$menuAnswer" == "4" ]; then
       doSaveChanges
     fi
     showMainMenu && doSelect
@@ -409,6 +413,7 @@ reloadPCIDevices() {
   done
   sleep 2
 }
+
 getConfigItem() {
   local configFile="$1"
   local item="$2"
@@ -423,76 +428,6 @@ getConfigItem() {
 
 }
 
-vCPUpinOld() {
-  local CORELIST="$1"
-  echo "Setting CPU affinity using cores: $CORELIST" | doOut
-
-  TIMEOUT=2
-
-  if [ -f /media/usb/custom/chrt ]; then
-    CHRTCMD=/media/usb/custom/chrt
-  else
-    CHRTCMD=chrt
-  fi
-  local THREADS=""
-
-  echo "Trying to find QEMU vCPU threads..." | doOut
-  while [ -z "$THREADS" ]; do
-    sleep 0.5
-    if hash nc 2>/dev/null; then 
-      #echo "." | doOut
-      THREADS=$( (echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout $TIMEOUT nc localhost 4444 | tr , '\n') | grep '{"thread-id"' | sed 's/.*: //g')
-    else
-      echo "ERROR: nc not found !" | doOut
-      continue
-    fi
-  done
-  echo QEMU Threads found: $THREADS | doOut
-
-  if [ "$(echo $CORELIST | tr -cd ' ' | wc -c)" -gt $(echo "$THREADS" | wc -l) ]; then
-    local USEHT=yes
-  else
-    local USEHT=no
-  fi
-
-  local COUNT=1
-  for THREAD_ID in $THREADS; do
-    if [ $USEHT == yes ]; then
-      NCOUNT=$(($COUNT + 1))
-      CURCORE=$(echo $CORELIST | cut -d " " -f $COUNT,$NCOUNT | sed 's/ /,/g')
-      COUNTUP=2
-    else
-      CURCORE=$(echo $CORELIST | cut -d " " -f $COUNT)
-      COUNTUP=1
-    fi
-
-    #echo "Binding $THREAD_ID to $CURCORE" | doOut
-    taskset -pc $CURCORE $THREAD_ID |& doOut
-    sleep 0.5
-    COUNT=$(($COUNT + $COUNTUP))
-  done
-
-  # Let the VM start first
-  sleep 120
-
-  # Find QEMU threads, and give them a lower nice value
-  QEMU_PID=$(pgrep qemu-system-x86_64)
-  QEMU_ALL_THREADS=$(ls -1 /proc/${QEMU_PID}/task)
-  for THREAD in $QEMU_ALL_THREADS; do
-    if echo "$THREADS" | grep ^${THREAD}; then
-      # This is a VM thread
-      #echo "Change VM thread to nice -10, and set FIFO/80" | doOut
-      echo "Change VM thread to nice -10" | doOut
-      renice -10 -p $THREAD |& doOut
-      #$CHRTCMD -pf 80 $THREAD_ID |& doOut
-    else
-      echo "Change QEMU thread to nice -5" | doOut
-      renice -5 -p $THREAD |& doOut
-    fi
-    sleep 0.2
-  done
-
-}
 
 vCPUpin() {
   sleep 10 # Let QEMU start threads
@@ -535,23 +470,28 @@ vCPUpin() {
       tmpCPUPROCESSED+=",$tmpCPU,"
       tmpCPUPROCESSED+=",$CPUSIBLING,"
     done
-
-    # Loop over cores in qemu, and associate with CPU map
-
   else
-    err "Only SMT/HT is supported"
+    LOOPCOUNT=0
+    for tmpCPU in $(echo $VMCPU | tr , '\n'); do
+      # First fine the physical core
+      echo "Pinning for CPU  $tmpCPU" | doOut
+      
+      # Find QEMU theads for core
+      tmpQEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 2 nc localhost 4444 )| tail -n1 | jq ".return[] | select(.\"props\".\"core-id\" == $LOOPCOUNT) | .\"thread-id\"" )
+      for tmpQEMUTHREAD in $tmpQEMUTHREADS; do
+          taskset -pc ${tmpCPU} $tmpQEMUTHREAD | doOut
+      done
+
+      let LOOPCOUNT++
+      tmpCPUPROCESSED+=",$tmpCPU,"
+    done
   fi
 }
 setupCPULayout() {
-  # Load current
-  # If no current, propose optimal
   if [ ! -e cpuTopology ]; then
     writeOptimalCPULayout
   fi
 
-  #vCPUPin2
-  # Show options
-  # Save to default
 }
 
 writeOptimalCPULayout() {
@@ -560,8 +500,11 @@ writeOptimalCPULayout() {
   HOSTCPU=$(lscpu -p| grep -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
   VMCPU=$(lscpu -p| grep -v \# | grep -v -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
   CPUTHREADS=$(lscpu |grep Thread | cut -d: -f2|tr -d ' ')
-  if [ ! -z "$HOSTCPU" ] || [ ! -z "$VMCPU" ]; then  
+  if [ ! -z "$HOSTCPU" ] && [ ! -z "$VMCPU" ]; then  
   cat > cpuTopology <<EOF
+# This file is auto-generated upon first start-up.
+# To regenerate, just delete this file
+#
 # Host CPUs reserves for Host OS.
 # Recommended is to use 1 CPU (inclusing SMT/Hyperthreading core)
 HOSTCPU=${HOSTCPU::-1}
@@ -574,6 +517,20 @@ CPUTHREADS=${CPUTHREADS}
 EOF
   fi
   # TODO: Write to cmdline
+}
+
+configureKernelCPUTopology() {
+  if [ ! -e cpuTopology ]; then
+    err "No cpuTopology file found"
+  else
+    source cpuTopology
+  fi
+  clear
+  mount -oremount,rw /media/usb/ || err "Cannot remount /media/usb"
+  cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old || err "Cannot copy grub.cfg"
+  cat /media/usb/boot/grub/grub.cfg.old | sed -e "s%\(isolcpus=\)[^[:space:]]\+%\1${VMCPU}%g" -e "s%\(nohz_full=\)[^[:space:]]\+%\1${VMCPU}%g" -e "s%\(rcu_nocbs=\)[^[:space:]]\+%\1${VMCPU}%g" > /media/usb/boot/grub/grub.cfg
+  mount -oremount,ro /media/usb/ || err "Cannot remount /media/usb"
+  dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 20 60
 }
 
 IRQAffinity() {

@@ -45,7 +45,7 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils qemu-img@community mdadm bcache-tools qemu-system-x86_64@community bash dialog bc nettle jq || err "Cannot install packages"
+apk add util-linux bridge bridge-utils qemu-img@community mdadm bcache-tools qemu-system-x86_64@community ovmf@community bash dialog bc nettle jq || err "Cannot install packages"
 
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
