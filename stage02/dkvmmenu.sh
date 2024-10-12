@@ -318,10 +318,6 @@ mainHandlerVM() {
   local VMPCIEDEVICE=$(getConfigItem $configFile PCIEDEVICE)
   local VMBIOS=$(getConfigItem $configFile BIOS)
   local VMBIOS_VARS=$(getConfigItem $configFile BIOS_VARS)
-  local VMSOCKETS=$(getConfigItem $configFile SOCKETS)
-  local VMCORES=$(getConfigItem $configFile CORES)
-  local VMTHREADS=$(getConfigItem $configFile THREADS)
-  local VMCORELIST=$(getConfigItem $configFile CORELIST)
   local VMMEM=$(getConfigItem $configFile MEM)
   local VMMAC=$(getConfigItem $configFile MAC)
   local VMCPUOPTS=$(getConfigItem $configFile CPUOPTS)
@@ -334,8 +330,10 @@ mainHandlerVM() {
   OPTS+=" -mem-path /dev/hugepages -m $VMMEM"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" $VMEXTRA "
-  if [ ! -z "$VMSOCKETS" ] && [ ! -z "$VMTHREADS" ] && [ ! -z "$VMCORES" ]; then
-    OPTS+=" -smp sockets=${VMSOCKETS},cores=${VMCORES},threads=${VMTHREADS}"
+  if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
+    local TMPALLCORES=$(echo $VMCPU | sed 's/,/ /g'|wc -w)
+    local TMPCORES=$(echo ${TMPALLCORES}/${CPUTHREADS} | bc)
+    OPTS+=" -smp threads=${CPUTHREADS},cores=${TMPCORES}"
   fi
   if [ ! -z "$VMBIOS" ] && [ ! -z "$VMBIOS_VARS" ]; then
     OPTS+=" -drive if=pflash,format=raw,readonly,file=${VMBIOS} -drive if=pflash,format=raw,file=${VMBIOS_VARS}"
@@ -491,7 +489,7 @@ setupCPULayout() {
   if [ ! -e cpuTopology ]; then
     writeOptimalCPULayout
   fi
-
+  source cpuTopology
 }
 
 writeOptimalCPULayout() {
@@ -552,6 +550,7 @@ IRQAffinity() {
     taskset -pc $IRQCORE $PID 2>/dev/null | doOut
   done
 }
+
 setupCPULayout
 
 showMainMenu
