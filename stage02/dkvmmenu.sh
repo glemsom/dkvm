@@ -485,6 +485,7 @@ vCPUpin() {
     done
   fi
 }
+
 setupCPULayout() {
   if [ ! -e cpuTopology ]; then
     writeOptimalCPULayout
@@ -514,7 +515,6 @@ VMCPU=${VMCPU::-1}
 CPUTHREADS=${CPUTHREADS}
 EOF
   fi
-  # TODO: Write to cmdline
 }
 
 configureKernelCPUTopology() {
