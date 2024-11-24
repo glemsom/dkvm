@@ -45,7 +45,7 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils qemu-img@community mdadm bcache-tools qemu-system-x86_64@community ovmf@community bash dialog bc nettle jq || err "Cannot install packages"
+apk add util-linux bridge bridge-utils qemu-img@community mdadm bcache-tools qemu-system-x86_64@community ovmf@community bash dialog bc nettle jq vim lvm2 || err "Cannot install packages"
 
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
@@ -80,9 +80,6 @@ modprobe vfio_iommu_type1
 modprobe tun
 modprobe vfio-pci
 modprobe vfio
-#modprobe vhost_net
-#modprobe vhost_scsi
-#modprobe vhost_sock
 rmmod pcspkr
 " >>/etc/local.d/modules.start
 
@@ -122,9 +119,6 @@ fstrim /media/storage01 &
 ' >> /etc/local.d/mount.start
 chmod +x /etc/local.d/mount.start
 
-#echo '#!/bin/sh
-#apk add /media/usb/custom/*.apk' >> /etc/local.d/custom-apk.start
-#chmod +x /etc/local.d/custom-apk.start
 
 cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
 

@@ -239,6 +239,37 @@ doEditVM() {
 
 }
 
+setupCPULayout() {
+  if [ ! -e cpuTopology ]; then
+    writeOptimalCPULayout
+  fi
+  source cpuTopology
+}
+
+writeOptimalCPULayout() {
+  # Pick first core, and any SMT as the host core
+  # TODO: What if we have more sockets / CCX?
+  HOSTCPU=$(lscpu -p| grep -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
+  VMCPU=$(lscpu -p| grep -v \# | grep -v -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
+  CPUTHREADS=$(lscpu |grep Thread | cut -d: -f2|tr -d ' ')
+  if [ ! -z "$HOSTCPU" ] && [ ! -z "$VMCPU" ]; then  
+  cat > cpuTopology <<EOF
+# This file is auto-generated upon first start-up.
+# To regenerate, just delete this file
+#
+# Host CPUs reserves for Host OS.
+# Recommended is to use 1 CPU (inclusing SMT/Hyperthreading core)
+HOSTCPU=${HOSTCPU::-1}
+# CPUs reserved for VM
+# Recommended is all, expect for the CPUs for the host
+VMCPU=${VMCPU::-1}
+# Number of SMT/Hyperthreads to emulate in topology
+# Recommended is to keep the same as host topology
+CPUTHREADS=${CPUTHREADS}
+EOF
+  fi
+}
+
 doSaveChanges() {
   local changesTxt="Changes saved...
 $(lbu diff)
@@ -271,7 +302,7 @@ mainHandlerInternal() {
     elif [ "$menuAnswer" == "2" ]; then
       doEditVM
     elif [ "$menuAnswer" == "3" ]; then
-      writeOptimalCPULayout
+      setupCPULayout
       vim cpuTopology
       configureKernelCPUTopology
     elif [ "$menuAnswer" == "4" ]; then
@@ -483,37 +514,6 @@ vCPUpin() {
       let LOOPCOUNT++
       tmpCPUPROCESSED+=",$tmpCPU,"
     done
-  fi
-}
-
-setupCPULayout() {
-  if [ ! -e cpuTopology ]; then
-    writeOptimalCPULayout
-  fi
-  source cpuTopology
-}
-
-writeOptimalCPULayout() {
-  # Pick first core, and any SMT as the host core
-  # TODO: What if we have more sockets / CCX?
-  HOSTCPU=$(lscpu -p| grep -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
-  VMCPU=$(lscpu -p| grep -v \# | grep -v -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
-  CPUTHREADS=$(lscpu |grep Thread | cut -d: -f2|tr -d ' ')
-  if [ ! -z "$HOSTCPU" ] && [ ! -z "$VMCPU" ]; then  
-  cat > cpuTopology <<EOF
-# This file is auto-generated upon first start-up.
-# To regenerate, just delete this file
-#
-# Host CPUs reserves for Host OS.
-# Recommended is to use 1 CPU (inclusing SMT/Hyperthreading core)
-HOSTCPU=${HOSTCPU::-1}
-# CPUs reserved for VM
-# Recommended is all, expect for the CPUs for the host
-VMCPU=${VMCPU::-1}
-# Number of SMT/Hyperthreads to emulate in topology
-# Recommended is to keep the same as host topology
-CPUTHREADS=${CPUTHREADS}
-EOF
   fi
 }
 

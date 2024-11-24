@@ -156,6 +156,7 @@ done
 echo '* Test boot - make sure the system can start. Then do a PowerOff'
 
 sudo $qemu -m 1G -machine q35 \
+	-smp cpus=2,sockets=1,dies=1 \
 	-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
 	-drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
 	-global driver=cfi.pflash01,property=secure,value=off \
