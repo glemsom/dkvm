@@ -70,6 +70,7 @@ cd tmp_iso_readonly && tar cf - . | (cd ../tmp_iso; tar xfp -) || err "Cannot co
 cd ../tmp_iso
 chmod +xw boot/grub/ || err "Cannot modify permissions for grub"
 chmod +w boot/syslinux/isolinux.bin || err "Cannot modify permissions for isolinux.bin"
+# Add console ttyS0 to grub
 sed -i 's/quiet/console=ttyS0,9600 quiet/' boot/grub/grub.cfg || err "Cannot patch grub.cfg"
 cd .. && xorriso -as mkisofs -o ${alpineISO}.patched -isohybrid-mbr tmp_iso/boot/syslinux/isohdpfx.bin -c boot/syslinux/boot.cat  -b boot/syslinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/grub/efi.img  -no-emul-boot -isohybrid-gpt-basdat  tmp_iso || err "Cannot build custom ISO"
 
