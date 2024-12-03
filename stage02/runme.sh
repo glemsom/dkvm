@@ -105,30 +105,15 @@ rc-update add ntpd default
 lbu include /root/.ssh
 
 ######### CUSTOM STUFF ##################
-echo "options vfio-pci ids=10de:13c2,10de:0fbb,1106:3483 disable_vga=1
+echo "options vfio-pci ids=vfio-pci.ids=1106:3483
 options kvm-intel nested=1 enable_apicv=1
 options kvm ignore_msrs=1
-options raid456 devices_handle_discard_safely=Y
 blacklist snd_hda_intel
 " > /etc/modprobe.d/vfio.conf
 
 echo '#!/bin/sh
-# Load require modules
-#modprobe raid5
+# Setup mounts
 
-#mkdir /media/storage01
-
-#mdadm --assemble /dev/md0 --uuid="4149adcf:15bd7541:555b931f:9b10a45a"
-
-mkdir /dev/hugepages
-
-mount -t hugetlbfs none /dev/hugepages
-
-#mount /dev/md0 /media/storage01
-#echo check > /sys/block/md0/md/sync_action
-
-#fstrim /media/storage01 &
-#
 mkdir /media/iso
 mkdir /media/bios
 
