@@ -23,6 +23,9 @@ cat /media/usb/boot/syslinux/syslinux.cfg.old | sed 's/^MENU LABEL.*/MENU LABEL 
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
 cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g'> /media/usb/boot/grub/grub.cfg
 
+# Switch to edge kernel
+sed -i '/lts/edge/g' /media/usb/boot/grub/grub.cfg
+
 #mount -o remount,ro /media/usb
 ln -s /media/usb/cache /etc/apk/cache
 
@@ -41,12 +44,19 @@ setup-alpine -e -f /media/cdrom/answer.txt
 echo "Enable extra repositories"
 sed -i '/^#.*v3.*community/s/^#/@community /' /etc/apk/repositories
 
+
 apk update
 apk upgrade
 
 # Install required tools
 apk add util-linux bridge bridge-utils qemu-img@community mdadm bcache-tools qemu-system-x86_64@community ovmf@community bash dialog bc nettle jq vim lvm2 || err "Cannot install packages"
 
+# Install edge kernel
+# Create reposotiry file for edge
+cp /etc/apk/repositories /etc/apk/repositories-edge
+sed -i 's/@community //' /etc/apk/repositories-edge
+
+update-kernel -f edge --repositories-file /etc/apk/repositories-edge /media/usb/boot
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
 
@@ -76,6 +86,7 @@ echo "set bell-style none" >> /etc/inputrc
 echo "#!/bin/sh
 # Load modules
 modprobe kvm_intel
+modprobe kvm_amd
 modprobe vfio_iommu_type1
 modprobe tun
 modprobe vfio-pci
@@ -102,20 +113,20 @@ blacklist snd_hda_intel
 
 echo '#!/bin/sh
 # Load require modules
-modprobe raid5
+#modprobe raid5
 
-mkdir /media/storage01
+#mkdir /media/storage01
 
-mdadm --assemble /dev/md0 --uuid="4149adcf:15bd7541:555b931f:9b10a45a"
+#mdadm --assemble /dev/md0 --uuid="4149adcf:15bd7541:555b931f:9b10a45a"
 
 mkdir /dev/hugepages
 
 mount -t hugetlbfs none /dev/hugepages
 
-mount /dev/md0 /media/storage01
-echo check > /sys/block/md0/md/sync_action
+#mount /dev/md0 /media/storage01
+#echo check > /sys/block/md0/md/sync_action
 
-fstrim /media/storage01 &
+#fstrim /media/storage01 &
 ' >> /etc/local.d/mount.start
 chmod +x /etc/local.d/mount.start
 

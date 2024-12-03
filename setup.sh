@@ -107,7 +107,7 @@ echo "Starting stage02..."
 
 sudo expect -c "set timeout -1
 set log_user 1
-spawn $qemu -m 1G -machine q35 -enable-kvm \
+spawn $qemu -m 8G -machine q35 -enable-kvm \
 -drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
 -drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
 -global driver=cfi.pflash01,property=secure,value=off \
