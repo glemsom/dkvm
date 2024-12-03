@@ -13,7 +13,7 @@ mkdir /media/usb/cache
 
 # Extra arguments for Linux kernel
 #TODO : Get this from a config file instead?
-extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on iommu=pt transparent_hugepage=never vfio-pci.ids=10de:13c2,10de:0fbb,1106:3483 elevator=noop waitusb=5 default_hugepagesz=2M hugepagesz=2M isolcpus=1,2,3,4,5,7,8,9,10,11 nohz_full=1,2,3,4,5,7,8,9,10,11 rcu_nocbs=1,2,3,4,5,7,8,9,10,11"
+extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on iommu=pt vfio-pci.ids=10de:13c2,10de:0fbb,1106:3483 elevator=noop waitusb=5 default_hugepagesz=2M hugepagesz=2M isolcpus=1,2,3,4,5,7,8,9,10,11 nohz_full=1,2,3,4,5,7,8,9,10,11 rcu_nocbs=1,2,3,4,5,7,8,9,10,11"
 
 # Patch syslinux (legacy boot)
 cp /media/usb/boot/syslinux/syslinux.cfg /media/usb/boot/syslinux/syslinux.cfg.old

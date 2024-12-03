@@ -2,4 +2,5 @@
  * Refactor isolcpu and such to be setup on first boot instead
   * Maybe make a menu/helper for setting up isolcpu/vCPU pinning
   * Maybe make a menu/helper for PCI passthrough
+* Support TPM
   
