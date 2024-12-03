@@ -49,7 +49,7 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community bash dialog bc nettle jq vim lvm2 || err "Cannot install packages"
+apk add util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community swtpm@community bash dialog bc nettle jq vim lvm2 e2fsprogs || err "Cannot install packages"
 
 # Install edge kernel
 # Create reposotiry file for edge
@@ -107,6 +107,7 @@ lbu include /root/.ssh
 ######### CUSTOM STUFF ##################
 echo "options vfio-pci ids=10de:13c2,10de:0fbb,1106:3483
 options kvm-intel nested=1 enable_apicv=1
+options kvm-amd nested=1
 options kvm ignore_msrs=1
 blacklist snd_hda_intel
 " > /etc/modprobe.d/vfio.conf

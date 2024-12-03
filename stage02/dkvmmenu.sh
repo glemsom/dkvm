@@ -32,6 +32,19 @@ buildMenuItemVMs() {
   done
 }
 
+doStartTPM() {
+  # Cleanup if an old was running
+  if [ -n "$tpmPID" ]; then 
+    kill $tpmPID >/dev/null 2>&1
+    find /tmp/${tpmUUID}/ -type f -delete
+    rmdir /tmp/${tpmUUID}
+  fi
+  tpmUUID=$(uuidgen)
+  mkdir -p /tmp/${tpmUUID}
+  /usr/bin/swtpm socket --tpmstate dir=/tmp/${tpmUUID},mode=0600 --ctrl type=unixio,path=/tmp/${tpmUUID}.sock,mode=0600 --log file=/root/tpm-${tpmUUID}.log --terminate --tpm2 &
+  tpmPID=$!
+}
+
 doShowLog() {
   # CPU monitor
   (
@@ -360,7 +373,8 @@ mainHandlerVM() {
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
   OPTS+=" -m $VMMEM"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
-  OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x062a,productid=0x3633 -device usb-host,vendorid=0x046d,productid=0xc328"
+  OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x062a,productid=0x3633 -device usb-host,vendorid=0x046d,productid=0xc328" #TODO Read this from config
+  OPTS+="  -chardev socket,id=chrtpm,path=/tmp/${tpmUUID}.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
   OPTS+=" $VMEXTRA "
   if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
     local TMPALLCORES=$(echo $VMCPU | sed 's/,/ /g'|wc -w)
