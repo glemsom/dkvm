@@ -49,7 +49,7 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils qemu-img@community mdadm bcache-tools qemu-system-x86_64@community ovmf@community bash dialog bc nettle jq vim lvm2 || err "Cannot install packages"
+apk add util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community bash dialog bc nettle jq vim lvm2 || err "Cannot install packages"
 
 # Install edge kernel
 # Create reposotiry file for edge
@@ -57,6 +57,7 @@ cp /etc/apk/repositories /etc/apk/repositories-edge
 sed -i 's/@community //' /etc/apk/repositories-edge
 
 update-kernel -f edge --repositories-file /etc/apk/repositories-edge /media/usb/boot
+
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
 
@@ -127,6 +128,14 @@ mount -t hugetlbfs none /dev/hugepages
 #echo check > /sys/block/md0/md/sync_action
 
 #fstrim /media/storage01 &
+#
+mkdir /media/iso
+mkdir /media/bios
+
+lvchange -ay vg_nvme
+
+mount /dev/mapper/vg_nvme-bios /media/bios
+mount /dev/mapper/vg_nvme-iso /media/iso
 ' >> /etc/local.d/mount.start
 chmod +x /etc/local.d/mount.start
 
