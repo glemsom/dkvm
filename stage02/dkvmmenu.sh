@@ -399,7 +399,7 @@ mainHandlerVM() {
   fi
   if [ ! -z "$VMCDROM" ]; then
     for CD in $VMCDROM; do
-      OPTS+=" -drive file=${VMCDROM},media=cdrom"
+      OPTS+=" -drive file=${CD},media=cdrom"
     done
   fi
   if [ ! -z "$VMPCIEDEVICE" ]; then
