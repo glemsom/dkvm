@@ -358,8 +358,9 @@ mainHandlerVM() {
   OPTS="-nodefaults -no-user-config -accel accel=kvm,kernel-irqchip=on -machine q35,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
   OPTS+=" -mem-prealloc -overcommit mem-lock=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
-  OPTS+=" -mem-path /dev/hugepages -m $VMMEM"
+  OPTS+=" -m $VMMEM"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
+  OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x062a,productid=0x3633 -device usb-host,vendorid=0x046d,productid=0xc328"
   OPTS+=" $VMEXTRA "
   if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
     local TMPALLCORES=$(echo $VMCPU | sed 's/,/ /g'|wc -w)
