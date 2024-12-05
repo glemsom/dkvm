@@ -41,7 +41,7 @@ doStartTPM() {
   fi
   tpmUUID=$(uuidgen)
   mkdir -p /tmp/${tpmUUID}
-  /usr/bin/swtpm socket --tpmstate dir=/tmp/${tpmUUID},mode=0600 --ctrl type=unixio,path=/tmp/${tpmUUID}.sock,mode=0600 --log file=/root/tpm-${tpmUUID}.log --terminate --tpm2 &
+  /usr/bin/swtpm socket --tpmstate dir=/tmp/${tpmUUID},mode=0600 --ctrl type=unixio,path=/tmp/${tpmUUID}.sock,mode=0600 --log file=/tmp/tpm-${tpmUUID}.log --terminate --tpm2 &
   tpmPID=$!
 }
 
@@ -283,6 +283,61 @@ EOF
   fi
 }
 
+updateGrub() {
+    mount -oremount,rw /media/usb/ || err "Cannot remount /media/usb"
+
+    local grubFile=/media/usb/boot/grub/grub.cfg
+
+    local key="$1"
+    local value="$2"
+
+    [ ! -z "$key" ] || [ ! -z "$value" ] || err "VFIO ID's not found $key $value"
+
+    # Get clean Linux line
+    grubLinuxLineCleaned=$(sed -e "s/ ${key}=[^ ]*//g" <<< $(grep ^linux $grubFile))
+
+    # Backup grub file
+    cp ${grubFile} ${grubFile}.bak || err "Unable to backup GRUB config file"
+
+    # Put in cleaned Linux line
+    sed "s#^linux.*#$grubLinuxLineCleaned#g" -i $grubFile
+
+    # Add key=value
+    sed "/^linux.*/s/\$/ ${key}=${value}/" -i $grubFile || err "Unable to patch grub.cfg"
+
+    mount -oremount,ro /media/usb/ || err "Cannot remount /media/usb"
+
+    dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 20 60
+}
+
+doPCIConfig() {
+  local pciDevices=$(lspci)
+  declare -a deviceInfo
+
+  OLDIFS=$IFS
+  IFS="
+"
+
+  for pciDevice in $pciDevices; do
+      pciID=$(cut -f 1  -d " " <<< $pciDevice)
+      pciName=$(cut -f 2- -d " " <<< $pciDevice)
+
+      # Build dialog
+      dialogStr+="\"$pciID\" \"$pciName\" off "
+  done
+
+  selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select PCI devices for passthrough\" 40 80 70 $dialogStr | tr ' ' '\n')
+
+  [ -z "$selectedDevices" ] && break
+
+  for selectedDevice in $selectedDevices; do
+      vfioIds+=$(lspci -vn -b -s $selectedDevice | grep Subsystem | head -n1 | cut -d: -f2 | sed 's/ //g'):"$(lspci -vn -b -s $selectedDevice | grep Subsystem | head -n1 | cut -d: -f3 | sed 's/ //g') "
+  done
+
+  updateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
+  IFS=$OLDIFS
+}
+
 doSaveChanges() {
   local changesTxt="Changes saved...
 $(lbu diff)
@@ -292,6 +347,7 @@ $(lbu commit)"
 
   showMainMenu && doSelect
 }
+
 mainHandlerInternal() {
   local item="$1"
   if [ "$1" == "INT_SHELL" ]; then
@@ -307,7 +363,19 @@ mainHandlerInternal() {
       showMainMenu && doSelect
     fi
   elif [ "$1" == "INT_CONFIG" ]; then
-    local menuStr="--title '$title' --backtitle '$backtitle' --no-tags --menu 'Select option' 20 50 20 1 'Add new VM' 2 'Edit VM' 3 'Edit CPU Topology' 4 'Save Changes' --stdout"
+    declare -a menuOptions
+    menuOptions[1]="Add new VM"
+    menuOptions[2]="Edit VM"
+    menuOptions[3]="Edit CPU Topology"
+    menuOptions[4]="Edit PCI Passthrough"
+    local itemString=""
+
+    for item in "${!menuOptions[@]}"; do
+      itemString+="$item '${menuOptions[$item]}' "
+    done
+    itemString=$(echo "$itemString" | sed 's/ $//')
+
+    local menuStr="--title '$title' --backtitle '$backtitle' --no-tags --menu 'Select option' 20 50 20 $itemString  --stdout"
     local menuAnswer=$(eval "dialog $menuStr")
 
     if [ "$menuAnswer" == "1" ]; then
@@ -319,6 +387,8 @@ mainHandlerInternal() {
       vim cpuTopology
       configureKernelCPUTopology
     elif [ "$menuAnswer" == "4" ]; then
+      doPCIConfig
+    elif [ "$menuAnswer" == "5" ]; then
       doSaveChanges
     fi
     showMainMenu && doSelect
@@ -328,18 +398,18 @@ mainHandlerInternal() {
   fi
 }
 
-setupHugePages() {
-  local mem=$1
-  local memInKB=$(echo "$mem * 1024" | bc)
+# setupHugePages() {
+#   local mem=$1
+#   local memInKB=$(echo "$mem * 1024" | bc)
 
-  # Get page size
-  local pageSize=$(grep Hugepagesize /proc/meminfo | awk '{print $2}')
+#   # Get page size
+#   local pageSize=$(grep Hugepagesize /proc/meminfo | awk '{print $2}')
 
-  # Calculate pages required
-  local required=$(echo "$memInKB / $pageSize" | bc)
+#   # Calculate pages required
+#   local required=$(echo "$memInKB / $pageSize" | bc)
 
-  echo $required > /proc/sys/vm/nr_hugepages
-}
+#   echo $required > /proc/sys/vm/nr_hugepages
+# }
 
 realTimeTune() {
   # Move dirty page writeback to CPU0 only
@@ -352,6 +422,7 @@ realTimeTune() {
 
 mainHandlerVM() {
   clear
+  doStartTPM
   doOut "clear"
   local configFile="dkvm_vmconfig.${1}"
 
@@ -420,7 +491,8 @@ mainHandlerVM() {
     OPTS+=" -cpu host "
   fi
   doOut "clear"
-  setupHugePages $VMMEM |& doOut
+  # NOTE: Static HugePages not used right now (We use THP)
+  #setupHugePages $VMMEM |& doOut
   IRQAffinity
   realTimeTune
   ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
@@ -469,7 +541,6 @@ getConfigItem() {
   fi
 
   echo "$value"
-
 }
 
 
