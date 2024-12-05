@@ -13,6 +13,8 @@ declare -a menuItemsType
 declare -a menuItemsVMs
 menuAnswer=""
 
+configPassthroughDevices=passthroughDevices
+
 err() {
   echo "ERROR $@"
   exit 1
@@ -327,6 +329,7 @@ doPCIConfig() {
   done
 
   selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select PCI devices for passthrough\" 40 80 70 $dialogStr | tr ' ' '\n')
+  echo "$selectedDevices" > $configPassthroughDevices
 
   [ -z "$selectedDevices" ] && break
 
@@ -430,7 +433,8 @@ mainHandlerVM() {
   local VMHARDDISK=$(getConfigItem $configFile HARDDISK)
   local VMCDROM=$(getConfigItem $configFile CDROM)
   local VMPCIDEVICE=$(getConfigItem $configFile PCIDEVICE)
-  local VMPCIEDEVICE=$(getConfigItem $configFile PCIEDEVICE)
+  #local VMPCIEDEVICE=$(getConfigItem $configFile PCIEDEVICE)
+  local VMPASSTHROUGHDEVICES=$(cat $configPassthroughDevices)
   local VMBIOS=$(getConfigItem $configFile BIOS)
   local VMBIOS_VARS=$(getConfigItem $configFile BIOS_VARS)
   local VMMEM=$(getConfigItem $configFile MEM)
@@ -445,7 +449,7 @@ mainHandlerVM() {
   OPTS+=" -m $VMMEM"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x062a,productid=0x3633 -device usb-host,vendorid=0x046d,productid=0xc328" #TODO Read this from config
-  OPTS+="  -chardev socket,id=chrtpm,path=/tmp/${tpmUUID}.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
+  OPTS+="  -chardev socket,id=chrtpm,path=/tmp/${tpmUUID}.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0" #TOOD We need a persistent config
   OPTS+=" $VMEXTRA "
   if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
     local TMPALLCORES=$(echo $VMCPU | sed 's/,/ /g'|wc -w)
@@ -473,14 +477,14 @@ mainHandlerVM() {
       OPTS+=" -drive file=${CD},media=cdrom"
     done
   fi
-  if [ ! -z "$VMPCIEDEVICE" ]; then
+  if [ ! -z "$VMPASSTHROUGHDEVICES" ]; then
     OPTS+=" -device pcie-root-port,id=root_port1,chassis=0,slot=0,bus=pcie.0"
-    for PCIEDEVICE in $VMPCIEDEVICE; do
+    for PCIEDEVICE in $VMPASSTHROUGHDEVICES; do
       OPTS+=" -device vfio-pci,host=${PCIEDEVICE},bus=root_port1"
     done
   fi
-  if [ ! -z "$VMPCIDEVICE" ]; then
-    for PCIDEVICE in $VMPCIDEVICE; do
+  if [ ! -z "$VMPASSTHROUGHDEVICES" ]; then
+    for PCIDEVICE in $VMPASSTHROUGHDEVICES; do
       OPTS+=" -device vfio-pci,host=${PCIDEVICE}"
     done
   fi
@@ -495,7 +499,7 @@ mainHandlerVM() {
   #setupHugePages $VMMEM |& doOut
   IRQAffinity
   realTimeTune
-  ( reloadPCIDevices $VMPCIDEVICE ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
+  ( reloadPCIDevices $VMPASSTHROUGHDEVICES ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
   vCPUpin &
   doOut showlog
 }
