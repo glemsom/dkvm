@@ -438,7 +438,7 @@ mainHandlerVM() {
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
   OPTS+=" -m $VMMEM"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
-  OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x062a,productid=0x3633 -device usb-host,vendorid=0x046d,productid=0xc328" #TODO Read this from config
+  OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x062a,productid=0x3633 -device usb-host,vendorid=0x046d,productid=0xc328 -device usb-host,vendorid=0x1532,productid=0x0528" #TODO Read this from config
   OPTS+="  -chardev socket,id=chrtpm,path=/tmp/${tpmUUID}.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0" #TOOD We need a persistent config
   OPTS+=" $VMEXTRA "
   if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
@@ -447,7 +447,7 @@ mainHandlerVM() {
     OPTS+=" -smp threads=${CPUTHREADS},cores=${TMPCORES}"
   fi
   if [ ! -z "$VMBIOS" ] && [ ! -z "$VMBIOS_VARS" ]; then
-    OPTS+=" -drive if=pflash,format=raw,readonly,file=${VMBIOS} -drive if=pflash,format=raw,file=${VMBIOS_VARS}"
+    OPTS+=" -drive if=pflash,format=raw,readonly=on,file=${VMBIOS} -drive if=pflash,format=raw,file=${VMBIOS_VARS}"
   fi
 
   if [ ! -z "$VMHARDDISK" ]; then
