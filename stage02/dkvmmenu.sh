@@ -503,13 +503,11 @@ reloadPCIDevices() {
     echo "0000:${device}" >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>&1 | doOut
     echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1 | doOut
     echo "Unloaded $pciDevice"
-    if [ -e "/sys/bus/pci/devices/0000:${pciDevice}/reset" ]; then
+    if [ -e "/sys/bus/pci/devices/0000:${device}/reset" ]; then
       echo "Resetting $pciDevice"
-      echo 1 >"/sys/bus/pci/devices/0000:${pciDevice}/reset" 2>&1 | doOut
+      echo 1 >"/sys/bus/pci/devices/0000:${device}/reset" 2>&1 | doOut
     fi
     sleep 1
-    echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}" | doOut
-    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
   done <<< "$@"
 
   while read device; do
@@ -517,6 +515,7 @@ reloadPCIDevices() {
     local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
     echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}" | doOut
     echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
+    sleep 1
   done <<< "$@"
 }
 
