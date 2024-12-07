@@ -472,23 +472,22 @@ mainHandlerVM() {
   if [ ! -z "$VMPASSTHROUGHDEVICES" ]; then
     # Use PCIE bus
     loopCount=0
-    for $VMPASSTHROUGHDEVICE in $VMPASSTHROUGHDEVICES; do
+    for VMPASSTHROUGHDEVICE in $VMPASSTHROUGHDEVICES; do
     let loopCount++
       if isGPU $VMPASSTHROUGHDEVICE; then # If this is a GPU adapter, set multifunction=on
-        OPTS+=" -device pcie-root-port,id=root_port${loopCount},multifunction=on,x-vga=on,chassis=0,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHDEVICE}"
+        OPTS+=" -device pcie-root-port,multifunction=on,slot=$loopCount,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHDEVICE}"
       else
-        OPTS+=" -device pcie-root-port,id=root_port${loopCount},chassis=0,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHDEVICE}"
+        OPTS+=" -device pcie-root-port,slot=$loopCount,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHDEVICE}"
       fi
     done
   fi
   if [ ! -z "$VMCPUOPTS" ]; then
     OPTS+=" -cpu host,${VMCPUOPTS}"
-
   else
     OPTS+=" -cpu host "
   fi
-  echo "Options for QEMU: $OPTS" | doOut
   doOut "clear"
+  echo "QEMU Options $OPTS" | doOut
   IRQAffinity
   realTimeTune
   ( reloadPCIDevices "$VMPASSTHROUGHDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
