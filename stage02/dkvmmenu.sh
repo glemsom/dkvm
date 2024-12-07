@@ -14,7 +14,7 @@ declare -a menuItemsVMs
 menuAnswer=""
 
 configPassthroughPCIDevices=passthroughPCIDevices
-configPassthroughUSB=passthroughUSB
+configPassthroughUSBDevices=passthroughUSB
 
 err() {
   echo "ERROR $@"
@@ -505,8 +505,8 @@ mainHandlerVM() {
   fi
   if [ ! -z "$VMPASSTHROUGHUSBDEVICES" ]; then
     for VMPASSTHROUGHUSBDEVICE in $VMPASSTHROUGHUSBDEVICES; do
-      local USBVendor=$(cut -f : -f 1 <<<$VMPASSTHROUGHUSBDEVICE)
-      local USBProduct=$(cut -f : -f 2 <<<$VMPASSTHROUGHUSBDEVICE)
+      local USBVendor=$(cut -d : -f 1 <<<$VMPASSTHROUGHUSBDEVICE)
+      local USBProduct=$(cut -d : -f 2 <<<$VMPASSTHROUGHUSBDEVICE)
       OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x${USBVendor},productid=0x${USBProduct}"
     done
   fi
@@ -519,7 +519,7 @@ mainHandlerVM() {
   echo "QEMU Options $OPTS" | doOut
   IRQAffinity
   realTimeTune
-  ( reloadPCIDevices "$PCIVMPASSTHROUGHDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
+  ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
   vCPUpin &
   doOut showlog
 }
