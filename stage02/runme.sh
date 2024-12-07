@@ -24,7 +24,7 @@ cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
 cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g'> /media/usb/boot/grub/grub.cfg
 
 # Switch to edge kernel
-sed -i 's/lts/edge/g' /media/usb/boot/grub/grub.cfg
+#sed -i 's/lts/edge/g' /media/usb/boot/grub/grub.cfg
 
 #mount -o remount,ro /media/usb
 ln -s /media/usb/cache /etc/apk/cache
@@ -53,10 +53,10 @@ apk add util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@commu
 
 # Install edge kernel
 # Create reposotiry file for edge
-cp /etc/apk/repositories /etc/apk/repositories-edge
-sed -i 's/@community //' /etc/apk/repositories-edge
+#cp /etc/apk/repositories /etc/apk/repositories-edge
+#sed -i 's/@community //' /etc/apk/repositories-edge
 
-update-kernel -f edge --repositories-file /etc/apk/repositories-edge /media/usb/boot
+#update-kernel -f edge --repositories-file /etc/apk/repositories-edge /media/usb/boot
 
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
