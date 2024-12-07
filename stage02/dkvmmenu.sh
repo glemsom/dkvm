@@ -335,8 +335,6 @@ doPCIConfig() {
       vfioIds+=$(lspci -n -s $selectedDevice | grep -Eo '(([0-9]|[a-f]){4}|:){3}'),
   done
 
-  echo $vfioIds >> log
-
   updateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
   doSaveChanges
   IFS=$OLDIFS
@@ -497,17 +495,20 @@ mainHandlerVM() {
 
 reloadPCIDevices() {
   while read device; do
-    echo Resetting $device | doOut
     local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
     local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-    echo "0000:${device}" >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>&1 | doOut
-    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1 | doOut
-    echo "Unloaded $pciDevice"
-    if [ -e "/sys/bus/pci/devices/0000:${device}/reset" ]; then
-      echo "Resetting $pciDevice"
-      echo 1 >"/sys/bus/pci/devices/0000:${device}/reset" 2>&1 | doOut
+    if [ -e /sys/bus/pci/devices/0000:${device}/driver/unbind ]; then
+      echo "0000:${device}" >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>&1 | doOut
+      sleep 1
     fi
+    echo "Removing $pciVendor $pciDevice from vfio-pci" | doOut
+    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1 | doOut
     sleep 1
+    if [ -e "/sys/bus/pci/devices/0000:${device}/reset" ]; then
+      echo "Resetting $device"
+      echo 1 >"/sys/bus/pci/devices/0000:${device}/reset" 2>&1 | doOut
+      sleep 1
+    fi
   done <<< "$@"
 
   while read device; do
