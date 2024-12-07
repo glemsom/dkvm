@@ -157,8 +157,6 @@ doOut() {
     killall -9 qemu-system-x86_64
     reset
     clear
-    # Reset hugepages
-    echo 0 > /proc/sys/vm/nr_hugepages
     killall dkvmmenu.sh
     exit
   else
@@ -334,10 +332,13 @@ doPCIConfig() {
   [ -z "$selectedDevices" ] && break
 
   for selectedDevice in $selectedDevices; do
-      vfioIds+=$(lspci -vn -b -s $selectedDevice | grep Subsystem | head -n1 | cut -d: -f2 | sed 's/ //g'):"$(lspci -vn -b -s $selectedDevice | grep Subsystem | head -n1 | cut -d: -f3 | sed 's/ //g') "
+      vfioIds+=$(lspci -n -s $selectedDevice | grep -Eo '(([0-9]|[a-f]){4}|:){3}'),
   done
 
+  echo $vfioIds >> log
+
   updateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
+  doSaveChanges
   IFS=$OLDIFS
 }
 
@@ -371,6 +372,7 @@ mainHandlerInternal() {
     menuOptions[2]="Edit VM"
     menuOptions[3]="Edit CPU Topology"
     menuOptions[4]="Edit PCI Passthrough"
+    menuOptions[5]="Save changes"
     local itemString=""
 
     for item in "${!menuOptions[@]}"; do
@@ -401,19 +403,6 @@ mainHandlerInternal() {
   fi
 }
 
-# setupHugePages() {
-#   local mem=$1
-#   local memInKB=$(echo "$mem * 1024" | bc)
-
-#   # Get page size
-#   local pageSize=$(grep Hugepagesize /proc/meminfo | awk '{print $2}')
-
-#   # Calculate pages required
-#   local required=$(echo "$memInKB / $pageSize" | bc)
-
-#   echo $required > /proc/sys/vm/nr_hugepages
-# }
-
 realTimeTune() {
   # Move dirty page writeback to CPU0 only
   echo 1 > /sys/devices/virtual/workqueue/cpumask
@@ -421,6 +410,11 @@ realTimeTune() {
   echo 300 >/proc/sys/vm/stat_interval 2>/dev/null
   # Disable watchdog
   echo 0   >/proc/sys/kernel/watchdog 2>/dev/null
+}
+
+isGPU() {
+  local device=$1
+  return $(lspci -s $device | grep -q VGA)
 }
 
 mainHandlerVM() {
@@ -432,8 +426,6 @@ mainHandlerVM() {
   local VMNAME="$(getConfigItem $configFile NAME)"
   local VMHARDDISK=$(getConfigItem $configFile HARDDISK)
   local VMCDROM=$(getConfigItem $configFile CDROM)
-  local VMPCIDEVICE=$(getConfigItem $configFile PCIDEVICE)
-  #local VMPCIEDEVICE=$(getConfigItem $configFile PCIEDEVICE)
   local VMPASSTHROUGHDEVICES=$(cat $configPassthroughDevices)
   local VMBIOS=$(getConfigItem $configFile BIOS)
   local VMBIOS_VARS=$(getConfigItem $configFile BIOS_VARS)
@@ -478,14 +470,15 @@ mainHandlerVM() {
     done
   fi
   if [ ! -z "$VMPASSTHROUGHDEVICES" ]; then
-    OPTS+=" -device pcie-root-port,id=root_port1,chassis=0,slot=0,bus=pcie.0"
-    for PCIEDEVICE in $VMPASSTHROUGHDEVICES; do
-      OPTS+=" -device vfio-pci,host=${PCIEDEVICE},bus=root_port1"
-    done
-  fi
-  if [ ! -z "$VMPASSTHROUGHDEVICES" ]; then
-    for PCIDEVICE in $VMPASSTHROUGHDEVICES; do
-      OPTS+=" -device vfio-pci,host=${PCIDEVICE}"
+    # Use PCIE bus
+    loopCount=0
+    for $VMPASSTHROUGHDEVICE in $VMPASSTHROUGHDEVICES; do
+    let loopCount++
+      if isGPU $VMPASSTHROUGHDEVICE; then # If this is a GPU adapter, set multifunction=on
+        OPTS+=" -device pcie-root-port,id=root_port${loopCount},multifunction=on,x-vga=on,chassis=0,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHDEVICE}"
+      else
+        OPTS+=" -device pcie-root-port,id=root_port${loopCount},chassis=0,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHDEVICE}"
+      fi
     done
   fi
   if [ ! -z "$VMCPUOPTS" ]; then
@@ -494,44 +487,38 @@ mainHandlerVM() {
   else
     OPTS+=" -cpu host "
   fi
+  echo "Options for QEMU: $OPTS" | doOut
   doOut "clear"
-  # NOTE: Static HugePages not used right now (We use THP)
-  #setupHugePages $VMMEM |& doOut
   IRQAffinity
   realTimeTune
-  ( reloadPCIDevices $VMPASSTHROUGHDEVICES ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
+  ( reloadPCIDevices "$VMPASSTHROUGHDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
   vCPUpin &
   doOut showlog
 }
 
 reloadPCIDevices() {
-  local VMPCIDEVICE="$@"
-  for PCIDEVICE in $(echo "$VMPCIDEVICE" | tr ' ' '\n'); do
-    PCIDEVICE=$(echo $PCIDEVICE | sed 's/,.*//') # Strip options
-    if [ -e /sys/bus/pci/devices/0000:${PCIDEVICE}/vendor ]; then
-      VENDOR=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/vendor)
-      DEVICE=$(cat /sys/bus/pci/devices/0000:${PCIDEVICE}/device)
-      if [ -e /sys/bus/pci/devices/0000:${PCIDEVICE}/driver ]; then
-        echo "0000:${PCIDEVICE}" >/sys/bus/pci/devices/0000:${PCIDEVICE}/driver/unbind 2>&1 | doOut
-        echo "Unloaded $PCIDEVICE" | doOut
-      fi
-      sleep 0.5
-      if [ -e "/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" ]; then
-        echo "Resetting $PCIDEVICE" | doOut
-        echo 1 >"/sys/bus/pci/devices/0000:${PCIDEVICE}/reset" 2>&1 | doOut
-        sleep 0.5
-        echo "$VENDOR $DEVICE" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1 | doOut
-      fi
-      sleep 0.5
-
-      echo "Registrating vfio-pci on ${VENDOR}:${DEVICE}" | doOut
-      echo "$VENDOR $DEVICE" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
-    else
-      echo "Device not found: ${PCIDEVICE}" | doOut
+  while read device; do
+    echo Resetting $device | doOut
+    local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
+    local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
+    echo "0000:${device}" >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>&1 | doOut
+    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1 | doOut
+    echo "Unloaded $pciDevice"
+    if [ -e "/sys/bus/pci/devices/0000:${pciDevice}/reset" ]; then
+      echo "Resetting $pciDevice"
+      echo 1 >"/sys/bus/pci/devices/0000:${pciDevice}/reset" 2>&1 | doOut
     fi
-    sleep 0.5
-  done
-  sleep 2
+    sleep 1
+    echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}" | doOut
+    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
+  done <<< "$@"
+
+  while read device; do
+    local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
+    local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
+    echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}" | doOut
+    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
+  done <<< "$@"
 }
 
 getConfigItem() {
@@ -642,6 +629,7 @@ IRQAffinity() {
 }
 
 setupCPULayout
+[ ! -e $configPassthroughDevices ] && doPCIConfig
 
 showMainMenu
 doSelect
