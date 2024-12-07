@@ -13,7 +13,8 @@ declare -a menuItemsType
 declare -a menuItemsVMs
 menuAnswer=""
 
-configPassthroughDevices=passthroughDevices
+configPassthroughPCIDevices=passthroughPCIDevices
+configPassthroughUSB=passthroughUSB
 
 err() {
   echo "ERROR $@"
@@ -283,6 +284,23 @@ EOF
   fi
 }
 
+doUSBConfig() {
+  echo "USB Config" | doLog
+  local USBDevices=$(lsusb)
+  dialogStr=""
+
+  for USBDevice in $USBDevices; do
+    USBId=$(grep -Eo '(([0-9]|[a-f]){4}|:){3}' <<<$USBDevice)
+    USBName=$(cut -d : -f 2- <<<$USBDevice | sed "s/.*$USBId //g")
+    dialogStr+="\"$USBId\" \"$USBName\" off "
+  done
+  selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select USB devices for passthrough\" 40 80 70 $dialogStr | tr ' ' '\n')
+
+  [ -z "$selectedDevices" ] && break
+
+  echo "$selectedDevices" > $configPassthroughUSB
+}
+
 updateGrub() {
     mount -oremount,rw /media/usb/ || err "Cannot remount /media/usb"
 
@@ -312,6 +330,7 @@ updateGrub() {
 
 doPCIConfig() {
   local pciDevices=$(lspci)
+  dialogStr=""
   declare -a deviceInfo
 
   OLDIFS=$IFS
@@ -327,7 +346,7 @@ doPCIConfig() {
   done
 
   selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select PCI devices for passthrough\" 40 80 70 $dialogStr | tr ' ' '\n')
-  echo "$selectedDevices" > $configPassthroughDevices
+  echo "$selectedDevices" > $configPassthroughPCIDevices
 
   [ -z "$selectedDevices" ] && break
 
@@ -370,7 +389,9 @@ mainHandlerInternal() {
     menuOptions[2]="Edit VM"
     menuOptions[3]="Edit CPU Topology"
     menuOptions[4]="Edit PCI Passthrough"
-    menuOptions[5]="Save changes"
+    menuOptions[5]="Edit USB Passthrough"
+    menuOptions[6]="Save changes"
+    
     local itemString=""
 
     for item in "${!menuOptions[@]}"; do
@@ -392,6 +413,8 @@ mainHandlerInternal() {
     elif [ "$menuAnswer" == "4" ]; then
       doPCIConfig
     elif [ "$menuAnswer" == "5" ]; then
+      doUSBConfig
+    elif [ "$menuAnswer" == "6" ]; then
       doSaveChanges
     fi
     showMainMenu && doSelect
@@ -424,7 +447,8 @@ mainHandlerVM() {
   local VMNAME="$(getConfigItem $configFile NAME)"
   local VMHARDDISK=$(getConfigItem $configFile HARDDISK)
   local VMCDROM=$(getConfigItem $configFile CDROM)
-  local VMPASSTHROUGHDEVICES=$(cat $configPassthroughDevices)
+  local VMPASSTHROUGHPCIDEVICES=$(cat $configPassthroughPCIDevices)
+  local VMPASSTHROUGHUSBDEVICES=$(cat $configPassthroughUSBDevices)
   local VMBIOS=$(getConfigItem $configFile BIOS)
   local VMBIOS_VARS=$(getConfigItem $configFile BIOS_VARS)
   local VMMEM=$(getConfigItem $configFile MEM)
@@ -438,7 +462,7 @@ mainHandlerVM() {
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
   OPTS+=" -m $VMMEM"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
-  OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x062a,productid=0x3633 -device usb-host,vendorid=0x046d,productid=0xc328 -device usb-host,vendorid=0x1532,productid=0x0528" #TODO Read this from config
+  #OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x062a,productid=0x3633 -device usb-host,vendorid=0x046d,productid=0xc328 -device usb-host,vendorid=0x1532,productid=0x0528" #TODO Read this from config
   OPTS+="  -chardev socket,id=chrtpm,path=/tmp/${tpmUUID}.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0" #TOOD We need a persistent config
   OPTS+=" $VMEXTRA "
   if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
@@ -467,16 +491,23 @@ mainHandlerVM() {
       OPTS+=" -drive file=${CD},media=cdrom"
     done
   fi
-  if [ ! -z "$VMPASSTHROUGHDEVICES" ]; then
+  if [ ! -z "$VMPASSTHROUGHPCIDEVICES" ]; then
     # Use PCIE bus
     loopCount=0
-    for VMPASSTHROUGHDEVICE in $VMPASSTHROUGHDEVICES; do
+    for VMPASSTHROUGHPCIDEVICE in $VMPASSTHROUGHPCIDEVICES; do
     let loopCount++
-      if isGPU $VMPASSTHROUGHDEVICE; then # If this is a GPU adapter, set multifunction=on
-        OPTS+=" -device pcie-root-port,multifunction=on,slot=$loopCount,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHDEVICE}"
+      if isGPU $VMPASSTHROUGHPCIDEVICE; then # If this is a GPU adapter, set multifunction=on
+        OPTS+=" -device pcie-root-port,multifunction=on,slot=$loopCount,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE}"
       else
-        OPTS+=" -device pcie-root-port,slot=$loopCount,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHDEVICE}"
+        OPTS+=" -device pcie-root-port,slot=$loopCount,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE}"
       fi
+    done
+  fi
+  if [ ! -z "$VMPASSTHROUGHUSBDEVICES" ]; then
+    for VMPASSTHROUGHUSBDEVICE in $VMPASSTHROUGHUSBDEVICES; do
+      local USBVendor=$(cut -f : -f 1 <<<$VMPASSTHROUGHUSBDEVICE)
+      local USBProduct=$(cut -f : -f 2 <<<$VMPASSTHROUGHUSBDEVICE)
+      OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x${USBVendor},productid=0x${USBProduct}"
     done
   fi
   if [ ! -z "$VMCPUOPTS" ]; then
@@ -488,7 +519,7 @@ mainHandlerVM() {
   echo "QEMU Options $OPTS" | doOut
   IRQAffinity
   realTimeTune
-  ( reloadPCIDevices "$VMPASSTHROUGHDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
+  ( reloadPCIDevices "$PCIVMPASSTHROUGHDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
   vCPUpin &
   doOut showlog
 }
@@ -628,7 +659,8 @@ IRQAffinity() {
 }
 
 setupCPULayout
-[ ! -e $configPassthroughDevices ] && doPCIConfig
+[ ! -e $configPassthroughUSB ] && doUSBConfig
+[ ! -e $configPassthroughPCIDevices ] && doPCIConfig
 
 showMainMenu
 doSelect
