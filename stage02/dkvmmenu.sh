@@ -657,10 +657,21 @@ IRQAffinity() {
     taskset -pc $IRQCORE $PID 2>/dev/null | doOut
   done
 }
+doWarnDKVMData() {
+  local txt
+  txt+="DKVM relies on a mountpoint to store VM BIOS and TPM data"
+  txt+="DKVMData mountpoint should be formatted and mounted at /media/dkvmdata"
+  txt+="Example could be a LVM volume, with a ext4 filesystem"
+  txt+="Please use CTRL+ArrowRight to get a root-console, and setup"
+  txt+="a mountpoint for DKVMData. (You might want to adjust /etc/fstab too)"
+
+  dialog --clear --msgbox "$txt" 30 70
+}
 
 setupCPULayout
 [ ! -e $configPassthroughUSB ] && doUSBConfig
 [ ! -e $configPassthroughPCIDevices ] && doPCIConfig
+mountpoint -q /media/dkvmdata || doWarnDKVMData
 
 showMainMenu
 doSelect
