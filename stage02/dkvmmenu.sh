@@ -15,6 +15,7 @@ menuAnswer=""
 
 configPassthroughPCIDevices=passthroughPCIDevices
 configPassthroughUSBDevices=passthroughUSB
+configDataFolder=/media/dkvmdata
 
 err() {
   echo "ERROR $@"
@@ -23,15 +24,11 @@ err() {
 
 buildMenuItemVMs() {
   menuItemsVMs=""
-  for cfile in dkvm_vmconfig.[0-9]; do
-    if [ "$cfile" == "dkvm_vmconfig.[0-9]" ]; then
-      err "No VM configs found. Look at dkvm_vmconfig.sam"
-    fi
-
-    # Build VM items for menu
-    itemNumber=$(echo "$cfile" | sed 's/.*\.//')
-    itemName=$(cat "$cfile" | grep ^NAME | sed 's/NAME=//')
+  itemNumber=0
+  for VM in $(ls -1 $configDataFolder/|grep -v lost+found); do
+    itemName=$VM
     menuItemsVMs[$itemNumber]="$itemName"
+    let itemNumber++
   done
 }
 
@@ -442,7 +439,8 @@ mainHandlerVM() {
   clear
   doStartTPM
   doOut "clear"
-  local configFile="dkvm_vmconfig.${1}"
+  #local configFile="dkvm_vmconfig.${1}"
+  local configFile=$configDataFolder/${1}/dkvm_vmconfig
 
   local VMNAME="$(getConfigItem $configFile NAME)"
   local VMHARDDISK=$(getConfigItem $configFile HARDDISK)
@@ -658,13 +656,15 @@ IRQAffinity() {
 }
 doWarnDKVMData() {
   local txt
-  txt+="DKVM relies on a mountpoint to store VM BIOS and TPM data"
-  txt+="DKVMData mountpoint should be formatted and mounted at /media/dkvmdata"
-  txt+="Example could be a LVM volume, with a ext4 filesystem"
-  txt+="Please use CTRL+ArrowRight to get a root-console, and setup"
-  txt+="a mountpoint for DKVMData. (You might want to adjust /etc/fstab too)"
+  txt+="DKVM relies on a mountpoint to store VM BIOS and TPM data.\n"
+  txt+="DKVMData mountpoint should be formatted and mounted at /media/dkvmdata.\n"
+  txt+="As an example could be a LVM volume with a ext4 filesystem.\n\n"
+  txt+="Please use CTRL+ArrowRight to get a root-console, and setup\n"
+  txt+="a mountpoint for DKVMData. (You might want to adjust /etc/fstab too)\n"
 
-  dialog --clear --msgbox "$txt" 30 70
+  dialog --cr-wrap --clear --msgbox "$txt" 20 80
+
+  exit 1
 }
 
 setupCPULayout

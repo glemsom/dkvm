@@ -15,16 +15,10 @@ mkdir /media/usb/cache
 #TODO : Get this from a config file instead?
 extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5"
 
-# Patch syslinux (legacy boot)
-cp /media/usb/boot/syslinux/syslinux.cfg /media/usb/boot/syslinux/syslinux.cfg.old
-cat /media/usb/boot/syslinux/syslinux.cfg.old | sed 's/^MENU LABEL.*/MENU LABEL DKVM/g' | sed "/^APPEND/ s/$/ $extraArgs /" | sed 's/quiet//g' > /media/usb/boot/syslinux/syslinux.cfg
-
 # Patch grub2 (uefi boot)
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
 cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g'> /media/usb/boot/grub/grub.cfg
 
-# Switch to edge kernel
-#sed -i 's/lts/edge/g' /media/usb/boot/grub/grub.cfg
 
 #mount -o remount,ro /media/usb
 ln -s /media/usb/cache /etc/apk/cache
@@ -49,26 +43,19 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community swtpm@community bash dialog bc nettle jq vim lvm2 e2fsprogs pciutils || err "Cannot install packages"
-
-# Install edge kernel
-# Create reposotiry file for edge
-#cp /etc/apk/repositories /etc/apk/repositories-edge
-#sed -i 's/@community //' /etc/apk/repositories-edge
-
-#update-kernel -f edge --repositories-file /etc/apk/repositories-edge /media/usb/boot
-
+apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils || err "Cannot install packages"
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
 
-apk add ca-certificates wget
 wget -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
 mount -o remount,rw /media/usb || err "Cannot remount /media/usb to readwrite"
 mkdir -p /media/usb/custom
 
 mount -o remount,ro /media/usb || err "Cannot remount /media/usb"
 
+# Add startup services
 rc-update add mdadm-raid
+rc-update add lvm default
 
 echo "Patching openssh for root login"
 sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config
@@ -112,19 +99,12 @@ blacklist snd_hda_intel
 " > /etc/modprobe.d/vfio.conf
 
 echo '#!/bin/sh
-# Setup mounts
+# Add DKVM Data folder (Mounted from fstab)
+mkdir /media/dkvmdata
+' >> /etc/local.d/dkvm_folder.start
+chmod +x /etc/local.d/dkvm_folder.start
 
-mkdir /media/iso
-mkdir /media/bios
-
-lvchange -ay vg_nvme
-
-mount /dev/mapper/vg_nvme-bios /media/bios
-mount /dev/mapper/vg_nvme-iso /media/iso
-' >> /etc/local.d/mount.start
-chmod +x /etc/local.d/mount.start
-
-
+# Copy dkvmmenu over
 cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
 
 # Copy any VM config
@@ -146,9 +126,7 @@ cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh#' > /etc/
 ########################################
 
 mount -o remount,rw /media/usb
-
 apk cache -v sync
-
 mount -o remount,ro /media/usb
 
 echo "Migrate to using disk label for APK cache"
@@ -157,7 +135,17 @@ umount /media/usb
 cat > /etc/fstab <<EOF
 /dev/cdrom	/media/cdrom	iso9660	noauto,ro 0 0
 LABEL=dkvm     /media/usb    vfat   noauto,ro 0 0
+# DKVM Data folder
+# Create a partition/lvm volume or what-ever suits your needs,
+# and add it here in fstab. (Destination must be /media/dkvmdata)
+# You can use /etc/local.d/ to include any custom mounting.
+# (Use Alt+RightArrow to get a root console)
+LABEL=dkvmdata /media/dkvmdata  ext4 defaults,discard,nofail 0 0
+
 EOF
+
+# Issue discard by default(LVM)
+sed 's/# issue_discards.*/issue_discards = 0/' -i /etc/lvm/lvm.conf
 
 setup-apkcache /media/usb/cache
 setup-lbu usb

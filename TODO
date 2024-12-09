@@ -6,3 +6,4 @@
   * helper for USB passthrough
  * Support TPM
  * Better "New VM" setup
+ * Dynamic allocate memory
