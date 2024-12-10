@@ -376,7 +376,7 @@ $(lbu commit)"
 
   dialog --backtitle "$backtitle" --msgbox "$changesTxt" 30 80
 
-  showMainMenu && doSelect
+  #showMainMenu && doSelect
 }
 
 mainHandlerInternal() {
