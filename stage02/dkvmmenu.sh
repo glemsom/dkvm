@@ -25,8 +25,8 @@ err() {
 buildMenuItemVMs() {
   menuItemsVMs=""
   itemNumber=0
-  for VM in $(ls -1 $configDataFolder/|grep -v lost+found); do
-    itemName=$VM
+  for VMConfig in $configDataFolder/*/vm_config; do
+    itemName=$(getConfigItem $VMConfig NAME)
     menuItemsVMs[$itemNumber]="$itemName"
     let itemNumber++
   done
@@ -439,8 +439,7 @@ mainHandlerVM() {
   clear
   doStartTPM
   doOut "clear"
-  #local configFile="dkvm_vmconfig.${1}"
-  local configFile=$configDataFolder/${1}/dkvm_vmconfig
+  local configFile=$configDataFolder/${1}/vm_config
 
   local VMNAME="$(getConfigItem $configFile NAME)"
   local VMHARDDISK=$(getConfigItem $configFile HARDDISK)
@@ -516,7 +515,7 @@ mainHandlerVM() {
   echo "QEMU Options $OPTS" | doOut
   IRQAffinity
   realTimeTune
-  ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
+  ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; echo eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
   vCPUpin &
   doOut showlog
 }
