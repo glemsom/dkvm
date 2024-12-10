@@ -516,7 +516,7 @@ mainHandlerVM() {
   echo "QEMU Options $OPTS" | doOut
   IRQAffinity
   realTimeTune
-  ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; echo eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
+  ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
   vCPUpin &
   doOut showlog
 }
@@ -563,12 +563,12 @@ getConfigItem() {
 
 
 vCPUpin() {
-  sleep 10 # Let QEMU start threads
+  sleep 20 # Let QEMU start threads
   # Load topology setup
   source cpuTopology
 
   # Get QEMU threads
-  QEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 2 nc localhost 4444 )| tail -n1 | jq '.return[] | ."thread-id"' )
+  QEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 10 nc localhost 4444 )| tail -n1 | jq '.return[] | ."thread-id"' )
   echo "Found QEMU threads: $QEMUTHREADS" | doOut
   if [ $CPUTHREADS -gt 1 ]; then
     # Group CPUs together
