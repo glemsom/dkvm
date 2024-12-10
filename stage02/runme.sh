@@ -101,6 +101,9 @@ blacklist snd_hda_intel
 echo '#!/bin/sh
 # Add DKVM Data folder (Mounted from fstab)
 mkdir /media/dkvmdata
+
+# Mount what we can from fstab
+mount -a
 ' >> /etc/local.d/dkvm_folder.start
 chmod +x /etc/local.d/dkvm_folder.start
 
