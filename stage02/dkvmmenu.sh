@@ -14,7 +14,7 @@ declare -a menuItemsVMs
 menuAnswer=""
 
 configPassthroughPCIDevices=passthroughPCIDevices
-configPassthroughUSBDevices=passthroughUSB
+configPassthroughUSBDevices=passthroughUSBDevices
 configDataFolder=/media/dkvmdata
 
 err() {
@@ -295,7 +295,7 @@ doUSBConfig() {
 
   [ -z "$selectedDevices" ] && break
 
-  echo "$selectedDevices" > $configPassthroughUSB
+  echo "$selectedDevices" > $configPassthroughUSBDevices
 }
 
 updateGrub() {
@@ -667,7 +667,7 @@ doWarnDKVMData() {
 }
 
 setupCPULayout
-[ ! -e $configPassthroughUSB ] && doUSBConfig
+[ ! -e $configPassthroughUSBDevices ] && doUSBConfig
 [ ! -e $configPassthroughPCIDevices ] && doPCIConfig
 mountpoint -q /media/dkvmdata || doWarnDKVMData
 
