@@ -351,8 +351,9 @@ doPCIConfig() {
       vfioIds+=$(lspci -n -s $selectedDevice | grep -Eo '(([0-9]|[a-f]){4}|:){3}'),
   done
 
-  updateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
   doSaveChanges
+  updateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
+  
   IFS=$OLDIFS
 }
 
