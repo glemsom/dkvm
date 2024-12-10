@@ -48,16 +48,13 @@ installBiosFiles() {
 }
 
 doStartTPM() {
+  local vmFolder="$1"
   # Cleanup if an old was running
-  if [ -n "$tpmPID" ]; then 
-    kill $tpmPID >/dev/null 2>&1
-    find /tmp/${tpmUUID}/ -type f -delete
-    rmdir /tmp/${tpmUUID}
+  if pgrep swtpm; then
+    killall swtpm
   fi
-  tpmUUID=$(uuidgen)
-  mkdir -p /tmp/${tpmUUID}
-  /usr/bin/swtpm socket --tpmstate dir=/tmp/${tpmUUID},mode=0600 --ctrl type=unixio,path=/tmp/${tpmUUID}.sock,mode=0600 --log file=/tmp/tpm-${tpmUUID}.log --terminate --tpm2 &
-  tpmPID=$!
+  mkdir -p ${vmFolder}/tpm || err "Cannot create folder ${vmFolder}/tpm"
+  /usr/bin/swtpm socket --tpmstate dir=${vmFolder}/tpm,mode=0600 --ctrl type=unixio,path=${vmFolder}/tpm.sock,mode=0600 --log file=${vmFolder}/tpm.log --terminate --tpm2 &
 }
 
 doShowLog() {
@@ -475,7 +472,7 @@ mainHandlerVM() {
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
   OPTS+=" -m $VMMEM"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
-  OPTS+="  -chardev socket,id=chrtpm,path=/tmp/${tpmUUID}.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0" #TOOD We need a persistent config
+  OPTS+="  -chardev socket,id=chrtpm,path=${vmFolder}/tpm.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
   OPTS+=" $VMEXTRA "
   if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
     local TMPALLCORES=$(echo $VMCPU | sed 's/,/ /g'|wc -w)
