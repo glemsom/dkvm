@@ -18,6 +18,7 @@ configPassthroughUSBDevices=passthroughUSBDevices
 configDataFolder=/media/dkvmdata
 configBIOSCODE=/usr/share/OVMF_CODE.fd
 configBIOSVARS=/usr/share/OVMF_VARS.fd
+configReservedMemKB=$(( 1024 * 1024 * 2 )) # 2GB
 
 err() {
   echo "ERROR $@"
@@ -448,6 +449,13 @@ isGPU() {
   return $(lspci -s $device | grep -q VGA)
 }
 
+getVMMemKB() {
+  local reservedMemKB=$1
+  local systemMemKB=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')
+
+  echo $(( $systemMemKB - $reservedMemKB ))
+}
+
 mainHandlerVM() {
   clear
   doStartTPM
@@ -461,7 +469,8 @@ mainHandlerVM() {
   local VMPASSTHROUGHUSBDEVICES=$(cat $configPassthroughUSBDevices)
   local VMBIOS=$configDataFolder/${1}/OVMF_CODE.fd
   local VMBIOS_VARS=$configDataFolder/${1}/OVMF_VARS.fd
-  local VMMEM=$(getConfigItem $configFile MEM)
+  #local VMMEM=$(getConfigItem $configFile MEM)
+  local VMMEM=getVMMemKB
   local VMMAC=$(getConfigItem $configFile MAC)
   local VMCPUOPTS=$(getConfigItem $configFile CPUOPTS)
   local VMEXTRA=$(getConfigItem $configFile EXTRA)
