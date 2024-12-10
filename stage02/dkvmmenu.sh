@@ -16,6 +16,8 @@ menuAnswer=""
 configPassthroughPCIDevices=passthroughPCIDevices
 configPassthroughUSBDevices=passthroughUSBDevices
 configDataFolder=/media/dkvmdata
+configBIOSCODE=/usr/share/OVMF_CODE.fd
+configBIOSVARS=/usr/share/OVMF_VARS.fd
 
 err() {
   echo "ERROR $@"
@@ -30,6 +32,19 @@ buildMenuItemVMs() {
     menuItemsVMs[$itemNumber]="$itemName"
     let itemNumber++
   done
+}
+
+# Install OVMF BIOS if not already present
+installBiosFiles() {
+  local VMFolder="$1"
+  if [ ! -e ${VMFolder}/OVMF_CODE.fd ]; then
+    echo "Installing ${VMFolder}/OVMF_CODE.fd" | doOut
+    cp $configBIOSCODE "${VMFolder}/OVMF_CODE.fd" || err "Cannot install $configBIOSCODE -> ${VMFolder}/OVMF_CODE.fd"
+  fi
+  if [ ! -e ${VMFolder}/OVMF_VARS.fd ]; then
+    echo "Installing ${VMFolder}/OVMF_VARS.fd" | doOut
+    cp $configBIOSVARS "${VMFolder}/OVMF_VARS.fd" || err "Cannot install $configBIOSVARS -> ${VMFolder}/OVMF_VARS.fd"
+  fi
 }
 
 doStartTPM() {
@@ -447,8 +462,8 @@ mainHandlerVM() {
   local VMCDROM=$(getConfigItem $configFile CDROM)
   local VMPASSTHROUGHPCIDEVICES=$(cat $configPassthroughPCIDevices)
   local VMPASSTHROUGHUSBDEVICES=$(cat $configPassthroughUSBDevices)
-  local VMBIOS=$(getConfigItem $configFile BIOS)
-  local VMBIOS_VARS=$(getConfigItem $configFile BIOS_VARS)
+  local VMBIOS=$configDataFolder/${1}/OVMF_CODE.fd
+  local VMBIOS_VARS=$configDataFolder/${1}/OVMF_VARS.fd
   local VMMEM=$(getConfigItem $configFile MEM)
   local VMMAC=$(getConfigItem $configFile MAC)
   local VMCPUOPTS=$(getConfigItem $configFile CPUOPTS)
