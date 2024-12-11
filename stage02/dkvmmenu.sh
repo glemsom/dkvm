@@ -16,12 +16,13 @@ menuAnswer=""
 configPassthroughPCIDevices=passthroughPCIDevices
 configPassthroughUSBDevices=passthroughUSBDevices
 configDataFolder=/media/dkvmdata
-configBIOSCODE=/usr/share/OVMF_CODE.fd
-configBIOSVARS=/usr/share/OVMF_VARS.fd
+configBIOSCODE=/usr/share/OVMF/OVMF_CODE.fd
+configBIOSVARS=/usr/share/OVMF/OVMF_VARS.fd
 configReservedMemKB=$(( 1024 * 1024 * 2 )) # 2GB
 
 err() {
   echo "ERROR $@"
+  echo "ERROR $@" | doLog
   exit 1
 }
 
@@ -36,7 +37,7 @@ buildMenuItemVMs() {
 }
 
 # Install OVMF BIOS if not already present
-installBiosFiles() {
+doInstallBIOSFiles() {
   local VMFolder="$1"
   if [ ! -e ${VMFolder}/OVMF_CODE.fd ]; then
     echo "Installing ${VMFolder}/OVMF_CODE.fd" | doOut
@@ -459,6 +460,7 @@ getVMMemKB() {
 mainHandlerVM() {
   clear
   doStartTPM
+  doInstallBIOSFiles $configDataFolder/${1}
   doOut "clear"
   local configFile=$configDataFolder/${1}/vm_config
 
@@ -470,7 +472,7 @@ mainHandlerVM() {
   local VMBIOS=$configDataFolder/${1}/OVMF_CODE.fd
   local VMBIOS_VARS=$configDataFolder/${1}/OVMF_VARS.fd
   #local VMMEM=$(getConfigItem $configFile MEM)
-  local VMMEM=getVMMemKB
+  local VMMEM=$(getVMMemKB $configReservedMemKB)
   local VMMAC=$(getConfigItem $configFile MAC)
   local VMCPUOPTS=$(getConfigItem $configFile CPUOPTS)
   local VMEXTRA=$(getConfigItem $configFile EXTRA)
@@ -479,7 +481,7 @@ mainHandlerVM() {
   OPTS="-nodefaults -no-user-config -accel accel=kvm,kernel-irqchip=on -machine q35,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
   OPTS+=" -mem-prealloc -overcommit mem-lock=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
-  OPTS+=" -m $VMMEM"
+  OPTS+=" -m ${VMMEM}k"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
   OPTS+="  -chardev socket,id=chrtpm,path=${vmFolder}/tpm.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
   OPTS+=" $VMEXTRA "
@@ -515,9 +517,9 @@ mainHandlerVM() {
     for VMPASSTHROUGHPCIDEVICE in $VMPASSTHROUGHPCIDEVICES; do
     let loopCount++
       if isGPU $VMPASSTHROUGHPCIDEVICE; then # If this is a GPU adapter, set multifunction=on
-        OPTS+=" -device pcie-root-port,multifunction=on,slot=$loopCount,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE}"
+        OPTS+=" --device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE},multifunction=on,x-vga=on"
       else
-        OPTS+=" -device pcie-root-port,slot=$loopCount,bus=pcie.0 -device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE}"
+        OPTS+=" -device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE}"
       fi
     done
   fi
