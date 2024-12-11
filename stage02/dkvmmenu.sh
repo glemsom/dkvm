@@ -236,32 +236,54 @@ doSelect() {
 }
 
 getLastVMConfig() {
-  echo "$(ls -1 dkvm_vmconfig.[0-9] | sed 's/.*\.//' | tail -n 1)"
+  basename $(find $configDataFolder -type d -maxdepth 1 -name "[0-9]" | tail -n 1)
 }
 
 doAddVM() {
+  local template='NAME=New VM
+
+# Multiple harddisk can be configured
+# Can be either a blockdevice, or a file
+#HARDDISK=/dev/mapper/vg_nvme-lv_debian
+#HARDDISK=/media/dkvmdata/disks/debian.raw
+
+# CDROM ISO file
+#CDROM=/media/dkvmdata/isos/debian-12.8.0-amd64-netinst.iso
+
+# MAC Address
+MAC=DE:AD:BE:EF:66:61
+
+# Extra CPU options to qemu
+CPUOPTS=hv-frequencies,hv-relaxed,hv-reset,hv-runtime,hv-spinlocks=0x1fff,hv-stimer,hv-synic,hv-time,hv-vapic,hv-vpindex,topoext=on,l3-cache=on
+'
   # Find next dkvm_vmconfig.X
   local lastVMConfig=$(getLastVMConfig)
-  let "lastVMConfig++"
-  cp dkvm_vmconfig.sam dkvm_vmconfig.${lastVMConfig}
-  vi dkvm_vmconfig.${lastVMConfig}
+  if [ $lastVMConfig == "" ]; then
+    # First VM
+    nextVMIndex=0
+  elif [ $getLastVMConfig == 9]; then
+    dialog --msgbox "All VM slots in use. Please clear up in ${configDataFolder}/[0-9]" 20 60
+    exit 1
+  else
+    nextVMIndex=$(($lastVMConfig + 1))
+  fi
 
-  showMainMenu && doSelect
+  mkdir -p $configDataFolder/${nextVMIndex} || err "Cannot create VM folder"
+  echo "$template" > $configDataFolder/${nextVMIndex}/vm_config || err "Cannot write VM Template"
+
+  doEditVM
 }
 
 doEditVM() {
-  local lastVMConfig=$(getLastVMConfig)
+  local VMFolders=$(find $configDataFolder -type d -maxdepth 1 -name "[0-9]")
   menuStr=""
-  for i in $(seq 0 $lastVMConfig); do
-    local name=$(grep NAME dkvm_vmconfig.${i} | sed 's/NAME=//')
-    local menuStr="$menuStr $i '$name'"
+  for VMFolder in $VMFolders; do
+    local VMName=$(getConfigItem ${VMFolder}/vm_config NAME)
+    local menuStr="$menuStr $(basename $VMFolder) '$VMName'"
   done
   local menuAnswer=$(eval "dialog --backtitle "'$backtitle'" --menu 'Choose VM' 20 30 20 $menuStr" --stdout)
 
-  vi dkvm_vmconfig.${menuAnswer}
-
-  showMainMenu && doSelect
-
+  vi ${configDataFolder}/${menuAnswer}/vm_config
 }
 
 setupCPULayout() {
