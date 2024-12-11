@@ -1,4 +1,5 @@
  * Support KVM for both Intel and AMD [done]
+ * Auto copy BIOS
  * Helper for setting up storage (LVM?)
  * Refactor isolcpu and such to be setup on first boot instead
   * Maybe make a menu/helper for setting up isolcpu/vCPU pinning
@@ -6,4 +7,4 @@
   * helper for USB passthrough
  * Support TPM
  * Better "New VM" setup
- * Dynamic allocate memory
+ * Dynamic allocate memory [done]
