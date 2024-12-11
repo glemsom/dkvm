@@ -8,3 +8,5 @@
  * Support TPM [done]
  * Better "New VM" setup [done]
  * Dynamic allocate memory [done]
+ * Optimze storage (multithread?)
+ * Improve log/running menu
