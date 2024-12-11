@@ -457,11 +457,12 @@ getVMMemKB() {
 }
 
 mainHandlerVM() {
+  local VMID=$1
   clear
-  doStartTPM
-  doInstallBIOSFiles $configDataFolder/${1}
+  doStartTPM $configDataFolder/${VMID}
+  doInstallBIOSFiles $configDataFolder/${VMID}
   doOut "clear"
-  local configFile=$configDataFolder/${1}/vm_config
+  local configFile=$configDataFolder/${VMID}/vm_config
 
   local VMNAME="$(getConfigItem $configFile NAME)"
   local VMHARDDISK=$(getConfigItem $configFile HARDDISK)
@@ -480,7 +481,7 @@ mainHandlerVM() {
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
   OPTS+=" -m ${VMMEM}k"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
-  OPTS+=" -chardev socket,id=chrtpm,path=${vmFolder}/tpm.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
+  OPTS+=" -chardev socket,id=chrtpm,path=$configDataFolder/${VMID}/tpm.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
   OPTS+=" -nographic -vga none"
   if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
     local TMPALLCORES=$(echo $VMCPU | sed 's/,/ /g'|wc -w)
