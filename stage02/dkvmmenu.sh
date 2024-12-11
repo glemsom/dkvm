@@ -312,31 +312,30 @@ doUSBConfig() {
   echo "$selectedDevices" > $configPassthroughUSBDevices
 }
 
-updateGrub() {
+doUpdateGrub() {
     mount -oremount,rw /media/usb/ || err "Cannot remount /media/usb"
-
     local grubFile=/media/usb/boot/grub/grub.cfg
-
     local key="$1"
     local value="$2"
 
     [ ! -z "$key" ] || [ ! -z "$value" ] || err "VFIO ID's not found $key $value"
-
     # Get clean Linux line
     grubLinuxLineCleaned=$(sed -e "s/ ${key}=[^ ]*//g" <<< $(grep ^linux $grubFile))
-
     # Backup grub file
     cp ${grubFile} ${grubFile}.bak || err "Unable to backup GRUB config file"
-
     # Put in cleaned Linux line
     sed "s#^linux.*#$grubLinuxLineCleaned#g" -i $grubFile
-
     # Add key=value
     sed "/^linux.*/s/\$/ ${key}=${value}/" -i $grubFile || err "Unable to patch grub.cfg"
-
     mount -oremount,ro /media/usb/ || err "Cannot remount /media/usb"
-
     dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 20 60
+}
+
+doUpdateModprobe() {
+  local ids="$1"
+  mount -oremount,rw /media/usb || err "Cannot remount /media/usb"
+  cat /etc/modprobe.d/vfio.conf | grep -v "options vfio-pci" > /etc/modprobe.d/vfio.conf
+  echo -en "\noptions vfio-pci ids=$ids" >> /etc/modprobe.d/vfio.conf
 }
 
 doPCIConfig() {
@@ -364,9 +363,9 @@ doPCIConfig() {
   for selectedDevice in $selectedDevices; do
       vfioIds+=$(lspci -n -s $selectedDevice | grep -Eo '(([0-9]|[a-f]){4}|:){3}'),
   done
-
+  doUpdateModprobe
   doSaveChanges
-  updateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
+  doUpdateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
   
   IFS=$OLDIFS
 }
@@ -471,7 +470,6 @@ mainHandlerVM() {
   local VMPASSTHROUGHUSBDEVICES=$(cat $configPassthroughUSBDevices)
   local VMBIOS=$configDataFolder/${1}/OVMF_CODE.fd
   local VMBIOS_VARS=$configDataFolder/${1}/OVMF_VARS.fd
-  #local VMMEM=$(getConfigItem $configFile MEM)
   local VMMEM=$(getVMMemKB $configReservedMemKB)
   local VMMAC=$(getConfigItem $configFile MAC)
   local VMCPUOPTS=$(getConfigItem $configFile CPUOPTS)
