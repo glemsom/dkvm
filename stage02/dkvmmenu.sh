@@ -429,8 +429,8 @@ mainHandlerVM() {
     for DISK in $VMHARDDISK; do
       #OPTS+=" -drive if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK}" ## normal
       OPTS+=" -object iothread,id=iothread0 -object iothread,id=iothread1"
-      OPTS+=" -drive if=none,cache=none,aio=native,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK},id=drive0"
-      OPTS+=" --device '{\"driver\":\"virtio-blk-pci\",\"iothread-vq-mapping\":[{\"iothread\":\"iothread0\"},{\"iothread\":\"iothread1\"}],\"drive\":\"drive0\",\"queue-size\":4096,\"config-wce\":false}'"
+      OPTS+=" -drive if=none,cache=none,aio=native,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK},id=drive${COUNT}"
+      OPTS+=" --device '{\"driver\":\"virtio-blk-pci\",\"iothread-vq-mapping\":[{\"iothread\":\"iothread0\"},{\"iothread\":\"iothread1\"}],\"drive\":\"drive${COUNT}\",\"queue-size\":4096,\"config-wce\":false}'"
 
       #
       #OPTS+=" -drive if=none,id=drive${COUNT},cache=directsync,aio=native,format=raw,file=${DISK} -device virtio-blk-pci,drive=drive${COUNT},scsi=off"
