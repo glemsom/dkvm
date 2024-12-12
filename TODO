@@ -8,7 +8,7 @@
  * Support TPM [done]
  * Better "New VM" setup [done]
  * Dynamic allocate memory [done]
- * Optimze storage (multithread?)
+ * Better storage (multithread?) [done]
  * Improve log/running menu
  * Configure CPU die
  * re-enable static hugepage support
