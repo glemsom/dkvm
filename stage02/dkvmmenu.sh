@@ -60,97 +60,8 @@ doStartTPM() {
 }
 
 doShowLog() {
-  # CPU monitor
-  (
-    logFreq=cpu-freq.log
-    IFS="
-"
->$logFreq
-    while [ true ]; do
-      # Get current Mhz for all cores
-      MHz=$(grep -i MHz /proc/cpuinfo | sed 's/\..*//g')
-      coreCount=0
-      for line in $MHz; do
-        freq=$(echo "$line" | awk '{print $4}')
-        echo "Core $coreCount @ $freq Mhz" >>$logFreq
-        let coreCount++
-      done
-      # Also write qemu status
->qemu-running.log
-      if pgrep -f qemu-system-x86_64 > /dev/null; then
-        echo "Running @ $(pgrep qemu-system-x86_64)" > qemu-running.log
-      else
-        echo "Stopped" > qemu-running.log
-      fi
-
-      sleep 5
-      >$logFreq
-    done
-  ) &
-  pidofFreq=$!
-
-  (
-    IFS=$OLDIFS
-    logUtil=cpu-util.log
-    CPUs=$(cat /proc/stat | grep ^cpu | awk '{print $1}')
-    getCounter() {
-      local counters="$1"
-      local counter="$2"
-      echo $(echo $counters | awk "{print \$$counter"})
-    }
-
-    counterName=(user nice system idle iowait irq softirq steal guest guest_nice)
-    declare -A lastCounters
-
-    while :; do
-      headerStr="CPU"
-      for name in ${counterName[@]}; do
-        headerStr+="\t${name}"
-      done
-      echo -e $headerStr >$logUtil
-      first=1
-      for CPU in $CPUs; do
-        echo -en "$CPU" >>$logUtil
-        counters=$(grep ^$CPU /proc/stat | head -n 1 | sed "s/$CPU//" | awk '{$1=$1};1')
-        counterSum=$(echo -e "$counters" | sed 's/ /+/g' | bc -l)
-        tmpLastCounters=(${lastCounters[$CPU]})
-
-        lastCountersSum=$(echo -e "${tmpLastCounters[@]}" | sed 's/ /+/g' | bc -l)
-        sumDelta=$(echo "$counterSum - $lastCountersSum" | bc -l)
-
-        # Loop over counters
-        tmpCountNr=0
-        for counter in $counters; do
-          # Get counter delta
-
-          tmpCounterDelta=$(echo "$counter - ${tmpLastCounters[$tmpCountNr]}" | bc -l)
-          tmpCounterDeltaPercent=$(LC_NUMERIC="en_US.UTF-8" printf %0.2f $(echo "100 * ($tmpCounterDelta / $sumDelta)" | bc -l))
-          echo -en "\t$tmpCounterDeltaPercent" >>$logUtil
-
-          let tmpCountNr++
-        done
-
-        # Remember counters for next iteration
-        lastCounters[$CPU]="$counters"
-        first=0
-        echo >>$logUtil
-      done
-      sleep 5
-    done
-  ) 2>/dev/null &
-  pidofCpuUtil=$!
-  # Reset logfiles
->cpu-freq.log
->cpu-util.log
->qemu-running.log
   dialog --backtitle "$backtitle" \
-    --title Log --begin 2 2 --tailboxbg dkvm.log 18 124 \
-    --and-widget --title "CPU" --begin 21 2 --tailboxbg cpu-freq.log 20 22 \
-    --and-widget --title "System load" --begin 21 26 --tailboxbg cpu-util.log 20 100 \
-    --and-widget --title "Qemu status" --begin 42 2 --tailboxbg qemu-running.log 4 22 \
-    --and-widget --begin 3 112 --keep-window --msgbox "Exit" 5 10 2>dialog.err
-
-  kill -9 $pidofFreq $pidofCpuUtil 2>&1 > /dev/null
+    --title Log --exit-label "Stop VM" --begin 2 2 --tailbox dkvm.log 30 90 
   clear
   exit
 }
@@ -161,7 +72,6 @@ doOut() {
     rm -f "$TAILFILE"
     touch "$TAILFILE"
   elif [ "$1" == "showlog" ]; then
-    #dialog --backtitle "$backtitle" --tailbox "$TAILFILE" 25 75
     doShowLog
     # When exited, kill any remaining qemu
     killall qemu-system-x86_64
@@ -710,10 +620,12 @@ doWarnDKVMData() {
   exit 1
 }
 
+doOut showlog
+
 setupCPULayout
 [ ! -e $configPassthroughUSBDevices ] && doUSBConfig
 [ ! -e $configPassthroughPCIDevices ] && doPCIConfig
-mountpoint -q /media/dkvmdata || doWarnDKVMData
+#mountpoint -q /media/dkvmdata || doWarnDKVMData
 
 showMainMenu
 doSelect

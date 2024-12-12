@@ -10,3 +10,5 @@
  * Dynamic allocate memory [done]
  * Optimze storage (multithread?)
  * Improve log/running menu
+ * Configure CPU die
+ * re-enable static hugepage support
