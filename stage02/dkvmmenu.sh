@@ -61,7 +61,7 @@ doStartTPM() {
 
 doShowLog() {
   dialog --backtitle "$backtitle" \
-    --title Log --exit-label "Stop VM" --begin 2 2 --tailbox dkvm.log 30 90 
+    --title Log --exit-label "Stop VM" --begin 2 2 --tailbox dkvm.log 30 92 
   clear
   exit
 }
@@ -427,10 +427,11 @@ mainHandlerVM() {
   if [ ! -z "$VMHARDDISK" ]; then
     COUNT=0
     for DISK in $VMHARDDISK; do
-      # Do we need virtio,id=driveX here ?
-      #OPTS+=" -drive if=virtio,cache=none,aio=native,format=raw,file=${DISK}"
-      #OPTS+=" -drive if=virtio,format=raw,file=${DISK}"
-      OPTS+=" -drive if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK}"
+      #OPTS+=" -drive if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK}" ## normal
+      OPTS+=" -object iothread,id=iothread0 -object iothread,id=iothread1"
+      OPTS+=" -drive if=none,cache=none,aio=native,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK},id=drive0"
+      OPTS+=" --device '{\"driver\":\"virtio-blk-pci\",\"iothread-vq-mapping\":[{\"iothread\":\"iothread0\"},{\"iothread\":\"iothread1\"}],\"drive\":\"drive0\",\"queue-size\":4096,\"config-wce\":false}'"
+
       #
       #OPTS+=" -drive if=none,id=drive${COUNT},cache=directsync,aio=native,format=raw,file=${DISK} -device virtio-blk-pci,drive=drive${COUNT},scsi=off"
       let COUNT=COUNT+1
@@ -619,8 +620,6 @@ doWarnDKVMData() {
 
   exit 1
 }
-
-doOut showlog
 
 setupCPULayout
 [ ! -e $configPassthroughUSBDevices ] && doUSBConfig
