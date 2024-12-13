@@ -11,4 +11,5 @@
  * Better storage (multithread?) [done]
  * Improve log/running menu
  * Configure CPU die
- * re-enable static hugepage support
+ * re-enable static hugepage support [done]
+   * Maybe support 1GB pages?

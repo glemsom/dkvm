@@ -634,7 +634,6 @@ doWarnDKVMData() {
 setupCPULayout
 [ ! -e $configPassthroughUSBDevices ] && doUSBConfig
 [ ! -e $configPassthroughPCIDevices ] && doPCIConfig
-#mountpoint -q /media/dkvmdata || doWarnDKVMData
 
 showMainMenu
 doSelect
