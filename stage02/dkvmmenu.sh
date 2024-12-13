@@ -393,14 +393,9 @@ getVMMemMB() {
 
 
 setupHugePages() {
-  local mem=$1
-
-  # Get page size
-  local pageSize=$(grep Hugepagesize /proc/meminfo | awk '{print $2}')
-
-  # Calculate pages required
-  local required=$(echo "$mem / $pageSize" | bc)
-
+  local VMMemMB=$1
+  local pageSizeMB=2
+  local required=´$(( $VMMemMB / $pageSizeMB ))
   echo $required > /proc/sys/vm/nr_hugepages
 }
 
@@ -480,7 +475,7 @@ mainHandlerVM() {
     OPTS+=" -cpu host "
   fi
   doOut "clear"
-  setupHugePages $VMMEM |& doOut
+  setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
   IRQAffinity
   realTimeTune
