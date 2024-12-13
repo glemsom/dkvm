@@ -387,7 +387,7 @@ getVMMemMB() {
   local totalMemKB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
   local totalMemMB=$(( $totalMemKB / 1024 ))
 
-  VMMemMB=$(( $totalMemMB - $reservedMemMB ))
+  VMMemMB=$(( ($totalMemMB - $reservedMemMB) + 2 ))
   echo $(( ${VMMemMB%.*} /2 * 2 ))
 }
 
@@ -396,6 +396,7 @@ setupHugePages() {
   local VMMemMB=$1
   local pageSizeMB=2
   local required=$(( $VMMemMB / $pageSizeMB ))
+  echo 1 > /proc/sys/vm/compact_memory
   echo $required > /proc/sys/vm/nr_hugepages
 }
 
