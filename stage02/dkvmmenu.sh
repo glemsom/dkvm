@@ -395,7 +395,7 @@ getVMMemMB() {
 setupHugePages() {
   local VMMemMB=$1
   local pageSizeMB=2
-  local required=´$(( $VMMemMB / $pageSizeMB ))
+  local required=$(( $VMMemMB / $pageSizeMB ))
   echo $required > /proc/sys/vm/nr_hugepages
 }
 
