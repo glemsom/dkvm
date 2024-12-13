@@ -388,6 +388,18 @@ getVMMemKB() {
   echo $(( $systemMemKB - $reservedMemKB ))
 }
 
+setupHugePages() {
+  local mem=$1
+
+  # Get page size
+  local pageSize=$(grep Hugepagesize /proc/meminfo | awk '{print $2}')
+
+  # Calculate pages required
+  local required=$(echo "$mem / $pageSize" | bc)
+
+  echo $required > /proc/sys/vm/nr_hugepages
+}
+
 mainHandlerVM() {
   local VMID=$1
   clear
@@ -411,7 +423,7 @@ mainHandlerVM() {
   OPTS="-nodefaults -no-user-config -accel accel=kvm,kernel-irqchip=on -machine q35,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
   OPTS+=" -mem-prealloc -overcommit mem-lock=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
-  OPTS+=" -m ${VMMEM}k"
+  OPTS+=" -m ${VMMEM}k  -mem-path /dev/hugepages"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" -chardev socket,id=chrtpm,path=$configDataFolder/${VMID}/tpm.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
   OPTS+=" -nographic -vga none"
@@ -431,9 +443,6 @@ mainHandlerVM() {
       OPTS+=" -object iothread,id=iothread0 -object iothread,id=iothread1"
       OPTS+=" -drive if=none,cache=none,aio=native,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK},id=drive${COUNT}"
       OPTS+=" --device '{\"driver\":\"virtio-blk-pci\",\"iothread-vq-mapping\":[{\"iothread\":\"iothread0\"},{\"iothread\":\"iothread1\"}],\"drive\":\"drive${COUNT}\",\"queue-size\":1024,\"config-wce\":false}'"
-
-      #
-      #OPTS+=" -drive if=none,id=drive${COUNT},cache=directsync,aio=native,format=raw,file=${DISK} -device virtio-blk-pci,drive=drive${COUNT},scsi=off"
       let COUNT=COUNT+1
     done
   fi
@@ -467,6 +476,7 @@ mainHandlerVM() {
     OPTS+=" -cpu host "
   fi
   doOut "clear"
+  setupHugePages $VMMEM |& doOut
   echo "QEMU Options $OPTS" | doOut
   IRQAffinity
   realTimeTune
