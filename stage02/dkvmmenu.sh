@@ -18,7 +18,8 @@ configPassthroughUSBDevices=passthroughUSBDevices
 configDataFolder=/media/dkvmdata
 configBIOSCODE=/usr/share/OVMF/OVMF_CODE.fd
 configBIOSVARS=/usr/share/OVMF/OVMF_VARS.fd
-configReservedMemKB=$(( 1000 * 1000 * 2 )) # 2GB
+configReservedMemMB=$(( 1024 * 2 )) # 2GB
+
 
 err() {
   echo "ERROR $@"
@@ -381,16 +382,15 @@ isGPU() {
   return $(lspci -s $device | grep -q VGA)
 }
 
-getVMMemKB() {
-  local reservedMemKB=$1
-  local systemMemKB=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')
-  echo $(( $systemMemKB - $reservedMemKB ))
+getVMMemMB() {
+  local reservedMemMB=$1
+  local totalMemKB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+  local totalMemMB=$(( $totalMemKB / 1024 ))
+
+  VMMemMB=$(( $totalMemMB - $reservedMemMB ))
+  echo $(( ${VMMemMB%.*} /2 * 2 ))
 }
 
-getVMMemMB() {
-  local VMMemMB=$(( getVMMemKB / 1000))
-  echo ${VMMemMB%.*}
-}
 
 setupHugePages() {
   local mem=$1
@@ -419,7 +419,7 @@ mainHandlerVM() {
   local VMPASSTHROUGHUSBDEVICES=$(cat $configPassthroughUSBDevices)
   local VMBIOS=$configDataFolder/${1}/OVMF_CODE.fd
   local VMBIOS_VARS=$configDataFolder/${1}/OVMF_VARS.fd
-  local VMMEMMB=$(getVMMemMB $configReservedMemKB)
+  local VMMEMMB=$(getVMMemMB $configReservedMemMB)
   local VMMAC=$(getConfigItem $configFile MAC)
   local VMCPUOPTS=$(getConfigItem $configFile CPUOPTS)
 
