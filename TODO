@@ -2,7 +2,7 @@
  * Auto copy BIOS [done]
  * Helper for setting up storage (LVM?)
  * Refactor isolcpu and such to be setup on first boot instead [done]
-  * Maybe make a menu/helper for setting up isolcpu/vCPU pinning [done]
+  * Maybe make a menu/helper for setting up isolcpu/vCPU pinning
   * Maybe make a menu/helper for PCI passthrough [done]
   * helper for USB passthrough [done]
  * Support TPM [done]

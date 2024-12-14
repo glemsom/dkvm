@@ -151,7 +151,7 @@ LABEL=dkvmdata /media/dkvmdata  ext4 defaults,discard,nofail 0 0
 EOF
 
 # Issue discard by default(LVM)
-sed 's/# issue_discards.*/issue_discards = 0/' -i /etc/lvm/lvm.conf
+sed 's/# issue_discards.*/issue_discards = 1/' -i /etc/lvm/lvm.conf
 
 setup-apkcache /media/usb/cache
 setup-lbu usb
