@@ -595,7 +595,12 @@ configureKernelCPUTopology() {
   clear
   mount -oremount,rw /media/usb/ || err "Cannot remount /media/usb"
   cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old || err "Cannot copy grub.cfg"
-  cat /media/usb/boot/grub/grub.cfg.old | sed -e "s%\(isolcpus=\)[^[:space:]]\+%\1${VMCPU}%g" -e "s%\(nohz_full=\)[^[:space:]]\+%\1${VMCPU}%g" -e "s%\(rcu_nocbs=\)[^[:space:]]\+%\1${VMCPU}%g" > /media/usb/boot/grub/grub.cfg
+  cat /media/usb/boot/grub/grub.cfg.old | sed '/^menuentry "DKVM"/,/^}/s/\(linux.*\)isolcpus=[^ ]*/\1isolcpus='$VMCPU'/; \
+                                          /isolcpus=[^ ]*/!s/\(linux.*\)$/\1 isolcpus='$VMCPU'/; \
+                                          s/\(linux.*\)nohz_full=[^ ]*/\1nohz_full='$VMCPU'/; \
+                                          /nohz_full=[^ ]*/!s/\(linux.*\)$/\1 nohz_full='$VMCPU'/; \
+                                          s/\(linux.*\)rcu_nocbs=[^ ]*/\1rcu_nocbs='$VMCPU'/; \
+                                          /rcu_nocbs=[^ ]*/!s/\(linux.*\)$/\1 rcpu_nocbs='$VMCPU'/' > /media/usb/boot/grub/grub.cfg
   mount -oremount,ro /media/usb/ || err "Cannot remount /media/usb"
   dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 20 60
 }
