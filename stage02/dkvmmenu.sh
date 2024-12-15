@@ -397,6 +397,7 @@ setupHugePages() {
 
 mainHandlerVM() {
   local VMID=$1
+  source $configCPUTopology
   clear
   doStartTPM $configDataFolder/${VMID}
   doInstallBIOSFiles $configDataFolder/${VMID}
