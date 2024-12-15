@@ -476,7 +476,7 @@ mainHandlerVM() {
   echo "QEMU Options $OPTS" | doOut
   realTimeTune
   ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
-  vCPUpin && IRQAffinity
+  vCPUpin &
   doOut showlog
 }
 
@@ -576,6 +576,9 @@ vCPUpin() {
       tmpCPUPROCESSED+=",$tmpCPU,"
     done
   fi
+
+  # Do IRQ Affinity
+  IRQAffinity
 }
 
 doKernelCPUTopology() {
@@ -607,26 +610,10 @@ IRQAffinity() {
   for IRQ in $(grep vfio /proc/interrupts | cut -d ":" -f 1 | sed 's/ //g'); do
     IRQLine+=" --banirq=$IRQ"
   done
-  echo "IRQBans for irqbalance: $IRQLine" | doOut
+  echo "VFIO IRQ bans for irqbalance: $IRQLine" | doOut
   /usr/sbin/irqbalance --oneshot $IRQLine | doOut
-
-  # IRQCORE=$HOSTCPU
-  # echo "IRQ Cores: $IRQCORE" | doOut
-
-  # # Move all irq away from VM CPUs
-  # for IRQ in $(cat /proc/interrupts | grep "^ ..:" | grep -v "timer\|rtc\|acpi\|dmar\|mei_me" | awk '{print $1}' | tr -d ':'); do
-  #   if [ -d /proc/irq/${IRQ} ]; then
-  #     echo "Moving IRQ $IRQ to $IRQCORE" | doOut
-  #     ( echo "$IRQCORE" > /proc/irq/${IRQ}/smp_affinity_list 2>&1 ) | doOut
-  #   fi
-  # done
-
-  # # Also move all other threads we can away from the VM CPUs
-  # echo "Moving non-vm relates tasks to $IRQCORE" | doOut
-  # for PID in $(ps | awk '{print $1}' | grep -v PID); do
-  #   taskset -pc $IRQCORE $PID 2>/dev/null | doOut
-  # done
 }
+
 doWarnDKVMData() {
   local txt
   txt+="DKVM relies on a mountpoint to store VM BIOS and TPM data.\n"
