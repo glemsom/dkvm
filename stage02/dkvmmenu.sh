@@ -267,8 +267,9 @@ doUpdateGrub() {
 doUpdateModprobe() {
   local ids="$1"
   mount -oremount,rw /media/usb || err "Cannot remount /media/usb"
-  cat /etc/modprobe.d/vfio.conf | grep -v "options vfio-pci" > /etc/modprobe.d/vfio.conf
+  sed -i '/options vfio-pci.*/d' /etc/modprobe.d/vfio.conf
   echo -en "\noptions vfio-pci ids=$ids" >> /etc/modprobe.d/vfio.conf
+  mount -oremount,ro /media/usb || err "Cannot remount /media/usb"
 }
 
 doPCIConfig() {
