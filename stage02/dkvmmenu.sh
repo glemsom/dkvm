@@ -474,10 +474,9 @@ mainHandlerVM() {
   doOut "clear"
   setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
-  IRQAffinity | doOut
   realTimeTune
   ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
-  vCPUpin &
+  vCPUpin && IRQAffinity
   doOut showlog
 }
 
@@ -523,9 +522,7 @@ getConfigItem() {
 
 
 vCPUpin() {
-  sleep 20 # Let QEMU start threads
-  # Load topology setup
-  source cpuTopology
+  sleep 30 # Let QEMU start threads
 
   # Get QEMU threads
   QEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 10 nc localhost 4444 )| tail -n1 | jq '.return[] | ."thread-id"' )
