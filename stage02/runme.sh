@@ -43,7 +43,7 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils || err "Cannot install packages"
+apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance || err "Cannot install packages"
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
 
@@ -56,6 +56,7 @@ mount -o remount,ro /media/usb || err "Cannot remount /media/usb"
 # Add startup services
 rc-update add mdadm-raid
 rc-update add lvm default
+rc-update add irqbalance
 
 echo "Patching openssh for root login"
 sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config

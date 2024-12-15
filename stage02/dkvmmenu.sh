@@ -479,7 +479,6 @@ mainHandlerVM() {
   doOut "clear"
   setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
-  IRQAffinity
   realTimeTune
   ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
   vCPUpin &
@@ -606,6 +605,7 @@ configureKernelCPUTopology() {
 }
 
 IRQAffinity() {
+  # Replaced with irqbalance
   source cpuTopology
   IRQCORE=$HOSTCPU
   echo "IRQ Cores: $IRQCORE" | doOut
