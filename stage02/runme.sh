@@ -56,7 +56,7 @@ mount -o remount,ro /media/usb || err "Cannot remount /media/usb"
 # Add startup services
 rc-update add mdadm-raid
 rc-update add lvm default
-rc-update add irqbalance
+#rc-update add irqbalance
 
 echo "Patching openssh for root login"
 sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config

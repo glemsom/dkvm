@@ -15,6 +15,7 @@ menuAnswer=""
 
 configPassthroughPCIDevices=passthroughPCIDevices
 configPassthroughUSBDevices=passthroughUSBDevices
+configCPUTopology=cpuTopology
 configDataFolder=/media/dkvmdata
 configBIOSCODE=/usr/share/OVMF/OVMF_CODE.fd
 configBIOSVARS=/usr/share/OVMF/OVMF_VARS.fd
@@ -197,13 +198,6 @@ doEditVM() {
   vi ${configDataFolder}/${menuAnswer}/vm_config
 }
 
-setupCPULayout() {
-  if [ ! -e cpuTopology ]; then
-    writeOptimalCPULayout
-  fi
-  source cpuTopology
-}
-
 writeOptimalCPULayout() {
   # Pick first core, and any SMT as the host core
   # TODO: What if we have more sockets / CCX?
@@ -352,9 +346,9 @@ mainHandlerInternal() {
     elif [ "$menuAnswer" == "2" ]; then
       doEditVM
     elif [ "$menuAnswer" == "3" ]; then
-      setupCPULayout
+      writeOptimalCPULayout
       vim cpuTopology
-      configureKernelCPUTopology
+      doKernelCPUTopology
     elif [ "$menuAnswer" == "4" ]; then
       doPCIConfig
     elif [ "$menuAnswer" == "5" ]; then
@@ -479,6 +473,7 @@ mainHandlerVM() {
   doOut "clear"
   setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
+  IRQAffinity | doOut
   realTimeTune
   ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
   vCPUpin &
@@ -585,7 +580,7 @@ vCPUpin() {
   fi
 }
 
-configureKernelCPUTopology() {
+doKernelCPUTopology() {
   if [ ! -e cpuTopology ]; then
     err "No cpuTopology file found"
   else
@@ -606,23 +601,33 @@ configureKernelCPUTopology() {
 
 IRQAffinity() {
   # Replaced with irqbalance
-  source cpuTopology
-  IRQCORE=$HOSTCPU
-  echo "IRQ Cores: $IRQCORE" | doOut
+  source $configCPUTopology
 
-  # Move all irq away from VM CPUs
-  for IRQ in $(cat /proc/interrupts | grep "^ ..:" | grep -v "timer\|rtc\|acpi\|dmar\|mei_me" | awk '{print $1}' | tr -d ':'); do
-    if [ -d /proc/irq/${IRQ} ]; then
-      echo "Moving IRQ $IRQ to $IRQCORE" | doOut
-      ( echo "$IRQCORE" > /proc/irq/${IRQ}/smp_affinity_list 2>&1 ) | doOut
-    fi
+  # irqbalance will honor isolcpu - so everything will go on $HOSTCPU by default.
+  # Manually exclude VFIO devices, as they prefer to be on the same core as the VM
+  IRQLine=""
+  for IRQ in $(grep vfio /proc/interrupts | cut -d ":" -f 1 | sed 's/ //g'); do
+    IRQLine+=" --banirq=$IRQ"
   done
+  echo "IRQBans for irqbalance: $IRQLine" | doOut
+  /usr/sbin/irqbalance --oneshot $IRQLine | doOut
 
-  # Also move all other threads we can away from the VM CPUs
-  echo "Moving non-vm relates tasks to $IRQCORE" | doOut
-  for PID in $(ps | awk '{print $1}' | grep -v PID); do
-    taskset -pc $IRQCORE $PID 2>/dev/null | doOut
-  done
+  # IRQCORE=$HOSTCPU
+  # echo "IRQ Cores: $IRQCORE" | doOut
+
+  # # Move all irq away from VM CPUs
+  # for IRQ in $(cat /proc/interrupts | grep "^ ..:" | grep -v "timer\|rtc\|acpi\|dmar\|mei_me" | awk '{print $1}' | tr -d ':'); do
+  #   if [ -d /proc/irq/${IRQ} ]; then
+  #     echo "Moving IRQ $IRQ to $IRQCORE" | doOut
+  #     ( echo "$IRQCORE" > /proc/irq/${IRQ}/smp_affinity_list 2>&1 ) | doOut
+  #   fi
+  # done
+
+  # # Also move all other threads we can away from the VM CPUs
+  # echo "Moving non-vm relates tasks to $IRQCORE" | doOut
+  # for PID in $(ps | awk '{print $1}' | grep -v PID); do
+  #   taskset -pc $IRQCORE $PID 2>/dev/null | doOut
+  # done
 }
 doWarnDKVMData() {
   local txt
@@ -637,9 +642,9 @@ doWarnDKVMData() {
   exit 1
 }
 
-setupCPULayout
 [ ! -e $configPassthroughUSBDevices ] && doUSBConfig
 [ ! -e $configPassthroughPCIDevices ] && doPCIConfig
+[ ! -e $configCPUTopology ] && writeOptimalCPULayout && vim $configCPUTopology && doKernelCPUTopology
 
 showMainMenu
 doSelect
