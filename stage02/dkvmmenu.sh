@@ -300,11 +300,8 @@ doPCIConfig() {
 
 doSaveChanges() {
   local changesTxt="Changes saved...
-$(lbu diff)
 $(lbu commit)"
-
   dialog --backtitle "$backtitle" --msgbox "$changesTxt" 30 80
-
   #showMainMenu && doSelect
 }
 
@@ -629,7 +626,7 @@ doWarnDKVMData() {
 
 [ ! -e $configPassthroughUSBDevices ] && doUSBConfig
 [ ! -e $configPassthroughPCIDevices ] && doPCIConfig
-[ ! -e $configCPUTopology ] && writeOptimalCPULayout && vim $configCPUTopology && doKernelCPUTopology
+[ ! -e $configCPUTopology ] && writeOptimalCPULayout && vim $configCPUTopology && doKernelCPUTopology && doSaveChanges
 
 showMainMenu
 doSelect
