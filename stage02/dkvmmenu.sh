@@ -296,7 +296,7 @@ doPCIConfig() {
   for selectedDevice in $selectedDevices; do
       vfioIds+=$(lspci -n -s $selectedDevice | grep -Eo '(([0-9]|[a-f]){4}|:){3}'),
   done
-  doUpdateModprobe
+  doUpdateModprobe $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
   doSaveChanges
   doUpdateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
   
