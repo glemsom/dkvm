@@ -19,8 +19,7 @@ configCPUTopology=cpuTopology
 configDataFolder=/media/dkvmdata
 configBIOSCODE=/usr/share/OVMF/OVMF_CODE.fd
 configBIOSVARS=/usr/share/OVMF/OVMF_VARS.fd
-configReservedMemMB=$(( 1024 * 2 )) # 2GB
-
+configReservedMemGB=2 # 2GB Reserved for system
 
 err() {
   echo "ERROR $@"
@@ -374,22 +373,19 @@ isGPU() {
   return $(lspci -s $device | grep -q VGA)
 }
 
-getVMMemMB() {
-  local reservedMemMB=$1
+getVMMemGB() {
+  local reservedMemGB=$1
   local totalMemKB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-  local totalMemMB=$(( $totalMemKB / 1024 ))
+  local totalMemGB=$(( $totalMemKB / 1000 / 1000 ))
 
-  VMMemMB=$(( ($totalMemMB - $reservedMemMB) + 2 ))
-  echo $(( ${VMMemMB%.*} /2 * 2 ))
+  VMMemGB=$(( ( $totalMemGB - $reservedMemGB ) - 2 ))
+  echo $VMMemGB
 }
 
-
 setupHugePages() {
-  local VMMemMB=$1
-  local pageSizeMB=2
-  local required=$(( $VMMemMB / $pageSizeMB ))
+  local VMMemGB=$1
   echo 1 > /proc/sys/vm/compact_memory
-  echo $required > /proc/sys/vm/nr_hugepages
+  echo $VMMemGB > /proc/sys/vm/nr_hugepages
 }
 
 mainHandlerVM() {
@@ -408,7 +404,7 @@ mainHandlerVM() {
   local VMPASSTHROUGHUSBDEVICES=$(cat $configPassthroughUSBDevices)
   local VMBIOS=$configDataFolder/${1}/OVMF_CODE.fd
   local VMBIOS_VARS=$configDataFolder/${1}/OVMF_VARS.fd
-  local VMMEMMB=$(getVMMemMB $configReservedMemMB)
+  local VMMEMGB=$(getVMMemGB $configReservedMemGB)
   local VMMAC=$(getConfigItem $configFile MAC)
   local VMCPUOPTS=$(getConfigItem $configFile CPUOPTS)
 
@@ -416,7 +412,7 @@ mainHandlerVM() {
   OPTS="-nodefaults -no-user-config -accel accel=kvm,kernel-irqchip=on -machine q35,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
   OPTS+=" -mem-prealloc -overcommit mem-lock=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
-  OPTS+=" -m ${VMMEMMB}M  -mem-path /dev/hugepages"
+  OPTS+=" -m ${VMMEMGB}G  -mem-path /dev/hugepages"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" -chardev socket,id=chrtpm,path=$configDataFolder/${VMID}/tpm.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
   OPTS+=" -nographic -vga none"
@@ -469,7 +465,7 @@ mainHandlerVM() {
     OPTS+=" -cpu host "
   fi
   doOut "clear"
-  setupHugePages $VMMEMMB |& doOut
+  setupHugePages $VMMEMGB |& doOut
   echo "QEMU Options $OPTS" | doOut
   realTimeTune
   ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
