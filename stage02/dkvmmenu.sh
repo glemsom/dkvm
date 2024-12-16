@@ -389,6 +389,8 @@ setupHugePages() {
   local pageSizeMB=2
   local required=$(( $VMMemMB / $pageSizeMB ))
   echo 1 > /proc/sys/vm/compact_memory
+  echo 'never' > /sys/kernel/mm/transparent_hugepage/defrag
+  echo 'never' > /sys/kernel/mm/transparent_hugepage/enabled
   echo $required > /proc/sys/vm/nr_hugepages
 }
 
