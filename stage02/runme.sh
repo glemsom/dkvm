@@ -13,7 +13,7 @@ mkdir /media/usb/cache
 
 # Extra arguments for Linux kernel
 #TODO : Get this from a config file instead?
-extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5 hugepagesz=1G default_hugepagesz=1G transparent_hugepage=never"
+extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5 hugepagesz=1G default_hugepagesz=1G"
 
 # Patch grub2 (uefi boot)
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
