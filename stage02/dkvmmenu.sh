@@ -84,7 +84,7 @@ doOut() {
     killall dkvmmenu.sh
     exit
   else
-    cat - >>"$TAILFILE"
+    cat - | fold  >>"$TAILFILE"
   fi
 }
 
