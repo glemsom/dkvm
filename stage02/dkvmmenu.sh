@@ -433,12 +433,15 @@ mainHandlerVM() {
 
   if [ ! -z "$VMHARDDISK" ]; then
     COUNT=0
+    THREADCOUNT=0
     for DISK in $VMHARDDISK; do
       #OPTS+=" -drive if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK}" ## normal
-      OPTS+=" -object iothread,id=iothread0 -object iothread,id=iothread1"
+      OPTS+=" -object iothread,id=iothread${THREADCOUNT}"
+      OPTS+=" -object iothread,id=iothread$(( ${THREADCOUNT} + 1 ))"
       OPTS+=" -drive if=none,cache=none,aio=native,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK},id=drive${COUNT}"
-      OPTS+=" --device '{\"driver\":\"virtio-blk-pci\",\"iothread-vq-mapping\":[{\"iothread\":\"iothread0\"},{\"iothread\":\"iothread1\"}],\"drive\":\"drive${COUNT}\",\"queue-size\":1024,\"config-wce\":false}'"
+      OPTS+=" --device '{\"driver\":\"virtio-blk-pci\",\"iothread-vq-mapping\":[{\"iothread\":\"iothread${THREADCOUNT}\"},{\"iothread\":\"iothread$(( ${THREADCOUNT} + 1 ))\"}],\"drive\":\"drive${COUNT}\",\"queue-size\":1024,\"config-wce\":false}'"
       let COUNT=COUNT+1
+      let THREADCOUNT=THREADCOUNT+2
     done
   fi
   if [ ! -z "$VMCDROM" ]; then
@@ -632,3 +635,4 @@ doWarnDKVMData() {
 
 showMainMenu
 doSelect
+
