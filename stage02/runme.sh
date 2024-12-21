@@ -108,18 +108,12 @@ mount -a
 ' >> /etc/local.d/dkvm_folder.start
 chmod +x /etc/local.d/dkvm_folder.start
 
-# Copy dkvmmenu over
+# Copy dkvmmenu and status over
 cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
-
-# Copy any VM config
-cp /media/cdrom/dkvm_* /root/
-
-# Rename files
-for f in /root/dkvm_vmc*; do
-    mv "$f" `echo $f | sed 's/vmc/vmconfig/g'`
-done
+cp /media/cdrom/dkvmstatus.sh /root/dkvmstatus.sh
 
 chmod +x /root/dkvmmenu.sh
+chmod +x /root/dkvmstatus.sh
 
 lbu include /root
 
