@@ -2,8 +2,6 @@
 # DKVM Menu
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 
-shopt -s nullglob 
-
 version=$(cat /media/usb/dkvm-release)
 # Change to script directory
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,6 +29,7 @@ err() {
 }
 
 buildMenuItemVMs() {
+  shopt -s nullglob
   menuItemsVMs=""
   itemNumber=0
   for VMConfig in $configDataFolder/*/vm_config; do
@@ -38,6 +37,7 @@ buildMenuItemVMs() {
     menuItemsVMs[$itemNumber]="$itemName"
     let itemNumber++
   done
+  shopt -u nullglob
 }
 
 # Install OVMF BIOS if not already present
