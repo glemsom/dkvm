@@ -110,10 +110,10 @@ chmod +x /etc/local.d/dkvm_folder.start
 
 # Copy dkvmmenu and status over
 cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
-cp /media/cdrom/dkvmstatus.sh /root/dkvmstatus.sh
+cp /media/cdrom/dkvmlog.sh /root/dkvmlog.sh
 
 chmod +x /root/dkvmmenu.sh
-chmod +x /root/dkvmstatus.sh
+chmod +x /root/dkvmlog.sh
 
 lbu include /root
 

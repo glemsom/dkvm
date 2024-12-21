@@ -63,7 +63,7 @@ doStartTPM() {
 
 doShowStatus() {
   dialog --backtitle "$backtitle" \
-    --title "Desktop VM" --prgbox "./dkvmstatus.sh $configPassthroughUSBDevices $configPassthroughPCIDevices " 30 80
+    --title "Desktop VM" --prgbox "./dkvmlog.sh $configPassthroughUSBDevices $configPassthroughPCIDevices " 30 80
   clear
   exit 0
 }

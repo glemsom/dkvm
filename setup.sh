@@ -1,5 +1,5 @@
 #!/bin/bash
-version=0.5.6
+version=0.5.7
 disksize=1024 #Disk size in MB
 alpineVersion=3.21
 alpineVersionMinor=0
