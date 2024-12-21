@@ -241,7 +241,7 @@ doUSBConfig() {
   done
   selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select USB devices for passthrough\" 40 80 70 $dialogStr | tr ' ' '\n')
 
-  [ -z "$selectedDevices" ] && break
+  [ -z "$selectedDevices" ] && exit 1
 
   echo "$selectedDevices" > $configPassthroughUSBDevices
 }
@@ -293,7 +293,7 @@ doPCIConfig() {
   selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select PCI devices for passthrough\" 40 80 70 $dialogStr | tr ' ' '\n')
   echo "$selectedDevices" > $configPassthroughPCIDevices
 
-  [ -z "$selectedDevices" ] && break
+  [ -z "$selectedDevices" ] && exit 1
 
   for selectedDevice in $selectedDevices; do
       vfioIds+=$(lspci -n -s $selectedDevice | grep -Eo '(([0-9]|[a-f]){4}|:){3}'),
