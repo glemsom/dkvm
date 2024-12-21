@@ -1,5 +1,6 @@
 alpine-standard-*-x86_64.iso
-OVMF.fd
+alpine-standard-*-x86_64.iso.patched
+OVMF*
 stage01.iso
 stage02.iso
 usbdisk.img
