@@ -150,7 +150,7 @@ doSelect() {
 }
 
 getLastVMConfig() {
-  basename $(find $configDataFolder -type d -maxdepth 1 -name "[0-9]" | tail -n 1)
+  basename $(find $configDataFolder -maxdepth 1 -type d -name "[0-9]" | sort | tail -n 1)
 }
 
 doAddVM() {
@@ -185,19 +185,24 @@ CPUOPTS=hv-frequencies,hv-relaxed,hv-reset,hv-runtime,hv-spinlocks=0x1fff,hv-sti
   mkdir -p $configDataFolder/${nextVMIndex} || err "Cannot create VM folder"
   echo "$template" > $configDataFolder/${nextVMIndex}/vm_config || err "Cannot write VM Template"
   
-  doEditVM
+  doEditVM "$configDataFolder/${nextVMIndex}/vm_config"
 }
 
 doEditVM() {
-  local VMFolders=$(find $configDataFolder -type d -maxdepth 1 -name "[0-9]")
-  menuStr=""
-  for VMFolder in $VMFolders; do
-    local VMName=$(getConfigItem ${VMFolder}/vm_config NAME)
-    local menuStr="$menuStr $(basename $VMFolder) '$VMName'"
-  done
-  local menuAnswer=$(eval "dialog --backtitle "'$backtitle'" --menu 'Choose VM' 20 30 20 $menuStr" --stdout)
+  if [ "$1" != "" ]; then
+    # Edit VM directly
+    vi "$1"
+  else
+    local VMFolders=$(find $configDataFolder -type d -maxdepth 1 -name "[0-9]")
+    menuStr=""
+    for VMFolder in $VMFolders; do
+      local VMName=$(getConfigItem ${VMFolder}/vm_config NAME)
+      local menuStr="$menuStr $(basename $VMFolder) '$VMName'"
+    done
+    local menuAnswer=$(eval "dialog --backtitle "'$backtitle'" --menu 'Choose VM to edit' 20 30 20 $menuStr" --stdout)
 
-  vi ${configDataFolder}/${menuAnswer}/vm_config
+    [ "$menuAnswer" != "" ] && vi ${configDataFolder}/${menuAnswer}/vm_config
+  fi
 }
 
 writeOptimalCPULayout() {
