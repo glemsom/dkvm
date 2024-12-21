@@ -61,11 +61,11 @@ doStartTPM() {
   /usr/bin/swtpm socket --tpmstate dir=${vmFolder}/tpm,mode=0600 --ctrl type=unixio,path=${vmFolder}/tpm.sock,mode=0600 --log file=${vmFolder}/tpm.log --terminate --tpm2 &
 }
 
-doShowLog() {
+doShowStatus() {
   dialog --backtitle "$backtitle" \
-    --title Log --exit-label "Stop VM" --begin 2 2 --tailbox dkvm.log 30 92 
+    --title "Desktop VM" --prgbox "./dkvmstatus.sh $configPassthroughUSBDevices $configPassthroughPCIDevices " 30 80
   clear
-  exit
+  exit 0
 }
 
 doOut() {
@@ -74,7 +74,7 @@ doOut() {
     rm -f "$TAILFILE"
     touch "$TAILFILE"
   elif [ "$1" == "showlog" ]; then
-    doShowLog
+    doShowStatus
     # When exited, kill any remaining qemu
     killall qemu-system-x86_64
     sleep 2
@@ -635,4 +635,3 @@ doWarnDKVMData() {
 
 showMainMenu
 doSelect
-
