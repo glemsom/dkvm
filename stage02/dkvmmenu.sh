@@ -2,6 +2,8 @@
 # DKVM Menu
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 
+shopt -s nullglob 
+
 version=$(cat /media/usb/dkvm-release)
 # Change to script directory
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -182,7 +184,7 @@ CPUOPTS=hv-frequencies,hv-relaxed,hv-reset,hv-runtime,hv-spinlocks=0x1fff,hv-sti
 
   mkdir -p $configDataFolder/${nextVMIndex} || err "Cannot create VM folder"
   echo "$template" > $configDataFolder/${nextVMIndex}/vm_config || err "Cannot write VM Template"
-
+  
   doEditVM
 }
 
