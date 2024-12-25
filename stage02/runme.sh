@@ -117,7 +117,7 @@ chmod +x /root/dkvmlog.sh
 
 lbu include /root
 
-# Patch inittab to start vm_start.sh
+# Patch inittab to start dkvmmenu.sh
 cp /etc/inittab /etc/inittab.bak
 cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh#' > /etc/inittab
 
@@ -147,6 +147,9 @@ EOF
 
 # Issue discard by default(LVM)
 sed 's/# issue_discards.*/issue_discards = 1/' -i /etc/lvm/lvm.conf
+
+# Passthrouch ACPI Power Button to Desktop VM
+echo 'echo -e \'{ "execute": "qmp_capabilities" }\n{ "execute": "system_powerdown" }\' | timeout 5 nc localhost 4444' > /etc/acpi/PWRF/00000080
 
 setup-apkcache /media/usb/cache
 setup-lbu usb
