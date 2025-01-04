@@ -149,7 +149,7 @@ EOF
 sed 's/# issue_discards.*/issue_discards = 1/' -i /etc/lvm/lvm.conf
 
 # Passthrouch ACPI Power Button to Desktop VM
-echo 'echo -e \'{ "execute": "qmp_capabilities" }\n{ "execute": "system_powerdown" }\' | timeout 5 nc localhost 4444' > /etc/acpi/PWRF/00000080
+echo $'echo -e \'{ "execute": "qmp_capabilities" }\\n{ "execute": "system_powerdown" }\' | timeout 5 nc localhost 4444' >  /etc/acpi/PWRF/00000080
 
 setup-apkcache /media/usb/cache
 setup-lbu usb
