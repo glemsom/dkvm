@@ -443,7 +443,6 @@ mainHandlerVM() {
     COUNT=0
     THREADCOUNT=0
     for DISK in $VMHARDDISK; do
-      #OPTS+=" -drive if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK}" ## normal
       OPTS+=" -object iothread,id=iothread${THREADCOUNT}"
       OPTS+=" -object iothread,id=iothread$(( ${THREADCOUNT} + 1 ))"
       OPTS+=" -drive if=none,cache=none,aio=native,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK},id=drive${COUNT}"
