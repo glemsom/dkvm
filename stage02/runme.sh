@@ -5,11 +5,10 @@ err() {
 	/bin/sh
 }
 
-
 echo "Creating persistent apk cache"
 
-mount -o remount,rw /media/usb
-mkdir /media/usb/cache
+mount -o remount,rw /media/usb || err "Cannot remount /media/usb as readwrite"
+mkdir /media/usb/cache || err "Cannot create cache folder"
 
 # Extra arguments for Linux kernel
 #TODO : Get this from a config file instead?
@@ -24,20 +23,17 @@ cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {
 ln -s /media/usb/cache /etc/apk/cache
 
 # Add br0
-
 brctl addbr br0
 brctl addif br0 eth0
 
 ip link set dev eth0 up
 
-mount /media/cdrom
 setup-alpine -e -f /media/cdrom/answer.txt
 
 #/bin/bash
 # Add extra repositories
 echo "Enable extra repositories"
 sed -i '/^#.*v3.*community/s/^#/@community /' /etc/apk/repositories
-
 
 apk update
 apk upgrade
@@ -46,15 +42,10 @@ apk upgrade
 apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance || err "Cannot install packages"
 
 # Upgrade kernel
-update-kernel /media/usb/boot/
+update-kernel /media/usb/boot/ || err "Kernel upgrade failed"
+umount /.modloop
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
-
-wget -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
-mount -o remount,rw /media/usb || err "Cannot remount /media/usb to readwrite"
-mkdir -p /media/usb/custom
-
-mount -o remount,ro /media/usb || err "Cannot remount /media/usb"
 
 # Add startup services
 rc-update add mdadm-raid
@@ -126,13 +117,14 @@ cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh#' > /etc/
 
 ########################################
 
-mount -o remount,rw /media/usb
+mount -o remount,rw /media/usb || err "Cannot remount /media/usb as readwrite"
 apk cache -v sync
-mount -o remount,ro /media/usb
+mount -o remount,ro /media/usb || err "Cannot remount /media/usb as readonly"
 
 echo "Migrate to using disk label for APK cache"
 
 umount /media/usb
+
 cat > /etc/fstab <<EOF
 /dev/cdrom	/media/cdrom	iso9660	noauto,ro 0 0
 LABEL=dkvm     /media/usb    vfat   noauto,ro 0 0

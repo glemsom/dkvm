@@ -1,6 +1,6 @@
 #!/bin/bash
 version=0.5.7
-disksize=1024 #Disk size in MB
+disksize=2048 #Disk size in MB
 alpineVersion=3.21
 alpineVersionMinor=0
 alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
@@ -114,7 +114,7 @@ spawn $qemu -m 12G -machine q35 -enable-kvm \
 -drive if=none,format=raw,id=usbstick,file=$diskfile \
 -usb -device usb-storage,drive=usbstick \
 -drive format=raw,media=cdrom,readonly,file=stage02.iso \
--netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
+-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10,hostfwd=tcp::2222-:22 \
 -device e1000,netdev=mynet0 \
 -nographic \
 -boot menu=on,splash-time=12000 \
