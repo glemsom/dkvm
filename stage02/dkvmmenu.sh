@@ -231,7 +231,7 @@ EOF
 
 doUSBConfig() {
   echo "USB Config" | doLog
-  local USBDevices=$(lsusb)
+  local USBDevices=$(lsusb 2>/dev/null)
   dialogStr=""
 
   for USBDevice in $USBDevices; do

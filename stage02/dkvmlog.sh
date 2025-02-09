@@ -1,5 +1,4 @@
 #!/bin/bash
-# From 
 
 qemuStarted=false
 shownUSBDevices=false
@@ -31,8 +30,8 @@ getQEMUThreads() {
 
 getUSBPassthroughDevices() {
     local usbDevices=$(cat $1)
-    for usbDevice  in $usbDevices; do
-        lsusb | grep $usbDevice
+    for usbDevice in $usbDevices; do
+        lsusb 2>/dev/null| grep $usbDevice
     done
 }
 getPCIPassthroughDevices() {
@@ -70,8 +69,6 @@ doShowStatus() {
             if [ ! "$(getQEMUStatus)" == "running" ] ;then
                 echo "QEMU exited."
                 exit 0
-            else
-                echo "`date` QEMU status" $(getQEMUStatus) >> mylog
             fi
         fi
         sleep 1
