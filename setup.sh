@@ -17,7 +17,7 @@ err() {
 }
 
 # Check dependencies
-deps="expect mkisofs dd xorriso zip $qemu"
+deps="wget expect mkisofs dd xorriso zip $qemu"
 
 for dep in $deps; do
 	which $dep || err "Missing $dep"
