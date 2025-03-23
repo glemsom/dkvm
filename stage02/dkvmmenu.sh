@@ -174,10 +174,10 @@ CPUOPTS=hv-frequencies,hv-relaxed,hv-reset,hv-runtime,hv-spinlocks=0x1fff,hv-sti
 '
   # Find next dkvm_vmconfig.X
   local lastVMConfig=$(getLastVMConfig)
-  if [ $lastVMConfig == "" ]; then
+  if [ -z "$lastVMConfig" ]; then
     # First VM
     nextVMIndex=0
-  elif [ $getLastVMConfig == 9]; then
+  elif [ $getLastVMConfig == 9 ]; then
     dialog --msgbox "All VM slots in use. Please clear up in ${configDataFolder}/[0-9]" 20 60
     exit 1
   else
