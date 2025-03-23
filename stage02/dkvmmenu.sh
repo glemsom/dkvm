@@ -309,7 +309,6 @@ doSaveChanges() {
   local changesTxt="Changes saved...
 $(lbu commit)"
   dialog --backtitle "$backtitle" --msgbox "$changesTxt" 30 80
-  #showMainMenu && doSelect
 }
 
 mainHandlerInternal() {
