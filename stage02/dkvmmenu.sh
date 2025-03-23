@@ -332,7 +332,8 @@ mainHandlerInternal() {
     menuOptions[3]="Edit CPU Topology"
     menuOptions[4]="Edit PCI Passthrough"
     menuOptions[5]="Edit USB Passthrough"
-    menuOptions[6]="Save changes"
+    menuOptions[6]="Edit custom PCI reload script"
+    menuOptions[7]="Save changes"
     
     local itemString=""
 
@@ -357,6 +358,8 @@ mainHandlerInternal() {
     elif [ "$menuAnswer" == "5" ]; then
       doUSBConfig
     elif [ "$menuAnswer" == "6" ]; then
+      setupCustomReloadPCIDevice
+    elif [ "$menuAnswer" == "7" ]; then
       doSaveChanges
     fi
     showMainMenu && doSelect
@@ -489,18 +492,61 @@ mainHandlerVM() {
 }
 
 reloadPCIDevices() {
+  if [ ! -e $configDataFolder/customReloadPCI ]; then
+    while read device; do
+      local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
+      local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
+      if [ -e /sys/bus/pci/devices/0000:${device}/driver/unbind ]; then
+        echo "0000:${device}" >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>&1 | doOut
+        sleep 1
+      fi
+      echo "Removing $pciVendor $pciDevice from vfio-pci" | doOut
+      echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1 | doOut
+      sleep 1
+      if [ -e "/sys/bus/pci/devices/0000:${device}/reset" ]; then
+        echo "Resetting $device" | doOut
+        echo 1 >"/sys/bus/pci/devices/0000:${device}/reset" 2>&1 | doOut
+        sleep 1
+      fi
+    done <<< "$@"
+
+    while read device; do
+      local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
+      local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
+      echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}" | doOut
+      echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
+      sleep 1
+    done <<< "$@"
+  fi
+}
+
+setupCustomReloadPCIDevice() {
+  if [ -e $configDataFolder/customReloadPCI ]; then
+    vi $configDataFolder/customReloadPCI
+  else
+    cat <<-'EOF' > $configDataFolder/customReloadPCI
+# Must be wrapper in a function called customReloadPCIDevices
+# Arguments to the function will be the passthrough devices
+# You to doOut function to write to status log
+#
+customReloadPCIDevices() {
+  echo "Custom PCI Passthrough function" | doOut
   while read device; do
     local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
     local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
+    # Unbind device
     if [ -e /sys/bus/pci/devices/0000:${device}/driver/unbind ]; then
       echo "0000:${device}" >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>&1 | doOut
       sleep 1
     fi
+
     echo "Removing $pciVendor $pciDevice from vfio-pci" | doOut
     echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1 | doOut
     sleep 1
+
+    # Reset device
     if [ -e "/sys/bus/pci/devices/0000:${device}/reset" ]; then
-      echo "Resetting $device"
+      echo "Resetting $device" | doOut
       echo 1 >"/sys/bus/pci/devices/0000:${device}/reset" 2>&1 | doOut
       sleep 1
     fi
@@ -513,6 +559,9 @@ reloadPCIDevices() {
     echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
     sleep 1
   done <<< "$@"
+}
+EOF
+  fi
 }
 
 getConfigItem() {
