@@ -17,6 +17,7 @@ configPassthroughPCIDevices=passthroughPCIDevices
 configPassthroughUSBDevices=passthroughUSBDevices
 configCPUTopology=cpuTopology
 configDataFolder=/media/dkvmdata
+configCustomPCIReloadScript=$configDataFolder/customPCIReload
 configBIOSCODE=/usr/share/OVMF/OVMF_CODE.fd
 configBIOSVARS=/usr/share/OVMF/OVMF_VARS.fd
 configReservedMemMB=$(( 1024 * 2 )) # 2GB
@@ -358,7 +359,7 @@ mainHandlerInternal() {
     elif [ "$menuAnswer" == "5" ]; then
       doUSBConfig
     elif [ "$menuAnswer" == "6" ]; then
-      setupCustomReloadPCIDevice
+      setupCustomReloadPCIDevice && vi $configCustomPCIReloadScript 
     elif [ "$menuAnswer" == "7" ]; then
       doSaveChanges
     fi
@@ -492,12 +493,12 @@ mainHandlerVM() {
 }
 
 reloadPCIDevices() {
-  if [ -e $configDataFolder/customReloadPCI ]; then
-    . $configDataFolder/customReloadPCI
+  if [ -e $configCustomPCIReloadScript ]; then
+    . $configCustomPCIReloadScript
     if declare -F setupCustomReloadPCIDevice >/dev/null; then
       setupCustomReloadPCIDevice "$@"
     else
-      echo "Unable to find function setupCustomReloadPCIDevice() in $configDataFolder/customReloadPCI" | doOut
+      echo "Unable to find function setupCustomReloadPCIDevice() in $configCustomPCIReloadScript" | doOut
       return 1
     fi
   else
@@ -529,10 +530,10 @@ reloadPCIDevices() {
 }
 
 setupCustomReloadPCIDevice() {
-  if [ -e $configDataFolder/customReloadPCI ]; then
-    vi $configDataFolder/customReloadPCI
+  if [ -e $configCustomPCIReloadScript ]; then
+    vi $configCustomPCIReloadScript
   else
-    cat <<-'EOF' > $configDataFolder/customReloadPCI
+    cat <<-'EOF' > $configCustomPCIReloadScript
 # Must be wrapper in a function called customReloadPCIDevices
 # Arguments to the function will be the passthrough devices
 # You to doOut function to write to status log
