@@ -214,7 +214,7 @@ writeOptimalCPULayout() {
   VMCPU=$(lscpu -p| grep -v \# | grep -v -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
   CPUTHREADS=$(lscpu |grep Thread | cut -d: -f2|tr -d ' ')
   if [ ! -z "$HOSTCPU" ] && [ ! -z "$VMCPU" ]; then  
-  cat > cpuTopology <<EOF
+  cat > $configCPUTopology <<EOF
 # This file is auto-generated upon first start-up.
 # To regenerate, just delete this file
 #
@@ -488,7 +488,7 @@ mainHandlerVM() {
   setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
   realTimeTune
-  ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
+  ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; echo eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
   vCPUpin &
   doOut showlog
 }
