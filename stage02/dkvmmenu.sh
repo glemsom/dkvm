@@ -25,7 +25,6 @@ configReservedMemMB=$(( 1024 * 2 )) # 2GB
 
 err() {
   echo "ERROR $@"
-  echo "ERROR $@" | doLog
   exit 1
 }
 
