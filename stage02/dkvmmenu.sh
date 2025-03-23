@@ -492,7 +492,15 @@ mainHandlerVM() {
 }
 
 reloadPCIDevices() {
-  if [ ! -e $configDataFolder/customReloadPCI ]; then
+  if [ -e $configDataFolder/customReloadPCI ]; then
+    . $configDataFolder/customReloadPCI
+    if declare -F setupCustomReloadPCIDevice >/dev/null; then
+      setupCustomReloadPCIDevice "$@"
+    else
+      echo "Unable to find function setupCustomReloadPCIDevice() in $configDataFolder/customReloadPCI" | doOut
+      return 1
+    fi
+  else
     while read device; do
       local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
       local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
