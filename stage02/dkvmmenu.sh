@@ -13,13 +13,15 @@ declare -a menuItemsType
 declare -a menuItemsVMs
 menuAnswer=""
 
-configPassthroughPCIDevices=passthroughPCIDevices
-configPassthroughUSBDevices=passthroughUSBDevices
-configCPUTopology=cpuTopology
 configDataFolder=/media/dkvmdata
+configPassthroughPCIDevices=$configDataFolder/passthroughPCIDevices
+configPassthroughUSBDevices=$configDataFolder/passthroughUSBDevices
+configCPUTopology=$configDataFolder/cpuTopology
 configCustomPCIReloadScript=$configDataFolder/customPCIReload
+
 configBIOSCODE=/usr/share/OVMF/OVMF_CODE.fd
 configBIOSVARS=/usr/share/OVMF/OVMF_VARS.fd
+
 configReservedMemMB=$(( 1024 * 2 )) # 2GB
 
 
