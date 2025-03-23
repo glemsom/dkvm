@@ -694,7 +694,7 @@ doWarnDKVMData() {
   exit 1
 }
 
-#mountpoint $configDataFolder || doWarnDKVMData
+mountpoint $configDataFolder || doWarnDKVMData
 
 [ ! -e $configPassthroughUSBDevices ] && doUSBConfig
 [ ! -e $configPassthroughPCIDevices ] && doPCIConfig
