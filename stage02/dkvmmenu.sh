@@ -488,7 +488,7 @@ mainHandlerVM() {
   setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
   realTimeTune
-  ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; echo eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
+  ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
   vCPUpin &
   doOut showlog
 }
@@ -496,10 +496,10 @@ mainHandlerVM() {
 reloadPCIDevices() {
   if [ -e $configCustomPCIReloadScript ]; then
     . $configCustomPCIReloadScript
-    if declare -F setupCustomReloadPCIDevice >/dev/null; then
-      setupCustomReloadPCIDevice "$@"
+    if declare -F doCustomReloadPCIDevice >/dev/null; then
+      doCustomReloadPCIDevice "$@"
     else
-      echo "Unable to find function setupCustomReloadPCIDevice() in $configCustomPCIReloadScript" | doOut
+      echo "Unable to find function doCustomReloadPCIDevice() in $configCustomPCIReloadScript" | doOut
       return 1
     fi
   else
@@ -535,29 +535,29 @@ setupCustomReloadPCIDevice() {
     vi $configCustomPCIReloadScript
   else
     cat <<-'EOF' > $configCustomPCIReloadScript
-# Must be wrapper in a function called customReloadPCIDevices
+# Must be wrapper in a function called doCustomReloadPCIDevice
 # Arguments to the function will be the passthrough devices
-# You to doOut function to write to status log
+# Write to STDOUT to capture logs in dkvm.log
 #
-customReloadPCIDevices() {
-  echo "Custom PCI Passthrough function" | doOut
+doCustomReloadPCIDevice() {
+  echo "Custom PCI Passthrough function"
   while read device; do
     local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
     local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
     # Unbind device
     if [ -e /sys/bus/pci/devices/0000:${device}/driver/unbind ]; then
-      echo "0000:${device}" >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>&1 | doOut
+      echo "0000:${device}" >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>&1
       sleep 1
     fi
 
-    echo "Removing $pciVendor $pciDevice from vfio-pci" | doOut
-    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1 | doOut
+    echo "Removing $pciVendor $pciDevice from vfio-pci"
+    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1
     sleep 1
 
     # Reset device
     if [ -e "/sys/bus/pci/devices/0000:${device}/reset" ]; then
-      echo "Resetting $device" | doOut
-      echo 1 >"/sys/bus/pci/devices/0000:${device}/reset" 2>&1 | doOut
+      echo "Resetting $device"
+      echo 1 >"/sys/bus/pci/devices/0000:${device}/reset" 2>&1
       sleep 1
     fi
   done <<< "$@"
@@ -565,8 +565,8 @@ customReloadPCIDevices() {
   while read device; do
     local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
     local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-    echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}" | doOut
-    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
+    echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}"
+    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1
     sleep 1
   done <<< "$@"
 }
@@ -694,7 +694,7 @@ doWarnDKVMData() {
   exit 1
 }
 
-mountpoint $configDataFolder || doWarnDKVMData
+#mountpoint $configDataFolder || doWarnDKVMData
 
 [ ! -e $configPassthroughUSBDevices ] && doUSBConfig
 [ ! -e $configPassthroughPCIDevices ] && doPCIConfig
