@@ -41,6 +41,6 @@ echo "Making usb disk bootable"
 setup-bootable /media/sr0 ${installDisk}1
 
 echo "System will now poweroff, and restart with stage02 iso"
+sync
 sleep 2
-
 poweroff

@@ -5,22 +5,32 @@ err() {
 	/bin/sh
 }
 
-echo "Creating persistent apk cache"
+sleep 5
 
+if ! mountpoint /media/usb; then
+	echo "/media/usb not automounted - binding /dev/sda1"
+	# Sometimes /dev/usbdisk is not correctly mounted under /media/usb
+	# In out case, it will then be /dev/sda1
+	# Bind it then
+	mount --bind /media/sda1 /media/usb || err "Bind mount failed"
+fi
+
+echo "Creating persistent apk cache"
 mount -o remount,rw /media/usb || err "Cannot remount /media/usb as readwrite"
 mkdir /media/usb/cache || err "Cannot create cache folder"
+
+ln -s /media/usb/cache /etc/apk/cache
 
 # Extra arguments for Linux kernel
 #TODO : Get this from a config file instead?
 extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5"
 
 # Patch grub2 (uefi boot)
+[ -e /media/usb/boot/grub/grub.cfg.old ] && rm -f /media/usb/boot/grub/grub.cfg.old
+
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
 cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g'> /media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
 
-
-#mount -o remount,ro /media/usb
-ln -s /media/usb/cache /etc/apk/cache
 
 # Add br0
 brctl addbr br0
@@ -39,7 +49,7 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance || err "Cannot install packages"
+apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils || err "Cannot install packages"
 
 # Upgrade kernel
 update-kernel /media/usb/boot/ || err "Kernel upgrade failed"
@@ -151,7 +161,9 @@ setup-lbu usb
 
 lbu commit -d -v
 
-echo "Exiting stage02"
+mount -o remount,ro /media/usb
+
 sync
 sleep 2
+echo "Exiting stage02"
 poweroff

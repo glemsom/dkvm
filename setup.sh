@@ -74,6 +74,9 @@ chmod +w boot/syslinux/isolinux.bin || err "Cannot modify permissions for isolin
 sed -i 's/quiet/console=ttyS0,9600 quiet/' boot/grub/grub.cfg || err "Cannot patch grub.cfg"
 cd .. && xorriso -as mkisofs -o ${alpineISO}.patched -isohybrid-mbr tmp_iso/boot/syslinux/isohdpfx.bin -c boot/syslinux/boot.cat  -b boot/syslinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/grub/efi.img  -no-emul-boot -isohybrid-gpt-basdat  tmp_iso || err "Cannot build custom ISO"
 
+sudo umount tmp_iso_readonly
+
+
 echo "Starting stage01..."
 
 sudo expect -c "set timeout -1
@@ -103,6 +106,9 @@ expect \"ALL DONE\"
 
 clear
 
+cp usbdisk.img usbdisk.img-save-stage01
+sleep 2
+
 echo "Starting stage02..."
 
 sudo expect -c "set timeout -1
@@ -118,8 +124,7 @@ spawn $qemu -smp 4 -m 8G -machine q35 -enable-kvm \
 -device e1000,netdev=mynet0 \
 -nographic \
 -boot menu=on,splash-time=12000 \
--global ICH9-LPC.disable_s3=0 \
--global driver=cfi.pflash01,property=secure,value=off
+-global ICH9-LPC.disable_s3=0
 expect \"login: \"
 send root\n
 expect \"localhost:~# \"
@@ -129,33 +134,32 @@ expect \"Exiting stage02\"
 " || err "Error in stage02"
 
 #clear
+#cp usbdisk.img usbdisk.img-save-stage02
 
 loopDevice=$(sudo losetup --show -f -P "$diskfile" 2>&1)
 mkdir tmp_dkvm
 sudo mount -o loop ${loopDevice}p1 tmp_dkvm || err "Cannot mount ${loopDevice}p1"
 
+ls -l tmp_dkvm
 # Write version
+echo -n "Version: "
 echo $version | sudo tee tmp_dkvm/dkvm-release
 
 # Cleanup mount
-sudo umount tmp_dkvm
-sudo umount ${loopDevice}p1
-sudo losetup -D
-sudo rm -rf tmp_dkvm
-
-sleep 5
-
 while mount | grep ${loopDevice}p1 -q; do
-	echo " ${loopDevice}p1 still mounted - trying to cleanup"
+	echo "${loopDevice}p1 still mounted - trying to cleanup"
 	mountPoint=$(mount | grep "${loopDevice}p1" | awk '{print $3}')
-	sudo umount ${loopDevice}p1
+	sudo umount "${loopDevice}p1"
 	sudo umount "$mountPoint"
 	sudo losetup -D
 	sleep 5
 done
 echo ${loopDevice}p1 unmounted
+sudo rm -rf tmp_dkvm
 
 #echo '* Test boot - make sure the system can start. Then do a PowerOff'
+
+#cp usbdisk.img usbdisk.img-save-stage02-end
 
 sudo $qemu -m 8G -machine q35 -enable-kvm \
 	-smp cpus=4,sockets=1,dies=1 \
@@ -166,9 +170,8 @@ sudo $qemu -m 8G -machine q35 -enable-kvm \
 	-usb -device usb-storage,drive=usbstick \
 	-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
 	-device e1000,netdev=mynet0 \
-	-boot menu=on,splash-time=12000 \
-	-global ICH9-LPC.disable_s3=0 \
-	-global driver=cfi.pflash01,property=secure,value=off || err "Cannot start qemu"
+	-boot menu=on,splash-time=4000 \
+	-global ICH9-LPC.disable_s3=0 || err "Cannot start qemu"
 
 # Cleanup
 sleep 1
