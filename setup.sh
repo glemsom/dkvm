@@ -1,6 +1,6 @@
 #!/bin/bash
 version=0.5.8
-disksize=2048 #Disk size in MB
+disksize=2048  #Disk size in MB
 alpineVersion=3.21
 alpineVersionMinor=3
 alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
@@ -77,7 +77,7 @@ cd .. && xorriso -as mkisofs -o ${alpineISO}.patched -isohybrid-mbr tmp_iso/boot
 echo "Starting stage01..."
 
 sudo expect -c "set timeout -1
-spawn $qemu -m 1G -machine q35 -enable-kvm \
+spawn $qemu -smp 4 -m 8G -machine q35 -enable-kvm \
 -drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
 -drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
 -drive if=none,format=raw,id=usbstick,file=$diskfile \
@@ -107,7 +107,7 @@ echo "Starting stage02..."
 
 sudo expect -c "set timeout -1
 set log_user 1
-spawn $qemu -m 12G -machine q35 -enable-kvm \
+spawn $qemu -smp 4 -m 8G -machine q35 -enable-kvm \
 -drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
 -drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
 -global driver=cfi.pflash01,property=secure,value=off \
@@ -157,20 +157,21 @@ done
 
 #echo '* Test boot - make sure the system can start. Then do a PowerOff'
 
-#sudo $qemu -m 8G -machine q35 -enable-kvm \
-#	-smp cpus=4,sockets=1,dies=1 \
-#	-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
-#	-drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
-#	-global driver=cfi.pflash01,property=secure,value=off \
-#	-drive if=none,format=raw,id=usbstick,file="$diskfile" \
-#	-usb -device usb-storage,drive=usbstick \
-#	-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
-#	-device e1000,netdev=mynet0 \
-#	-boot menu=on,splash-time=12000 \
-#	-global ICH9-LPC.disable_s3=0 \
-#	-global driver=cfi.pflash01,property=secure,value=off || err "Cannot start qemu"
+sudo $qemu -m 8G -machine q35 -enable-kvm \
+	-smp cpus=4,sockets=1,dies=1 \
+	-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
+	-drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
+	-global driver=cfi.pflash01,property=secure,value=off \
+	-drive if=none,format=raw,id=usbstick,file="$diskfile" \
+	-usb -device usb-storage,drive=usbstick \
+	-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
+	-device e1000,netdev=mynet0 \
+	-boot menu=on,splash-time=12000 \
+	-global ICH9-LPC.disable_s3=0 \
+	-global driver=cfi.pflash01,property=secure,value=off || err "Cannot start qemu"
 
 # Cleanup
+sleep 1
 sudo rm -rf tmp_iso
 sudo umount tmp_iso_readonly
 rm -rf tmp_iso_readonly
