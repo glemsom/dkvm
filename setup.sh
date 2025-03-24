@@ -153,7 +153,7 @@ while mount | grep ${loopDevice}p1 -q; do
 	sudo losetup -D
 	sleep 5
 done
-
+echo ${loopDevice}p1 unmounted
 
 #echo '* Test boot - make sure the system can start. Then do a PowerOff'
 
