@@ -16,7 +16,7 @@ extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 
 
 # Patch grub2 (uefi boot)
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
-cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g'> /media/usb/boot/grub/grub.cfg
+cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g'> /media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
 
 
 #mount -o remount,ro /media/usb
@@ -152,5 +152,6 @@ setup-lbu usb
 lbu commit -d -v
 
 echo "Exiting stage02"
+sync
 sleep 2
 poweroff
