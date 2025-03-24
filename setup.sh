@@ -106,7 +106,7 @@ expect \"ALL DONE\"
 
 clear
 
-cp usbdisk.img usbdisk.img-save-stage01
+#cp usbdisk.img usbdisk.img-save-stage01
 sleep 2
 
 echo "Starting stage02..."
