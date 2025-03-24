@@ -353,7 +353,7 @@ mainHandlerInternal() {
       doEditVM
     elif [ "$menuAnswer" == "3" ]; then
       writeOptimalCPULayout
-      vim cpuTopology
+      vim $configCPUTopology
       doKernelCPUTopology
     elif [ "$menuAnswer" == "4" ]; then
       doPCIConfig
@@ -698,7 +698,7 @@ mountpoint $configDataFolder || doWarnDKVMData
 
 [ ! -e $configPassthroughUSBDevices ] && doUSBConfig
 [ ! -e $configPassthroughPCIDevices ] && doPCIConfig
-[ ! -e $configCPUTopology ] && writeOptimalCPULayout && vim $configCPUTopology && doKernelCPUTopology && doSaveChanges
+[ ! -e $configCPUTopology ] && writeOptimalCPULayout && vi $configCPUTopology && doKernelCPUTopology && doSaveChanges
 
 showMainMenu
 doSelect
