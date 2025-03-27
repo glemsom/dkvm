@@ -18,3 +18,4 @@
  * Move config files to datafolder for persistence [done]
  * Option to not load VFIO-PCI on startup
  * Support setting ROM
+ * Consider using a PCIe root port
