@@ -16,3 +16,4 @@
  * re-enable static hugepage support [done]
    * Maybe support 1GB pages?
  * Move config files to datafolder for persistence [done]
+ * Option to not load VFIO-PCI on startup
