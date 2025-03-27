@@ -473,13 +473,14 @@ mainHandlerVM() {
   fi
   if [ ! -z "$VMPASSTHROUGHPCIDEVICES" ]; then
     # Use PCIE bus
+    OPTS+=" -device pcie-root-port,id=root_port1,chassis=0,slot=0,bus=pcie.0"
     loopCount=0
     for VMPASSTHROUGHPCIDEVICE in $VMPASSTHROUGHPCIDEVICES; do
     let loopCount++
       if isGPU $VMPASSTHROUGHPCIDEVICE; then # If this is a GPU adapter, set multifunction=on
-        OPTS+=" --device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE},multifunction=on"
+        OPTS+=" --device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE},bus=root_port1,addr=00.${loopCount},multifunction=on"
       else
-        OPTS+=" -device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE}"
+        OPTS+=" -device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE},bus=root_port1,addr=00.${loopCount}"
       fi
     done
   fi
