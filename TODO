@@ -12,7 +12,7 @@
  * Better storage (multithread?) [done]
  * Improve log/running menu
  * Configure CPU die
- * Support more custom PCI passthrough rutine
+ * Support more custom PCI passthrough rutine [done]
  * re-enable static hugepage support [done]
    * Maybe support 1GB pages?
  * Move config files to datafolder for persistence [done]
