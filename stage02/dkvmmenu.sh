@@ -477,7 +477,7 @@ mainHandlerVM() {
     for VMPASSTHROUGHPCIDEVICE in $VMPASSTHROUGHPCIDEVICES; do
     let loopCount++
       if isGPU $VMPASSTHROUGHPCIDEVICE; then # If this is a GPU adapter, set multifunction=on
-        OPTS+=" --device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE},multifunction=on,x-vga=on"
+        OPTS+=" --device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE},multifunction=on"
       else
         OPTS+=" -device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE}"
       fi
