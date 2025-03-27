@@ -77,15 +77,10 @@ cleanup(){
     . $configCustomStartStopScript
     if declare -F customVMStop >/dev/null; then
       customVMStop
+    else
+      err "customVMStop script missing from $configCustomStartStopScript"
     fi
   fi
-  killall qemu-system-x86_64
-  sleep 2
-  killall -9 qemu-system-x86_64
-  reset
-  clear
-  killall dkvmmenu.sh
-
 }
 
 doOut() {
@@ -99,7 +94,7 @@ doOut() {
     # When exited, kill any remaining qemu
     cleanup
   else
-    cat - | fold  >>"$TAILFILE"
+    cat - >>"$TAILFILE"
   fi
 }
 
@@ -178,13 +173,13 @@ doAddVM() {
 #CDROM=/media/dkvmdata/isos/debian-12.8.0-amd64-netinst.iso
 
 # GPU ROM (Usually not needed)
-GPUROM=/media/dkvmdata/dummy.rom
+#GPUROM=/media/dkvmdata/dummy.rom
 
 # MAC Address
 MAC=DE:AD:BE:EF:66:61
 
 # Extra CPU options to qemu
-CPUOPTS=hv-frequencies,hv-relaxed,hv-reset,hv-runtime,hv-spinlocks=0x1fff,hv-stimer,hv-synic,hv-time,hv-vapic,hv-vpindex,topoext=on,l3-cache=on
+CPUOPTS=kvm=off,hv_vendor_id=dkvm,hv-frequencies,hv-relaxed,hv-reset,hv-runtime,hv-spinlocks=0x1fff,hv-stimer,hv-synic,hv-time,hv-vapic,hv-vpindex,topoext=on,l3-cache=on
 '
   # Find next dkvm_vmconfig.X
   local lastVMConfig=$(getLastVMConfig)
