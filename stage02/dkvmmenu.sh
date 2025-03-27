@@ -76,7 +76,7 @@ cleanup(){
   if [ -e $configCustomStartStopScript ]; then
     . $configCustomStartStopScript
     if declare -F customVMStop >/dev/null; then
-      customVMStart
+      customVMStop
     fi
   fi
   killall qemu-system-x86_64
