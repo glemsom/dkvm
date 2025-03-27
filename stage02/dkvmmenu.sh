@@ -177,6 +177,9 @@ doAddVM() {
 # CDROM ISO file
 #CDROM=/media/dkvmdata/isos/debian-12.8.0-amd64-netinst.iso
 
+# GPU ROM (Usually not needed)
+GPUROM=/media/dkvmdata/dummy.rom
+
 # MAC Address
 MAC=DE:AD:BE:EF:66:61
 
@@ -428,6 +431,7 @@ mainHandlerVM() {
   local VMNAME="$(getConfigItem $configFile NAME)"
   local VMHARDDISK=$(getConfigItem $configFile HARDDISK)
   local VMCDROM=$(getConfigItem $configFile CDROM)
+  local VMGPUROM=$(getConfigItem $configFile GPUROM)
   local VMPASSTHROUGHPCIDEVICES=$(cat $configPassthroughPCIDevices)
   local VMPASSTHROUGHUSBDEVICES=$(cat $configPassthroughUSBDevices)
   local VMBIOS=$configDataFolder/${1}/OVMF_CODE.fd
@@ -478,7 +482,8 @@ mainHandlerVM() {
     for VMPASSTHROUGHPCIDEVICE in $VMPASSTHROUGHPCIDEVICES; do
     let loopCount++
       if isGPU $VMPASSTHROUGHPCIDEVICE; then # If this is a GPU adapter, set multifunction=on
-        OPTS+=" --device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE},bus=root_port1,addr=00.${loopCount},multifunction=on"
+        [ ! -z "$VMGPUROM" ] && GPUROMSTRING=",romfile=$VMGPUROM" || GPUROMSTRING=""
+        OPTS+=" --device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE},bus=root_port1,addr=00.${loopCount},multifunction=on$GPUROMSTRING"
       else
         OPTS+=" -device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE},bus=root_port1,addr=00.${loopCount}"
       fi
