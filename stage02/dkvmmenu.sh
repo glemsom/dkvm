@@ -13,11 +13,11 @@ declare -a menuItemsType
 declare -a menuItemsVMs
 menuAnswer=""
 
-configDataFolder=/media/dkvmdata
-configPassthroughPCIDevices=$configDataFolder/passthroughPCIDevices
-configPassthroughUSBDevices=$configDataFolder/passthroughUSBDevices
-configCPUTopology=$configDataFolder/cpuTopology
-configCustomPCIReloadScript=$configDataFolder/customPCIReload
+export configDataFolder=/media/dkvmdata
+export configPassthroughPCIDevices=$configDataFolder/passthroughPCIDevices
+export configPassthroughUSBDevices=$configDataFolder/passthroughUSBDevices
+export configCPUTopology=$configDataFolder/cpuTopology
+export configCustomPCIReloadScript=$configDataFolder/customPCIReload
 
 configBIOSCODE=/usr/share/OVMF/OVMF_CODE.fd
 configBIOSVARS=/usr/share/OVMF/OVMF_VARS.fd
@@ -72,6 +72,22 @@ doShowStatus() {
   exit 0
 }
 
+cleanup(){
+  if [ -e $configCustomPCIReloadScript ]; then
+    . $configCustomPCIReloadScript
+    if declare -F customVMStop >/dev/null; then
+      customVMStart
+    fi
+  fi
+  killall qemu-system-x86_64
+  sleep 2
+  killall -9 qemu-system-x86_64
+  reset
+  clear
+  killall dkvmmenu.sh
+
+}
+
 doOut() {
   local TAILFILE=dkvm.log
   if [ "$1" == "clear" ]; then
@@ -79,14 +95,9 @@ doOut() {
     touch "$TAILFILE"
   elif [ "$1" == "showlog" ]; then
     doShowStatus
+    # Clean rutine
     # When exited, kill any remaining qemu
-    killall qemu-system-x86_64
-    sleep 2
-    killall -9 qemu-system-x86_64
-    reset
-    clear
-    killall dkvmmenu.sh
-    exit
+    cleanup
   else
     cat - | fold  >>"$TAILFILE"
   fi
@@ -496,10 +507,10 @@ mainHandlerVM() {
 reloadPCIDevices() {
   if [ -e $configCustomPCIReloadScript ]; then
     . $configCustomPCIReloadScript
-    if declare -F doCustomReloadPCIDevice >/dev/null; then
-      doCustomReloadPCIDevice "$@"
+    if declare -F customVMStart >/dev/null; then
+      customVMStart "$@"
     else
-      echo "Unable to find function doCustomReloadPCIDevice() in $configCustomPCIReloadScript" | doOut
+      echo "Unable to find function customVMStart() in $configCustomPCIReloadScript" | doOut
       return 1
     fi
   else
@@ -539,36 +550,15 @@ setupCustomReloadPCIDevice() {
 # Arguments to the function will be the passthrough devices
 # Write to STDOUT to capture logs in dkvm.log
 #
-doCustomReloadPCIDevice() {
-  echo "Custom PCI Passthrough function"
-  while read device; do
-    local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
-    local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-    # Unbind device
-    if [ -e /sys/bus/pci/devices/0000:${device}/driver/unbind ]; then
-      echo "0000:${device}" >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>&1
-      sleep 1
-    fi
 
-    echo "Removing $pciVendor $pciDevice from vfio-pci"
-    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1
-    sleep 1
 
-    # Reset device
-    if [ -e "/sys/bus/pci/devices/0000:${device}/reset" ]; then
-      echo "Resetting $device"
-      echo 1 >"/sys/bus/pci/devices/0000:${device}/reset" 2>&1
-      sleep 1
-    fi
-  done <<< "$@"
+customVMStart() {
+  devices=$(cat $configPassthroughPCIDevices)
+  echo Do stuff with $devices
+}
 
-  while read device; do
-    local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
-    local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-    echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}"
-    echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1
-    sleep 1
-  done <<< "$@"
+customVMStop() {
+  echo Do stuff here
 }
 EOF
   fi
