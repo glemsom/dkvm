@@ -17,7 +17,7 @@ export configDataFolder=/media/dkvmdata
 export configPassthroughPCIDevices=$configDataFolder/passthroughPCIDevices
 export configPassthroughUSBDevices=$configDataFolder/passthroughUSBDevices
 export configCPUTopology=$configDataFolder/cpuTopology
-export configCustomPCIReloadScript=$configDataFolder/customPCIReload
+export configCustomStartStopScript=$configDataFolder/customStartStopScript
 
 configBIOSCODE=/usr/share/OVMF/OVMF_CODE.fd
 configBIOSVARS=/usr/share/OVMF/OVMF_VARS.fd
@@ -73,8 +73,8 @@ doShowStatus() {
 }
 
 cleanup(){
-  if [ -e $configCustomPCIReloadScript ]; then
-    . $configCustomPCIReloadScript
+  if [ -e $configCustomStartStopScript ]; then
+    . $configCustomStartStopScript
     if declare -F customVMStop >/dev/null; then
       customVMStart
     fi
@@ -371,7 +371,7 @@ mainHandlerInternal() {
     elif [ "$menuAnswer" == "5" ]; then
       doUSBConfig
     elif [ "$menuAnswer" == "6" ]; then
-      setupCustomReloadPCIDevice && vi $configCustomPCIReloadScript 
+      setupCustomStartStopScript
     elif [ "$menuAnswer" == "7" ]; then
       doSaveChanges
     fi
@@ -505,12 +505,12 @@ mainHandlerVM() {
 }
 
 reloadPCIDevices() {
-  if [ -e $configCustomPCIReloadScript ]; then
-    . $configCustomPCIReloadScript
+  if [ -e $configCustomStartStopScript ]; then
+    . $configCustomStartStopScript
     if declare -F customVMStart >/dev/null; then
-      customVMStart "$@"
+      customVMStart
     else
-      echo "Unable to find function customVMStart() in $configCustomPCIReloadScript" | doOut
+      echo "Unable to find function customVMStart() in $configCustomStartStopScript" | doOut
       return 1
     fi
   else
@@ -541,17 +541,11 @@ reloadPCIDevices() {
   fi
 }
 
-setupCustomReloadPCIDevice() {
-  if [ -e $configCustomPCIReloadScript ]; then
-    vi $configCustomPCIReloadScript
+setupCustomStartStopScript() {
+  if [ -e $configCustomStartStopScript ]; then
+    vi $configCustomStartStopScript
   else
-    cat <<-'EOF' > $configCustomPCIReloadScript
-# Must be wrapper in a function called doCustomReloadPCIDevice
-# Arguments to the function will be the passthrough devices
-# Write to STDOUT to capture logs in dkvm.log
-#
-
-
+    cat <<-'EOF' > $configCustomStartStopScript
 customVMStart() {
   devices=$(cat $configPassthroughPCIDevices)
   echo Do stuff with $devices
@@ -562,6 +556,7 @@ customVMStop() {
 }
 EOF
   fi
+  vi $configCustomStartStopScript
 }
 
 getConfigItem() {
