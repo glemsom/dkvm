@@ -175,6 +175,12 @@ doAddVM() {
 # GPU ROM (Usually not needed)
 #GPUROM=/media/dkvmdata/dummy.rom
 
+# Enable an emulated graphics card, and setup VNC to listen.
+# <IP>:<Display Numer>
+# Example 0.0.0.0:0 will listen on all IPs, and use the first display (port 5900)
+
+#VNCLISTEN=0.0.0.0:0
+
 # MAC Address
 MAC=DE:AD:BE:EF:66:61
 
@@ -433,6 +439,7 @@ mainHandlerVM() {
   local VMBIOS_VARS=$configDataFolder/${1}/OVMF_VARS.fd
   local VMMEMMB=$(getVMMemMB $configReservedMemMB)
   local VMMAC=$(getConfigItem $configFile MAC)
+  local VNCLISTEN=$(getConfigItem $configFile VNCLISTEN)
   local VMCPUOPTS=$(getConfigItem $configFile CPUOPTS)
 
   # Build qemu command
@@ -443,7 +450,11 @@ mainHandlerVM() {
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" -chardev socket,id=chrtpm,path=$configDataFolder/${VMID}/tpm.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
   OPTS+=" -device virtio-serial-pci,id=virtio-serial0 -chardev socket,id=guestagent,path=/tmp/qga.sock,server,nowait -device virtserialport,chardev=guestagent,name=org.qemu.guest_agent.0"
-  OPTS+=" -nographic -vga none"
+  if [ -z "$VNCLISTEN" ]; then
+    OPTS+=" -nographic -vga none"
+  else
+    OPTS+=" -vnc $VNCLISTEN"
+  fi
   if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
     local TMPALLCORES=$(echo $VMCPU | sed 's/,/ /g'|wc -w)
     local TMPCORES=$(echo ${TMPALLCORES}/${CPUTHREADS} | bc)
