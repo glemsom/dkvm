@@ -599,13 +599,12 @@ vCPUpin() {
       if echo "$tmpCPUPROCESSED" | grep ",${tmpCPU}," -q; then
         continue
       fi
-      # Find siblling
-      # First fine the physical core
+      # First find the physical core
       PHYCORE=$(lscpu -p|grep ^${tmpCPU}, | cut -d , -f 2)
       [ -z "$PHYCORE" ] && continue
 
       # Find the sibling
-      CPUSIBLING=$(lscpu -p|grep -E "(^[0-9]+),$PHYCORE" | grep -v ^$tmpCPU | cut -d , -f 1 | head -n 1)
+      CPUSIBLING=$(lscpu -p|grep -E "(^[0-9]+),$PHYCORE," | grep -v ^$tmpCPU | cut -d , -f 1 | head -n 1)
       [ -z "$CPUSIBLING" ] && continue
       echo "Pinning for CPU Pair $tmpCPU + $CPUSIBLING" | doOut
       
