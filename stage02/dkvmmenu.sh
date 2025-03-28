@@ -604,7 +604,7 @@ vCPUpin() {
       [ -z "$PHYCORE" ] && continue
 
       # Find the sibling
-      CPUSIBLING=$(lscpu -p|grep -E "(^[0-9]+),$PHYCORE," | grep -v ^$tmpCPU | cut -d , -f 1 | head -n 1)
+      CPUSIBLING=$(lscpu -p|grep -E "(^[0-9]+),$PHYCORE," | grep -v ^$tmpCPU, | cut -d , -f 1 | head -n 1)
       [ -z "$CPUSIBLING" ] && continue
       echo "Pinning for CPU Pair $tmpCPU + $CPUSIBLING" | doOut
       
