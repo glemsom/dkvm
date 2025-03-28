@@ -21,8 +21,7 @@ mkdir /media/usb/cache || err "Cannot create cache folder"
 
 ln -s /media/usb/cache /etc/apk/cache
 
-# Extra arguments for Linux kernel
-#TODO : Get this from a config file instead?
+# Default arguments for Linux kernel
 extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5"
 
 # Patch grub2 (uefi boot)
@@ -49,7 +48,7 @@ apk update
 apk upgrade
 
 # Install required tools
-apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance || err "Cannot install packages"
+apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance || err "Cannot install packages"
 
 # Upgrade kernel
 update-kernel /media/usb/boot/ || err "Kernel upgrade failed"

@@ -171,7 +171,7 @@ sudo $qemu -m 8G -machine q35 -enable-kvm \
 	-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
 	-device e1000,netdev=mynet0 \
 	-boot menu=on,splash-time=4000 \
-	-global ICH9-LPC.disable_s3=0 || err "Cannot start qemu"
+	-global ICH9-LPC.disable_s3=0 -vnc 0.0.0.0:0 || err "Cannot start qemu"
 
 # Cleanup
 sleep 1
