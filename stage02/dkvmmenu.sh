@@ -444,7 +444,8 @@ mainHandlerVM() {
 
   # Build qemu command
   OPTS="-name \"$VMNAME\",debug-threads=on -nodefaults -no-user-config -accel accel=kvm,kernel-irqchip=on -machine q35,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
-  OPTS+=" -mem-prealloc -overcommit mem-lock=on,cpu-pm=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
+  #OPTS+=" -mem-prealloc -overcommit mem-lock=on,cpu-pm=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
+  OPTS+=" -mem-prealloc -overcommit mem-lock=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
   OPTS+=" -m ${VMMEMMB}M  -mem-path /dev/hugepages"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
@@ -586,7 +587,7 @@ getConfigItem() {
 
 
 vCPUpin() {
-  sleep 30 # Let QEMU start threads
+  sleep 40 # Let QEMU start threads
 
   # Get QEMU threads
   QEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 10 nc localhost 4444 )| tail -n1 | jq '.return[] | ."thread-id"' )
@@ -646,10 +647,10 @@ vCPUpin() {
 }
 
 doKernelCPUTopology() {
-  if [ ! -e cpuTopology ]; then
+  if [ ! -e $configCPUTopology ]; then
     err "No cpuTopology file found"
   else
-    source cpuTopology
+    source $configCPUTopology
   fi
   clear
   mount -oremount,rw /media/usb/ || err "Cannot remount /media/usb"
