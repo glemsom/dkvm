@@ -369,7 +369,7 @@ mainHandlerInternal() {
     elif [ "$menuAnswer" == "2" ]; then
       doEditVM
     elif [ "$menuAnswer" == "3" ]; then
-      writeOptimalCPULayout
+      [ ! -e $configCPUTopology ] && writeOptimalCPULayout
       vim $configCPUTopology
       doKernelCPUTopology
     elif [ "$menuAnswer" == "4" ]; then
