@@ -319,9 +319,16 @@ doPCIConfig() {
   for selectedDevice in $selectedDevices; do
       vfioIds+=$(lspci -n -s $selectedDevice | grep -Eo '(([0-9]|[a-f]){4}|:){3}'),
   done
-  doUpdateModprobe $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
+  dialog --yesno "Add vfio-pci.ids to /etc/modprobe.d/vfio?" 10 80
+  if [ "$?" -eq "0" ]; then
+    doUpdateModprobe $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
+  fi
+  dialog --yesno "Add vfio-pci.ids to kernel commandline?\nNOTE: This is often required for vfio to load before any graphical drivers" 10 80
+  if [ "$?" -eq "0" ]; then
+    doUpdateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
+  fi
   doSaveChanges
-  doUpdateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
+  
   
   IFS=$OLDIFS
 }
