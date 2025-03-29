@@ -69,7 +69,6 @@ doShowStatus() {
   dialog --backtitle "$backtitle" \
     --title "Desktop VM" --prgbox "./dkvmlog.sh $configPassthroughUSBDevices $configPassthroughPCIDevices " 30 80
   clear
-  exit 0
 }
 
 cleanup(){
@@ -80,6 +79,8 @@ cleanup(){
     else
       err "customVMStop script missing from $configCustomStartStopScript"
     fi
+  else
+    echo "No custom configCustomStartStopScript defined" | doOut
   fi
 }
 
@@ -93,6 +94,7 @@ doOut() {
     # Clean rutine
     # When exited, kill any remaining qemu
     cleanup
+    exit 0 # Reload script
   else
     cat - >>"$TAILFILE"
   fi
