@@ -19,4 +19,4 @@
  * Option to not load VFIO-PCI on startup
  * Support setting ROM [done]
  * Consider using a PCIe root port [done]
- * Support VNC Server
+ * Support VNC Server [done]
