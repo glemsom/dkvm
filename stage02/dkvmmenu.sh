@@ -449,7 +449,7 @@ mainHandlerVM() {
   #OPTS+=" -mem-prealloc -overcommit mem-lock=on,cpu-pm=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
   OPTS+=" -mem-prealloc -overcommit mem-lock=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
-  OPTS+=" -m ${VMMEMMB}M  -mem-path /dev/hugepages"
+  OPTS+=" -m ${VMMEMMB}M" #  -mem-path /dev/hugepages"
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" -chardev socket,id=chrtpm,path=$configDataFolder/${VMID}/tpm.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
   OPTS+=" -device virtio-serial-pci,id=virtio-serial0 -chardev socket,id=guestagent,path=/tmp/qga.sock,server,nowait -device virtserialport,chardev=guestagent,name=org.qemu.guest_agent.0"

@@ -22,7 +22,8 @@ mkdir /media/usb/cache || err "Cannot create cache folder"
 ln -s /media/usb/cache /etc/apk/cache
 
 # Default arguments for Linux kernel
-extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5"
+#extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5"
+extraArgs="mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5"
 
 # Patch grub2 (uefi boot)
 [ -e /media/usb/boot/grub/grub.cfg.old ] && rm -f /media/usb/boot/grub/grub.cfg.old
@@ -30,7 +31,8 @@ extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
 cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g'> /media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
 
-
+# Edge kernel
+sed -i 's/lts/edge/g' /media/usb/boot/grub/grub.cfg || err "Unable to patch grub"
 # Add br0
 brctl addbr br0
 brctl addif br0 eth0
@@ -50,8 +52,13 @@ apk upgrade
 # Install required tools
 apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance || err "Cannot install packages"
 
+# Create reposotiry file for edge
+cp /etc/apk/repositories /etc/apk/repositories-edge
+sed -i 's/@community //' /etc/apk/repositories-edge
+
 # Upgrade kernel
-update-kernel /media/usb/boot/ || err "Kernel upgrade failed"
+update-kernel -f edge --repositories-file /etc/apk/repositories-edge /media/usb/boot
+#update-kernel /media/usb/boot/ || err "Kernel upgrade failed"
 umount /.modloop
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
