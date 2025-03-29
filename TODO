@@ -15,7 +15,7 @@
  * Support more custom PCI passthrough rutine [done]
  * re-enable static hugepage support
  * Move config files to datafolder for persistence [done]
- * Option to not load VFIO-PCI on startup
+ * Option to not load VFIO-PCI on startup [done]
  * Support setting ROM [done]
  * Consider using a PCIe root port [done]
  * Support VNC Server [done]
