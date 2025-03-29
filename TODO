@@ -4,6 +4,7 @@
  * Refactor isolcpu and such to be setup on first boot instead [done]
   * Maybe make a menu/helper for setting up isolcpu/vCPU pinning
     * Expose correct CPU cache (CCX / Socket)
+    * Configure CPU die
   * Maybe make a menu/helper for PCI passthrough [done]
   * helper for USB passthrough [done]
  * Support TPM [done]
@@ -11,10 +12,8 @@
  * Dynamic allocate memory [done]
  * Better storage (multithread?) [done]
  * Improve log/running menu
- * Configure CPU die
  * Support more custom PCI passthrough rutine [done]
- * re-enable static hugepage support [done]
-   * Maybe support 1GB pages?
+ * re-enable static hugepage support
  * Move config files to datafolder for persistence [done]
  * Option to not load VFIO-PCI on startup
  * Support setting ROM [done]
