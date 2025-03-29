@@ -235,8 +235,10 @@ writeOptimalCPULayout() {
 # This file is auto-generated upon first start-up.
 # To regenerate, just delete this file
 #
+# To get more info about your CPU, use tools like lscpu and lstopo(hwloc-tools)
+#
 # Host CPUs reserves for Host OS.
-# Recommended is to use 1 CPU (inclusing SMT/Hyperthreading core)
+# Recommended is to use at least 1 CPU (inclusing SMT/Hyperthreading core)
 HOSTCPU=${HOSTCPU::-1}
 # CPUs reserved for VM
 # Recommended is all, expect for the CPUs for the host
