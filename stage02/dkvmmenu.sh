@@ -360,7 +360,7 @@ mainHandlerInternal() {
     menuOptions[3]="Edit CPU Topology"
     menuOptions[4]="Edit PCI Passthrough"
     menuOptions[5]="Edit USB Passthrough"
-    menuOptions[6]="Edit custom PCI reload script"
+    menuOptions[6]="Edit Custom PCI reload script"
     menuOptions[7]="Save changes"
     
     local itemString=""
