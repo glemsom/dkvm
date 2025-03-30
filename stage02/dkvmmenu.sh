@@ -521,7 +521,7 @@ mainHandlerVM() {
     OPTS+=" -cpu host "
   fi
   doOut "clear"
-  setupHugePages $VMMEMMB |& doOut
+  #setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
   realTimeTune
   ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
