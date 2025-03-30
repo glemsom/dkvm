@@ -67,7 +67,7 @@ doStartTPM() {
 
 doShowStatus() {
   dialog --backtitle "$backtitle" \
-    --title "Desktop VM" --prgbox "./dkvmlog.sh $configPassthroughUSBDevices $configPassthroughPCIDevices " 30 80
+    --title "Desktop VM" --prgbox "./dkvmlog.sh $configPassthroughUSBDevices $configPassthroughPCIDevices " 0 0
   clear
 }
 
@@ -139,7 +139,7 @@ showMainMenu() {
   done
   local ip=$(ip a | grep "inet " | grep -v "inet 127" | awk '{print $2}')
   backtitle="DKVM @ $ip   Version: $version"
-  local menuStr="$tmpFix --title '$title' --backtitle '$backtitle' --no-tags --no-cancel --menu 'Select option' 20 50 20 $menuStr --stdout"
+  local menuStr="$tmpFix --title '$title' --backtitle '$backtitle' --no-tags --no-cancel --menu 'Select option' 0 0 20 $menuStr --stdout"
   menuAnswer=$(eval "dialog $menuStr")
   if [ $? -eq 1 ]; then
     err "Main dialog canceled ?!"
@@ -194,7 +194,7 @@ CPUOPTS=kvm=off,hv_vendor_id=dkvm,hv-frequencies,hv-relaxed,hv-reset,hv-runtime,
     # First VM
     nextVMIndex=0
   elif [ $getLastVMConfig == 9 ]; then
-    dialog --msgbox "All VM slots in use. Please clear up in ${configDataFolder}/[0-9]" 20 60
+    dialog --msgbox "All VM slots in use. Please clear up in ${configDataFolder}/[0-9]" 0 0
     exit 1
   else
     nextVMIndex=$(($lastVMConfig + 1))
@@ -217,7 +217,7 @@ doEditVM() {
       local VMName=$(getConfigItem ${VMFolder}/vm_config NAME)
       local menuStr="$menuStr $(basename $VMFolder) '$VMName'"
     done
-    local menuAnswer=$(eval "dialog --backtitle "'$backtitle'" --menu 'Choose VM to edit' 20 30 20 $menuStr" --stdout)
+    local menuAnswer=$(eval "dialog --backtitle "'$backtitle'" --menu 'Choose VM to edit' 0 0 20 $menuStr" --stdout)
 
     [ "$menuAnswer" != "" ] && vi ${configDataFolder}/${menuAnswer}/vm_config
   fi
@@ -259,7 +259,7 @@ doUSBConfig() {
     USBName=$(cut -d : -f 2- <<<$USBDevice | sed "s/.*$USBId //g")
     dialogStr+="\"$USBId\" \"$USBName\" off "
   done
-  selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select USB devices for passthrough\" 40 80 70 $dialogStr | tr ' ' '\n')
+  selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select USB devices for passthrough\" 0 0 70 $dialogStr | tr ' ' '\n')
 
   [ -z "$selectedDevices" ] && exit 1
 
@@ -282,7 +282,7 @@ doUpdateGrub() {
     # Add key=value
     sed "/^linux.*/s/\$/ ${key}=${value}/" -i $grubFile || err "Unable to patch grub.cfg"
     mount -oremount,ro /media/usb/ || err "Cannot remount /media/usb"
-    dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 20 60
+    dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 0 0
 }
 
 doUpdateModprobe() {
@@ -310,7 +310,7 @@ doPCIConfig() {
       dialogStr+="\"$pciID\" \"$pciName\" off "
   done
 
-  selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select PCI devices for passthrough\" 40 80 70 $dialogStr | tr ' ' '\n')
+  selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select PCI devices for passthrough\" 0 0 70 $dialogStr | tr ' ' '\n')
   echo "$selectedDevices" > $configPassthroughPCIDevices
 
   [ -z "$selectedDevices" ] && exit 1
@@ -318,11 +318,11 @@ doPCIConfig() {
   for selectedDevice in $selectedDevices; do
       vfioIds+=$(lspci -n -s $selectedDevice | grep -Eo '(([0-9]|[a-f]){4}|:){3}'),
   done
-  dialog --yesno "Add vfio-pci.ids to /etc/modprobe.d/vfio?" 10 80
+  dialog --yesno "Add vfio-pci.ids to /etc/modprobe.d/vfio?" 0 0
   if [ "$?" -eq "0" ]; then
     doUpdateModprobe $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
   fi
-  dialog --yesno "Add vfio-pci.ids to kernel commandline?\nNOTE: This is often required for vfio to load before any graphical drivers" 10 80
+  dialog --yesno "Add vfio-pci.ids to kernel commandline?" 0 0
   if [ "$?" -eq "0" ]; then
     doUpdateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
   fi
@@ -335,7 +335,7 @@ doPCIConfig() {
 doSaveChanges() {
   local changesTxt="Changes saved...
 $(lbu commit)"
-  dialog --backtitle "$backtitle" --msgbox "$changesTxt" 30 80
+  dialog --backtitle "$backtitle" --msgbox "$changesTxt" 0 0
 }
 
 mainHandlerInternal() {
@@ -672,7 +672,7 @@ doKernelCPUTopology() {
                                           s/\(linux.*\)rcu_nocbs=[^ ]*/\1rcu_nocbs='$VMCPU'/; \
                                           /rcu_nocbs=[^ ]*/!s/\(linux.*\)$/\1 rcu_nocbs='$VMCPU'/' > /media/usb/boot/grub/grub.cfg
   mount -oremount,ro /media/usb/ || err "Cannot remount /media/usb"
-  dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 20 60
+  dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 0 0
 }
 
 IRQAffinity() {
@@ -697,16 +697,16 @@ doWarnDKVMData() {
   txt+="Please use CTRL+ArrowRight to get a root-console, and setup\n"
   txt+="a mountpoint for DKVMData. (You might want to adjust /etc/fstab too)\n"
 
-  dialog --cr-wrap --clear --msgbox "$txt" 20 80
+  dialog --cr-wrap --clear --msgbox "$txt" 0 0
 
   exit 1
 }
 
-mountpoint $configDataFolder || doWarnDKVMData
+#mountpoint $configDataFolder || doWarnDKVMData
 
-[ ! -e $configPassthroughUSBDevices ] && doUSBConfig
-[ ! -e $configPassthroughPCIDevices ] && doPCIConfig
-[ ! -e $configCPUTopology ] && writeOptimalCPULayout && vi $configCPUTopology && doKernelCPUTopology && doSaveChanges
+#[ ! -e $configPassthroughUSBDevices ] && doUSBConfig
+#[ ! -e $configPassthroughPCIDevices ] && doPCIConfig
+#[ ! -e $configCPUTopology ] && writeOptimalCPULayout && vi $configCPUTopology && doKernelCPUTopology && doSaveChanges
 
 showMainMenu
 doSelect
