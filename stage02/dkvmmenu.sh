@@ -67,7 +67,7 @@ doStartTPM() {
 
 doShowStatus() {
   dialog --backtitle "$backtitle" \
-    --title "Desktop VM" --prgbox "./dkvmlog.sh $configPassthroughUSBDevices $configPassthroughPCIDevices " 0 0
+    --title "Desktop VM" --prgbox "./dkvmlog.sh $configPassthroughUSBDevices $configPassthroughPCIDevices " 25 80
   clear
 }
 
@@ -573,50 +573,54 @@ setupCustomStartStopScript() {
     cat <<-'EOF' > $configCustomStartStopScript
 # Sample startStopScript
 customVMStart() {
-	# Custom start script for 9070 XT cards
-	# AMDGPU driver should already be loaded - and initialized the GPU
+  # Custom start script for 9070 XT cards
+  # AMDGPU driver should already be loaded - and initialized the GPU
 
-	devices=$(cat $configPassthroughPCIDevices)
-	GPU=03:00.0 # 9070 XT
+  devices=$(cat $configPassthroughPCIDevices)
+  GPU=03:00.0 # 9070 XT
 	
-	# Unbind current drivers for all passthrough devices
-	for device in $devices; do
-		echo 0000:${device}  >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>/dev/null
- 	done
+  # Unbind current drivers for all passthrough devices
+  for device in $devices; do
+    local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
+    local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
+    echo 0000:${device}  >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>/dev/null
+    # Cleanup VFIO IDs
+    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/remove_id 2>/dev/null
+  done
 
-	# Set BAR for 9070XT
-	echo 12 > /sys/bus/pci/devices/0000:$GPU/resource0_resize
-	echo 3 >  /sys/bus/pci/devices/0000:$GPU/resource2_resize
+  # Set BAR for 9070XT
+  echo 12 > /sys/bus/pci/devices/0000:$GPU/resource0_resize
+  echo 3 >  /sys/bus/pci/devices/0000:$GPU/resource2_resize
 	
-	sleep 1 # Let devices settle
+  sleep 1 # Let devices settle
 
-	# Bind VFIO-PCI
-	for device in $devices; do
-		local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
-		local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-		echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/new_id 2>/dev/null
-	done
-	echo "Done with custom start script"
+  # Bind VFIO-PCI
+  for device in $devices; do
+    local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
+    local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
+    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/new_id 2>/dev/null
+  done
+  echo "Done with custom start script"
 }
 
 customVMStop() {
-	# Custom stop script for 9070 XT cards
-	devices=$(cat $configPassthroughPCIDevices)
-	GPU=03:00.0 # 9070 XT
+  # Custom stop script for 9070 XT cards
+  devices=$(cat $configPassthroughPCIDevices)
+  GPU=03:00.0 # 9070 XT
 
-	# Unbind and remove devices
-	for device in $devices; do
-	local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
-	local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-		echo 0000:${device} > /sys/bus/pci/devices/0000:${device}/driver/unbind
-		sleep 1 # Let unbind settle
-		echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/remove_id 2>/dev/null
-  	done
+  # Unbind and remove devices
+  for device in $devices; do
+    local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
+    local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
+    echo 0000:${device} > /sys/bus/pci/devices/0000:${device}/driver/unbind
+    sleep 1 # Let unbind settle
+    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/remove_id 2>/dev/null
+  done
 
-	# Reload AMDGPU driver
-	echo 0000:$GPU > /sys/bus/pci/drivers/amdgpu/bind
+  # Reload AMDGPU driver
+  echo 0000:$GPU > /sys/bus/pci/drivers/amdgpu/bind
 
-	echo "Done with custom stop script"
+  echo "Done with custom stop script"
 }
 EOF
   fi
