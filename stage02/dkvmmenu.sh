@@ -462,6 +462,7 @@ mainHandlerVM() {
   OPTS+=" -chardev socket,id=chrtpm,path=$configDataFolder/${VMID}/tpm.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
   OPTS+=" -device virtio-serial-pci,id=virtio-serial0 -chardev socket,id=guestagent,path=/tmp/qga.sock,server,nowait -device virtserialport,chardev=guestagent,name=org.qemu.guest_agent.0"
   OPTS+=" -boot menu=on,splash-time=5000"
+  OPTS+=" -fw_cfg opt/ovmf/X-PciMmio64Mb,string=65536"
   if [ -z "$VNCLISTEN" ]; then
     OPTS+=" -nographic -vga none"
   else
