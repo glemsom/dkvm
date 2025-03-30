@@ -180,7 +180,6 @@ doAddVM() {
 # Enable an emulated graphics card, and setup VNC to listen.
 # <IP>:<Display Numer>
 # Example 0.0.0.0:0 will listen on all IPs, and use the first display (port 5900)
-
 #VNCLISTEN=0.0.0.0:0
 
 # MAC Address
@@ -462,6 +461,7 @@ mainHandlerVM() {
   OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
   OPTS+=" -chardev socket,id=chrtpm,path=$configDataFolder/${VMID}/tpm.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
   OPTS+=" -device virtio-serial-pci,id=virtio-serial0 -chardev socket,id=guestagent,path=/tmp/qga.sock,server,nowait -device virtserialport,chardev=guestagent,name=org.qemu.guest_agent.0"
+  OPTS+=" -boot menu=on,splash-time=5000"
   if [ -z "$VNCLISTEN" ]; then
     OPTS+=" -nographic -vga none"
   else
