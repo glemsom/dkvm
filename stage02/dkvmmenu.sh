@@ -702,11 +702,11 @@ doWarnDKVMData() {
   exit 1
 }
 
-#mountpoint $configDataFolder || doWarnDKVMData
+mountpoint $configDataFolder || doWarnDKVMData
 
-#[ ! -e $configPassthroughUSBDevices ] && doUSBConfig
-#[ ! -e $configPassthroughPCIDevices ] && doPCIConfig
-#[ ! -e $configCPUTopology ] && writeOptimalCPULayout && vi $configCPUTopology && doKernelCPUTopology && doSaveChanges
+[ ! -e $configPassthroughUSBDevices ] && doUSBConfig
+[ ! -e $configPassthroughPCIDevices ] && doPCIConfig
+[ ! -e $configCPUTopology ] && writeOptimalCPULayout && vi $configCPUTopology && doKernelCPUTopology && doSaveChanges
 
 showMainMenu
 doSelect
