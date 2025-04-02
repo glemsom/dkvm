@@ -526,9 +526,8 @@ mainHandlerVM() {
   doOut "clear"
   #setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
-  realTimeTune
-  #( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
-  # vCPUpin &
+  realTimeTune | doOut
+  IRQAffinity | doOut
   reloadPCIDevices | doOut
   eval qemu-system-x86_64 -S $OPTS 2>&1 | doOut &
   sleep 5 && addCPUs $VMCPU 2>&1| doOut
@@ -666,17 +665,6 @@ addCPUs() {
     # Reset VCORE for next die
     VCORE=0
   done
-
-  # All CPUs added, use taskset to pin them
-  for TMPHOSTCORE in "${!HOSTTOV[@]}"
-    do
-      echo "HostCore  : $TMPHOSTCORE"
-      echo "VCORE     : ${HOSTTOV[$TMPHOSTCORE]}"
-
-      # Get PID for vCore
-
-  done
-
 }
 
 reloadPCIDevices() {
@@ -723,7 +711,8 @@ setupCustomStartStopScript() {
     cat <<-'EOF' > $configCustomStartStopScript
 # Sample startStopScript
 customVMStart() {
-  # Custom start script for 9070 XT cards
+  # Example Custom Start/Stop script
+  #
   # AMDGPU driver should already be loaded - and initialized the GPU
 
   devices=$(cat $configPassthroughPCIDevices)
@@ -788,66 +777,6 @@ getConfigItem() {
   fi
 
   echo "$value"
-}
-
-
-vCPUpin() {
-  sleep 40 # Let QEMU start threads
-
-  # Get QEMU threads
-  QEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 10 nc localhost 4444 )| tail -n1 | jq '.return[] | ."thread-id"' )
-  echo "Found QEMU threads: $QEMUTHREADS" | doOut
-  if [ $CPUTHREADS -gt 1 ]; then
-    # Group CPUs together
-    LOOPCOUNT=0
-    for tmpCPU in $(echo $VMCPU | tr , '\n'); do
-      if echo "$tmpCPUPROCESSED" | grep ",${tmpCPU}," -q; then
-        continue
-      fi
-      # First find the physical core
-      PHYCORE=$(lscpu -p|grep ^${tmpCPU}, | cut -d , -f 2)
-      [ -z "$PHYCORE" ] && continue
-
-      # Find the sibling
-      CPUSIBLING=$(lscpu -p|grep -E "(^[0-9]+),$PHYCORE," | grep -v ^$tmpCPU, | cut -d , -f 1 | head -n 1)
-      [ -z "$CPUSIBLING" ] && continue
-      echo "Pinning for CPU Pair $tmpCPU + $CPUSIBLING" | doOut
-      
-      # Find QEMU theads for core
-      tmpQEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 2 nc localhost 4444 )| tail -n1 | jq ".return[] | select(.\"props\".\"core-id\" == $LOOPCOUNT) | .\"thread-id\"" )
-      tmpThread=0
-      for tmpQEMUTHREAD in $tmpQEMUTHREADS; do
-        if [ "$tmpThread" == 1 ]; then
-          taskset -pc ${CPUSIBLING} $tmpQEMUTHREAD | doOut
-        else
-          taskset -pc ${tmpCPU} $tmpQEMUTHREAD | doOut
-        fi
-        tmpThread=1
-      done
-
-      let LOOPCOUNT++
-      tmpCPUPROCESSED+=",$tmpCPU,"
-      tmpCPUPROCESSED+=",$CPUSIBLING,"
-    done
-  else
-    LOOPCOUNT=0
-    for tmpCPU in $(echo $VMCPU | tr , '\n'); do
-      # First fine the physical core
-      echo "Pinning for CPU  $tmpCPU" | doOut
-      
-      # Find QEMU theads for core
-      tmpQEMUTHREADS=$( ( echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 2 nc localhost 4444 )| tail -n1 | jq ".return[] | select(.\"props\".\"core-id\" == $LOOPCOUNT) | .\"thread-id\"" )
-      for tmpQEMUTHREAD in $tmpQEMUTHREADS; do
-          taskset -pc ${tmpCPU} $tmpQEMUTHREAD | doOut
-      done
-
-      let LOOPCOUNT++
-      tmpCPUPROCESSED+=",$tmpCPU,"
-    done
-  fi
-
-  # Do IRQ Affinity
-  IRQAffinity
 }
 
 doKernelCPUTopology() {
