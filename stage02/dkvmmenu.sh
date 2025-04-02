@@ -471,7 +471,10 @@ mainHandlerVM() {
   if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
     local TMPALLCORES=$(echo $VMCPU | sed 's/,/ /g'|wc -w)
     local TMPCORES=$(echo ${TMPALLCORES}/${CPUTHREADS} | bc)
-    OPTS+=" -smp threads=${CPUTHREADS},cores=${TMPCORES}"
+    local DIES=$(getNumDies $VMCPU)
+    #OPTS+=" -smp threads=${CPUTHREADS},cores=${TMPCORES}"
+    # Start with 1 cpu (required), and make room to add the others later
+    OPTS+=" -smp cpus=1,threads=$CPUTHREADS,sockets=1,maxcpus=32,dies=$DIES"
   fi
   if [ ! -z "$VMBIOS" ] && [ ! -z "$VMBIOS_VARS" ]; then
     OPTS+=" -drive if=pflash,format=raw,readonly=on,file=${VMBIOS} -drive if=pflash,format=raw,file=${VMBIOS_VARS}"
@@ -524,9 +527,156 @@ mainHandlerVM() {
   #setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
   realTimeTune
-  ( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
-  vCPUpin &
+  #( reloadPCIDevices "$VMPASSTHROUGHPCIDEVICES" ; echo "Starting QEMU" ; eval qemu-system-x86_64 $OPTS 2>&1 ) 2>&1 | doOut &
+  # vCPUpin &
+  reloadPCIDevices | doOut
+  eval qemu-system-x86_64 -S $OPTS 2>&1 | doOut &
+  sleep 5 && addCPUs $VMCPU 2>&1| doOut
+  continueVM | doOut
+
   doOut showlog
+}
+
+continueVM() {
+  echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "cont" }' | timeout 2 nc localhost 4444
+}
+
+
+getvCorePid() {
+  local COREID=$1
+  local DIEID=$2
+  local THREADID=$3
+  local PIDS=$(echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 0.5 nc localhost 4444 | tail -n1 | jq ".return[] | select(.\"props\".\"core-id\" == $COREID and .\"props\".\"die-id\" == $DIEID and .\"props\".\"thread-id\" == $THREADID) | .\"thread-id\"") 2>/dev/null
+  echo "$PIDS"
+}
+
+getNumDies() {
+  local CPUS=$1
+  local IFS=',' 
+  read -r -a CPU_CORES <<< "$CPUS"
+  local DIE_IDS=()
+
+  # Iterate over each CPU core
+  for CPU_CORE in "${CPU_CORES[@]}"; do
+    # Check if the CPU core is valid
+    if [[ -d "/sys/devices/system/cpu/cpu${CPU_CORE}" ]]; then
+      # Get the die_id for the current CPU core
+      local DIE_ID=$(cat "/sys/devices/system/cpu/cpu${CPU_CORE}/topology/die_id")
+
+      # Add the die_id to the array if it's not already present
+      local FOUND=false
+      for EXISTING_DIE in "${DIE_IDS[@]}"; do
+        if [[ "$EXISTING_DIE" == "$DIE_ID" ]]; then
+          FOUND=true
+          break
+        fi
+      done
+      if [[ "$FOUND" == false ]]; then
+        DIE_IDS+=("$DIE_ID")
+      fi
+    fi
+  done
+
+  # Count the number of unique DIE_IDS
+  echo "${#DIE_IDS[@]}"
+}
+
+
+addvCore() {
+    local COREID=$1
+    local DIE_ID=$2
+    local THREAD_ID=$3
+    local SOCKET=$4
+    local HOSTCORE=$5
+    echo "Adding vCore: Host Core Id: $HOSTCORE, ID=$COREID, Die ID= $DIE_ID, vCore ID=$COREID, vThread ID=$THREAD_ID"
+    echo -e '{ "execute": "qmp_capabilities" }
+    { "execute": "device_add", "arguments": { 
+        "core-id": '$COREID', 
+        "driver": "host-x86_64-cpu", 
+        "id": "cpu-'${HOSTCORE}'", 
+        "die-id": '$DIE_ID', 
+        "socket-id": '$SOCKET', 
+        "thread-id": '$THREAD_ID' } 
+    }' | timeout 1 nc localhost 4444 | grep error
+}
+
+printarr() { declare -n __p="$1"; for k in "${!__p[@]}"; do printf "%s=%s\n" "$k" "${__p[$k]}" ; done ;  } 
+
+addCPUs() {
+  declare -A PROCESSED_SIBLING_LIST
+
+  # The host cores to add to the VM as virtual cores
+  echo "Adding CPUs for $1"
+
+  OLDIFS=$IFS
+
+  # Add cores to array of cores
+  IFS=','
+  read -r -a TMPHOSTCORES <<< $1
+  IFS=$OLDIFS
+
+  # Cleanup first core from array, as it is already pre-added to the VM
+  if [ ${#TMPHOSTCORES[@]} -gt 0 ]; then
+    TMPSIBLING=$(cat /sys/devices/system/cpu/cpu${TMPHOSTCORES[0]}/topology/thread_siblings_list | cut -d , -f2)
+    FIRST_CORE=${TMPHOSTCORES[0]}
+    # Get PID for core
+    TMPPID=$(getvCorePid $FIRST_CORE 0 0)
+    taskset -pc $FIRST_CORE $TMPPID
+    PROCESSED_SIBLING_LIST[$FIRST_CORE,$TMPSIBLING]=0
+    echo Already added core $FIRST_CORE with sibling $TMPSIBLING
+    echo Processed siblings: $(printarr PROCESSED_SIBLING_LIST)
+    unset 'TMPHOSTCORES[0]'
+    HOSTCORES=("${TMPHOSTCORES[@]}") # Re-index the array
+  fi
+  echo "First core added"
+
+  # Get number of dies in the host system
+  DIES=$(cat /sys/devices/system/cpu/cpu*/topology/die_id | sort | uniq)
+
+  VCORE=1 # Start from 1, as 0 is already attached to the VM
+
+  for DIE in $DIES; do
+    echo "Processing for die $DIE"
+    for HOSTCORE in ${HOSTCORES[@]}; do
+      local CUR_DIE_ID=$(cat /sys/devices/system/cpu/cpu${HOSTCORE}/topology/die_id)
+      if [ $CUR_DIE_ID == $DIE ]; then
+        echo "Current seen siblings:"
+        printarr PROCESSED_SIBLING_LIST
+        SIBLING_LIST=$(cat /sys/devices/system/cpu/cpu${HOSTCORE}/topology/thread_siblings_list)
+        echo "Processing hostcore $HOSTCORE @ die $DIE with siblings_list $SIBLING_LIST"
+        if [ ! -z ${PROCESSED_SIBLING_LIST[$SIBLING_LIST]} ]; then
+          echo "    Host core $HOSTCORE already processed as sibling $SIBLING_LIST. Virtual core of sibling: ${PROCESSED_SIBLING_LIST[$SIBLING_LIST]}"
+          addvCore ${PROCESSED_SIBLING_LIST[$SIBLING_LIST]} $CUR_DIE_ID 1 0 $HOSTCORE
+          # Get the POD for the newly added vCore
+          TMPPID=$(getvCorePid ${PROCESSED_SIBLING_LIST[$SIBLING_LIST]} $CUR_DIE_ID 1)
+          taskset -pc $HOSTCORE $TMPPID
+          
+        else
+          echo "    Host core $HOSTCORE not seen before as $SIBLING_LIST"
+          echo "Result from sibling check:" ${PROCESSED_SIBLING_LIST[$SIBLING_LIST]}
+          # Add this as-is to the VM
+          addvCore $VCORE $CUR_DIE_ID 0 0 $HOSTCORE
+          PROCESSED_SIBLING_LIST[$SIBLING_LIST]=$VCORE
+          TMPPID=$(getvCorePid $VCORE $CUR_DIE_ID 0)
+          taskset -pc $HOSTCORE $TMPPID
+          let VCORE++
+        fi
+      fi
+    done
+    # Reset VCORE for next die
+    VCORE=0
+  done
+
+  # All CPUs added, use taskset to pin them
+  for TMPHOSTCORE in "${!HOSTTOV[@]}"
+    do
+      echo "HostCore  : $TMPHOSTCORE"
+      echo "VCORE     : ${HOSTTOV[$TMPHOSTCORE]}"
+
+      # Get PID for vCore
+
+  done
+
 }
 
 reloadPCIDevices() {
