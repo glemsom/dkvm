@@ -235,15 +235,17 @@ writeOptimalCPULayout() {
 # To regenerate, just delete this file
 #
 # To get more info about your CPU, use tools like lscpu and lstopo(hwloc-tools)
+# $(lstopo --of console --no-io | sed 's/^/#/')
 #
 # Host CPUs reserves for Host OS.
-# Recommended is to use at least 1 CPU (inclusing SMT/Hyperthreading core)
+# Minimum is to allocate at-least 1 core for the host (including SMT/Hyperthreading core)
+# Recommended to to use at-least 2 cores for the host (including SMT/Hyperthreading core)
+#
+# HOSTCPU is the allocated cores for HOST OS
 HOSTCPU=${HOSTCPU::-1}
-# CPUs reserved for VM
-# Recommended is all, expect for the CPUs for the host
+# VMCPU is the allocated cores for the VM OS. Recommendation is to use all cores, except for the cores in-use by the host OS
 VMCPU=${VMCPU::-1}
-# Number of SMT/Hyperthreads to emulate in topology
-# Recommended is to keep the same as host topology
+# Threads per core (This is usually 2 for modern CPUs)
 CPUTHREADS=${CPUTHREADS}
 EOF
   fi
@@ -662,7 +664,7 @@ addCPUs() {
         fi
       fi
     done
-    # Reset VCORE for next die
+    # Reset VCORE for next die (QEMU expects core_id to be reset)
     VCORE=0
   done
 }
@@ -711,8 +713,8 @@ setupCustomStartStopScript() {
     cat <<-'EOF' > $configCustomStartStopScript
 # Sample startStopScript
 customVMStart() {
-  # Example Custom Start/Stop script
-  #
+  echo "Starting custom start script"
+  # Custom start script for 9070 XT cards
   # AMDGPU driver should already be loaded - and initialized the GPU
 
   devices=$(cat $configPassthroughPCIDevices)
@@ -722,9 +724,9 @@ customVMStart() {
   for device in $devices; do
     local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
     local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-    echo 0000:${device}  >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>/dev/null
+    echo 0000:${device}  >/sys/bus/pci/devices/0000:${device}/driver/unbind >/dev/null 2>&1
     # Cleanup VFIO IDs
-    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/remove_id 2>/dev/null
+    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/remove_id >/dev/null 2>&1
   done
 
   # Set BAR for 9070XT
@@ -737,27 +739,28 @@ customVMStart() {
   for device in $devices; do
     local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
     local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/new_id 2>/dev/null
+    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/new_id >/dev/null 2>&1
   done
   echo "Done with custom start script"
 }
 
 customVMStop() {
+  echo "Starting custom stop script"
   # Custom stop script for 9070 XT cards
   devices=$(cat $configPassthroughPCIDevices)
   GPU=03:00.0 # 9070 XT
 
   # Unbind and remove devices
   for device in $devices; do
-    local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
-    local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-    echo 0000:${device} > /sys/bus/pci/devices/0000:${device}/driver/unbind
+  local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
+  local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
+    echo 0000:${device} > /sys/bus/pci/devices/0000:${device}/driver/unbind >/dev/null 2>&1
     sleep 1 # Let unbind settle
-    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/remove_id 2>/dev/null
+    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/remove_id >/dev/null 2>&1
   done
 
   # Reload AMDGPU driver
-  echo 0000:$GPU > /sys/bus/pci/drivers/amdgpu/bind
+  echo 0000:$GPU > /sys/bus/pci/drivers/amdgpu/bind >/dev/null 2>&1
 
   echo "Done with custom stop script"
 }

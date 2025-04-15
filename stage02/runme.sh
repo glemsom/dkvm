@@ -10,8 +10,7 @@ sleep 5
 if ! mountpoint /media/usb; then
 	echo "/media/usb not automounted - binding /dev/sda1"
 	# Sometimes /dev/usbdisk is not correctly mounted under /media/usb
-	# In out case, it will then be /dev/sda1
-	# Bind it then
+	# In our case, it will then be /dev/sda1
 	mount --bind /media/sda1 /media/usb || err "Bind mount failed"
 fi
 
@@ -46,11 +45,14 @@ setup-alpine -e -f /media/cdrom/answer.txt
 echo "Enable extra repositories"
 sed -i '/^#.*v3.*community/s/^#/@community /' /etc/apk/repositories
 
+# In case /dev/usbdisk was sda1, move it to usb
+sed -i 's/sda1/usb/' /etc/apk/repositories
+
 apk update
 apk upgrade
 
 # Install required tools
-apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance || err "Cannot install packages"
+apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance hwloc-tools || err "Cannot install packages"
 
 # Create reposotiry file for edge
 cp /etc/apk/repositories /etc/apk/repositories-edge
