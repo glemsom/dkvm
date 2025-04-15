@@ -530,7 +530,7 @@ mainHandlerVM() {
   echo "QEMU Options $OPTS" | doOut
   realTimeTune | doOut
   IRQAffinity | doOut
-  reloadPCIDevices | doOut
+  reloadPCIDevices $VMPASSTHROUGHPCIDEVICES | doOut
   eval qemu-system-x86_64 -S $OPTS 2>&1 | doOut &
   sleep 5 && addCPUs $VMCPU 2>&1| doOut
   continueVM | doOut
