@@ -724,22 +724,27 @@ customVMStart() {
   for device in $devices; do
     local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
     local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-    echo 0000:${device}  >/sys/bus/pci/devices/0000:${device}/driver/unbind >/dev/null 2>&1
+    if [ -e /sys/bus/pci/devices/0000:${device}/driver/unbind ]; then
+      echo "Unbinding 0000:${device}" 
+      echo 0000:${device} > /sys/bus/pci/devices/0000:${device}/driver/unbind 2>/dev/null
+    fi
     # Cleanup VFIO IDs
-    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/remove_id >/dev/null 2>&1
+    echo "Purging VFIO IDs $pciVendor $pciDevice"
+    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/remove_id 2>/dev/null
   done
 
   # Set BAR for 9070XT
-  echo 12 > /sys/bus/pci/devices/0000:$GPU/resource0_resize
-  echo 3 >  /sys/bus/pci/devices/0000:$GPU/resource2_resize
+  echo 12 > /sys/bus/pci/devices/0000:$GPU/resource0_resize 2>/dev/null
+  echo 3  > /sys/bus/pci/devices/0000:$GPU/resource2_resize 2>/dev/null
 	
-  sleep 1 # Let devices settle
+  sleep 2 # Let devices settle
 
   # Bind VFIO-PCI
   for device in $devices; do
     local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
     local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/new_id >/dev/null 2>&1
+    echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}"
+    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/new_id 2>/dev/null
   done
   echo "Done with custom start script"
 }
@@ -752,15 +757,20 @@ customVMStop() {
 
   # Unbind and remove devices
   for device in $devices; do
-  local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
-  local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
-    echo 0000:${device} > /sys/bus/pci/devices/0000:${device}/driver/unbind >/dev/null 2>&1
-    sleep 1 # Let unbind settle
-    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/remove_id >/dev/null 2>&1
+    local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
+    local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
+    if [ -e /sys/bus/pci/devices/0000:${device}/driver/unbind ]; then
+      echo "Unbinding 0000:${device}"
+      echo 0000:${device} > /sys/bus/pci/devices/0000:${device}/driver/unbind 2>/dev/null
+    fi
+    sleep 2 # Let unbind settle
+    echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}"
+    echo "$pciVendor $pciDevice" > /sys/bus/pci/drivers/vfio-pci/remove_id 2>/dev/null
   done
 
   # Reload AMDGPU driver
-  echo 0000:$GPU > /sys/bus/pci/drivers/amdgpu/bind >/dev/null 2>&1
+  echo "Reloading AMDGPU driver on 0000:$GPU"
+  echo 0000:$GPU > /sys/bus/pci/drivers/amdgpu/bind 2>/dev/null
 
   echo "Done with custom stop script"
 }
