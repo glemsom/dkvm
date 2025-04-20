@@ -399,12 +399,10 @@ mainHandlerInternal() {
 }
 
 realTimeTune() {
-  # Move dirty page writeback to CPU0 only
-  echo 1 > /sys/devices/virtual/workqueue/cpumask
   # Reduce vmstat collection
-  echo 300 >/proc/sys/vm/stat_interval 2>/dev/null
+  [ -e /proc/sys/vm/stat_interval ] && echo 300 >/proc/sys/vm/stat_interval 2>/dev/null
   # Disable watchdog
-  echo 0   >/proc/sys/kernel/watchdog 2>/dev/null
+  [ -e proc/sys/kernel/watchdog ] && echo 0 >/proc/sys/kernel/watchdog 2>/dev/null
 }
 
 isGPU() {
@@ -525,12 +523,12 @@ mainHandlerVM() {
   else
     OPTS+=" -cpu host "
   fi
-  doOut "clear"
-  #setupHugePages $VMMEMMB |& doOut
+  setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
   realTimeTune | doOut
   IRQAffinity | doOut
   reloadPCIDevices $VMPASSTHROUGHPCIDEVICES | doOut
+  doOut "clear"
   eval qemu-system-x86_64 -S $OPTS 2>&1 | doOut &
   sleep 5 && addCPUs $VMCPU 2>&1| doOut
   continueVM | doOut
@@ -679,7 +677,7 @@ reloadPCIDevices() {
       return 1
     fi
   else
-    while read device; do
+    for device in $@; do
       local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
       local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
       if [ -e /sys/bus/pci/devices/0000:${device}/driver/unbind ]; then
@@ -694,15 +692,15 @@ reloadPCIDevices() {
         echo 1 >"/sys/bus/pci/devices/0000:${device}/reset" 2>&1 | doOut
         sleep 1
       fi
-    done <<< "$@"
+    done
 
-    while read device; do
+    for device in $@; do
       local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
       local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
       echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}" | doOut
       echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
       sleep 1
-    done <<< "$@"
+    done
   fi
 }
 

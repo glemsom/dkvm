@@ -22,13 +22,13 @@ ln -s /media/usb/cache /etc/apk/cache
 
 # Default arguments for Linux kernel
 #extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5"
-extraArgs="mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5"
+extraArgs="mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5 blacklist=amdgpu"
 
 # Patch grub2 (uefi boot)
 [ -e /media/usb/boot/grub/grub.cfg.old ] && rm -f /media/usb/boot/grub/grub.cfg.old
 
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
-cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g'> /media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
+cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g' | sed 's/\(modules=[^ ]*\)/\1,vfio-pci/'  > /media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
 
 # Edge kernel
 sed -i 's/lts/edge/g' /media/usb/boot/grub/grub.cfg || err "Unable to patch grub"
@@ -109,6 +109,7 @@ echo "options kvm-intel nested=1 enable_apicv=1
 options kvm-amd nested=1
 options kvm ignore_msrs=1
 blacklist snd_hda_intel
+blacklist amdgpu
 " > /etc/modprobe.d/vfio.conf
 
 echo '#!/bin/sh
