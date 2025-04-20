@@ -1,4 +1,4 @@
-# dkvm
+# DKVM
 DKVM - Desktop KVM
 
 DKVM is a minimal KVM hypervisor running from RAM.
