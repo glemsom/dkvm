@@ -532,7 +532,6 @@ mainHandlerVM() {
   eval qemu-system-x86_64 -S $OPTS 2>&1 | doOut &
   sleep 5 && addCPUs $VMCPU 2>&1| doOut
   continueVM | doOut
-
   doOut showlog
 }
 
@@ -681,12 +680,12 @@ reloadPCIDevices() {
       local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
       local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
       if [ -e /sys/bus/pci/devices/0000:${device}/driver/unbind ]; then
+        echo "Unbinding 0000:${device}" | doOut
         echo "0000:${device}" >/sys/bus/pci/devices/0000:${device}/driver/unbind 2>&1 | doOut
         sleep 1
       fi
       echo "Removing $pciVendor $pciDevice from vfio-pci" | doOut
       echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/remove_id 2>&1 | doOut
-      sleep 1
       if [ -e "/sys/bus/pci/devices/0000:${device}/reset" ]; then
         echo "Resetting $device" | doOut
         echo 1 >"/sys/bus/pci/devices/0000:${device}/reset" 2>&1 | doOut
@@ -699,7 +698,7 @@ reloadPCIDevices() {
       local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
       echo "Registrating vfio-pci on ${pciVendor}:${pciDevice}" | doOut
       echo "$pciVendor $pciDevice" >/sys/bus/pci/drivers/vfio-pci/new_id 2>&1 | doOut
-      sleep 1
+      sleep 0.5
     done
   fi
 }

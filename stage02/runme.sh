@@ -31,7 +31,8 @@ cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
 cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g' | sed 's/\(modules=[^ ]*\)/\1,vfio-pci/'  > /media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
 
 # Edge kernel
-sed -i 's/lts/edge/g' /media/usb/boot/grub/grub.cfg || err "Unable to patch grub"
+# Disabled for now. We will manually inject a new kernel
+#sed -i 's/lts/edge/g' /media/usb/boot/grub/grub.cfg || err "Unable to patch grub"
 # Add br0
 brctl addbr br0
 brctl addif br0 eth0
@@ -55,13 +56,14 @@ apk upgrade
 apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance hwloc-tools || err "Cannot install packages"
 
 # Create reposotiry file for edge
-cp /etc/apk/repositories /etc/apk/repositories-edge
-sed -i 's/@community //' /etc/apk/repositories-edge
+# Disabled for now. We will manually inject a new kernel
+#cp /etc/apk/repositories /etc/apk/repositories-edge
+#sed -i 's/@community //' /etc/apk/repositories-edge
 
 # Upgrade kernel
-update-kernel -f edge --repositories-file /etc/apk/repositories-edge /media/usb/boot
-#update-kernel /media/usb/boot/ || err "Kernel upgrade failed"
-umount /.modloop
+# Disabled for now. We will manually inject a new kernel
+#update-kernel -f edge --repositories-file /etc/apk/repositories-edge /media/usb/boot
+#umount /.modloop
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
 
