@@ -161,6 +161,7 @@ sudo rm -rf tmp_dkvm
 
 #cp usbdisk.img usbdisk.img-save-stage02-end
 
+echo "VM started, using vnc to check console. ssh on port 2222(You need to set passwd)"
 sudo $qemu -m 8G -machine q35 -enable-kvm \
 	-smp cpus=4,sockets=1,dies=1 \
 	-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
@@ -168,7 +169,7 @@ sudo $qemu -m 8G -machine q35 -enable-kvm \
 	-global driver=cfi.pflash01,property=secure,value=off \
 	-drive if=none,format=raw,id=usbstick,file="$diskfile" \
 	-usb -device usb-storage,drive=usbstick \
-	-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
+	-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10,hostfwd=tcp::2222-:22  \
 	-device e1000,netdev=mynet0 \
 	-boot menu=on,splash-time=4000 \
 	-global ICH9-LPC.disable_s3=0 -vnc 0.0.0.0:0 || err "Cannot start qemu"
