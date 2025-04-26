@@ -530,8 +530,7 @@ mainHandlerVM() {
   reloadPCIDevices $VMPASSTHROUGHPCIDEVICES | doOut
   doOut "clear"
   eval qemu-system-x86_64 -S $OPTS 2>&1 | doOut &
-  sleep 5 && addCPUs $VMCPU 2>&1| doOut
-  continueVM | doOut
+  sleep 5 && addCPUs $VMCPU 2>&1 | doOut && continueVM &
   doOut showlog
 }
 
