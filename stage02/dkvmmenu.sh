@@ -708,7 +708,7 @@ setupCustomStartStopScript() {
   else
     cat <<-'EOF' > $configCustomStartStopScript
 # Sample startStopScript
-# Look at examples at https://github.com/glemsom/dkvm/examples
+# Look at examples at https://github.com/glemsom/dkvm/tree/master/examples
 customVMStart() {
   echo "Starting custom start script"
   echo "Done with custom start script"
