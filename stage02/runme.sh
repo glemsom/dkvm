@@ -30,9 +30,6 @@ extraArgs="mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop wa
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
 cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g' | sed 's/\(modules=[^ ]*\)/\1,vfio-pci/'  > /media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
 
-# Edge kernel
-# Disabled for now. We will manually inject a new kernel
-#sed -i 's/lts/edge/g' /media/usb/boot/grub/grub.cfg || err "Unable to patch grub"
 # Add br0
 brctl addbr br0
 brctl addif br0 eth0
@@ -49,21 +46,21 @@ sed -i '/^#.*v3.*community/s/^#/@community /' /etc/apk/repositories
 # In case /dev/usbdisk was sda1, move it to usb
 sed -i 's/sda1/usb/' /etc/apk/repositories
 
+# Add new repository file with edge and testing enabled
+cp /etc/apk/repositories /etc/apk/repositories-edge
+echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories-edge
+echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories-edge
+
 apk update
 apk upgrade
 
 # Install required tools
 apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance hwloc-tools || err "Cannot install packages"
 
-# Create reposotiry file for edge
-# Disabled for now. We will manually inject a new kernel
-#cp /etc/apk/repositories /etc/apk/repositories-edge
-#sed -i 's/@community //' /etc/apk/repositories-edge
-
-# Upgrade kernel
-# Disabled for now. We will manually inject a new kernel
-#update-kernel -f edge --repositories-file /etc/apk/repositories-edge /media/usb/boot
-#umount /.modloop
+# Upgrade kernel from testing repo
+update-kernel -f stable --repositories-file /etc/apk/repositories-edge -v /media/usb/boot || err "Cannot update kernel"
+sed -i 's/lts/stable/g' /media/usb/boot/grub/grub.cfg || err "Unable to patch grub"
+umount /.modloop
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
 
