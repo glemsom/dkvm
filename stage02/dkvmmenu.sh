@@ -185,9 +185,6 @@ doAddVM() {
 
 # MAC Address
 MAC=DE:AD:BE:EF:66:61
-
-# Extra CPU options to qemu
-CPUOPTS=kvm=off,hv_vendor_id=dkvm,hv-frequencies,hv-relaxed,hv-reset,hv-runtime,hv-spinlocks=0x1fff,hv-stimer,hv-synic,hv-time,hv-vapic,hv-vpindex,topoext=on,l3-cache=on
 '
   # Find next dkvm_vmconfig.X
   local lastVMConfig=$(getLastVMConfig)
