@@ -17,6 +17,7 @@ export configDataFolder=/media/dkvmdata
 export configPassthroughPCIDevices=$configDataFolder/passthroughPCIDevices
 export configPassthroughUSBDevices=$configDataFolder/passthroughUSBDevices
 export configCPUTopology=$configDataFolder/cpuTopology
+export configCPUOptions=$configDataFolder/cpuOptions
 export configCustomStartStopScript=$configDataFolder/customStartStopScript
 
 configBIOSCODE=/usr/share/OVMF/OVMF_CODE.fd
@@ -362,7 +363,8 @@ mainHandlerInternal() {
     menuOptions[4]="Edit PCI Passthrough"
     menuOptions[5]="Edit USB Passthrough"
     menuOptions[6]="Edit Custom PCI reload script"
-    menuOptions[7]="Save changes"
+    menuOptions[7]="Edit CPU options"
+    menuOptions[8]="Save changes"
     
     local itemString=""
 
@@ -389,6 +391,8 @@ mainHandlerInternal() {
     elif [ "$menuAnswer" == "6" ]; then
       setupCustomStartStopScript
     elif [ "$menuAnswer" == "7" ]; then
+      doEditCPUOptions
+    elif [ "$menuAnswer" == "8" ]; then
       doSaveChanges
     fi
     showMainMenu && doSelect
@@ -518,10 +522,11 @@ mainHandlerVM() {
       OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x${USBVendor},productid=0x${USBProduct}"
     done
   fi
-  if [ ! -z "$VMCPUOPTS" ]; then
-    OPTS+=" -cpu host,${VMCPUOPTS}"
+
+  if [ -e $configCPUOptions ]; then
+    OPTS+=" cpu,host,$(doEchoCPUOptions)"
   else
-    OPTS+=" -cpu host "
+    OPTS+=" cpu,host"
   fi
   setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
@@ -780,6 +785,59 @@ doWarnDKVMData() {
   dialog --cr-wrap --clear --msgbox "$txt" 0 0
 
   exit 1
+}
+
+doEditCPUOptions() {
+  prevChoice=""
+  if [ -e $configCPUOptions ]; then
+    prevChoice=$(cat $configCPUOptions)
+  fi
+
+  # Setup CPU options
+  local options=()
+  for opt in "kvm=off" "hv-vendor-id=dkvm" "hv-frequencies" "hv-relaxed" \
+            "hv-reset" "hv-runtime" "hv-spinlocks=0x1fff" "hv-stimer" "hv-synic" \
+            "hv-time" "hv-vapic" "hv-vpindex" "topoext=on" "l3-cache=on"; do
+    desc=" "
+    case $opt in
+      kvm=off ) desc="Hide KVM Hypervisor signature" ;;
+      hv-vendor-id=dkvm ) desc="Set custom hardware vendor ID" ;;
+      hv-frequencies ) desc="Provides HV_X64_MSR_TSC_FREQUENCY" ;;
+      hv-relaxed ) desc="Disable watchdog timeouts" ;;
+      hv-reset ) desc="Provides HV_X64_MSR_RESET" ;;
+      hv-runtime ) desc="Provides HV_X64_MSR_RUNTIME" ;;
+      hv-spinlocks=0x1fff ) desc="Paravirtualized spinlocks" ;;
+      hv-stimer ) desc="Enables Hyper-V synthetic timers" ;;
+      hv-synic ) desc="Enables Hyper-V Synthetic interrupt controller" ;;
+      hv-time ) desc="Enables two Hyper-V-specific clocksources" ;;
+      hv-vapic ) desc="Provides  VP Assist page MSR" ;;
+      hv-vpindex ) desc="Provides HV_X64_MSR_VP_INDEX MSR" ;;
+      topoext=on ) desc="Enable topology extension" ;;
+      l3-cache=on ) desc="Enable L3 layout cache" ;;
+    esac
+
+    state=off
+    for prev in $prevChoice; do
+      if [ $prev = $opt ]; then
+        state=on
+      fi
+    done
+
+    options+=($opt $desc $state)
+  done
+
+  choice=$(dialog --checklist "Select CPU Options:" 20 70 8 "${options[@]}" 2>&1 >/dev/tty)
+
+  echo $choice | tr ' ' '\n'> $configCPUOptions
+
+  doEchoCPUOptions
+  exit 1
+}
+
+doEchoCPUOptions() {
+  if [ -e $configCPUOptions ]; then
+    cat $configCPUOptions | tr '\n' ',' | sed 's/,*$//g'
+  fi
 }
 
 mountpoint $configDataFolder || doWarnDKVMData
