@@ -9,7 +9,7 @@ customVMStart() {
   # Custom start script for 9070 XT cards
   # AMDGPU driver should already be loaded - and initialized the GPU
 
-  devices=$(cat $configPassthroughPCIDevices)
+  devices=$(cat $configPassthroughPCIDevices) # Load configured passthrough devices
   GPU=03:00.0     # 9070 XT
   HOSTGPU=7c:00.0 # Onboard iGPU
 	
@@ -32,7 +32,7 @@ customVMStart() {
   # Load amdgpu
   echo "Loading AMDGPU driver on 0000:$GPU"
   modprobe amdgpu
-  sleep 2
+  sleep 2 # Let the card settle
 
   # Unload amdgpu
   echo "Unloading AMDGPU driver on 0000:$GPU"
@@ -45,7 +45,7 @@ customVMStart() {
 	
   sleep 2 # Let devices settle
 
-  # Bind VFIO-PCI
+  # Bind VFIO-PCI to all devices
   for device in $devices; do
     local pciVendor=$(cat /sys/bus/pci/devices/0000:${device}/vendor)
     local pciDevice=$(cat /sys/bus/pci/devices/0000:${device}/device)
@@ -57,5 +57,6 @@ customVMStart() {
 
 customVMStop() {
   echo "Starting custom stop script"
+  # Insert custom stop script here
   echo "Done with custom stop script"
 }
