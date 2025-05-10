@@ -521,16 +521,16 @@ mainHandlerVM() {
   fi
 
   if [ -e $configCPUOptions ]; then
-    OPTS+=" cpu,host,$(doEchoCPUOptions)"
+    OPTS+=" -cpu host,$(doEchoCPUOptions)"
   else
-    OPTS+=" cpu,host"
+    OPTS+=" -cpu host"
   fi
+  doOut "clear"
   setupHugePages $VMMEMMB |& doOut
   echo "QEMU Options $OPTS" | doOut
   realTimeTune | doOut
   IRQAffinity | doOut
   reloadPCIDevices $VMPASSTHROUGHPCIDEVICES
-  doOut "clear"
   eval qemu-system-x86_64 -S $OPTS 2>&1 | doOut &
   sleep 5 && addCPUs $VMCPU 2>&1 | doOut && continueVM &
   doOut showlog
@@ -826,9 +826,6 @@ doEditCPUOptions() {
   choice=$(dialog --checklist "Select CPU Options:" 20 70 8 "${options[@]}" 2>&1 >/dev/tty)
 
   echo $choice | tr ' ' '\n'> $configCPUOptions
-
-  doEchoCPUOptions
-  exit 1
 }
 
 doEchoCPUOptions() {
