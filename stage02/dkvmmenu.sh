@@ -467,7 +467,7 @@ mainHandlerVM() {
   if [ -z "$VNCLISTEN" ]; then
     OPTS+=" -nographic -vga none"
   else
-    OPTS+=" -vnc $VNCLISTEN"
+    OPTS+=" -vga std -vnc $VNCLISTEN"
   fi
   if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
     local TMPALLCORES=$(echo $VMCPU | sed 's/,/ /g'|wc -w)
