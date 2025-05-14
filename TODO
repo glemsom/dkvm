@@ -20,3 +20,4 @@
  * Consider using a PCIe root port [done]
  * Support VNC Server [done]
  * Add documentation
+ * Add menu for other QEMU Options
