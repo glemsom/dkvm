@@ -23,7 +23,7 @@ export configCustomStartStopScript=$configDataFolder/customStartStopScript
 configBIOSCODE=/usr/share/OVMF/OVMF_CODE.fd
 configBIOSVARS=/usr/share/OVMF/OVMF_VARS.fd
 
-configReservedMemMB=$(( 1024 * 2 )) # 2GB
+configReservedMemMB=$(( 1024 * 4 )) # 4GB
 
 
 err() {
