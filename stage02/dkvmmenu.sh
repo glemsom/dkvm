@@ -646,10 +646,9 @@ addCPUs() {
         if [ ! -z ${PROCESSED_SIBLING_LIST[$SIBLING_LIST]} ]; then
           echo "    Host core $HOSTCORE already processed as sibling $SIBLING_LIST. Virtual core of sibling: ${PROCESSED_SIBLING_LIST[$SIBLING_LIST]}"
           addvCore ${PROCESSED_SIBLING_LIST[$SIBLING_LIST]} $CUR_DIE_ID 1 0 $HOSTCORE
-          # Get the POD for the newly added vCore
+          # Get the PID for the newly added vCore
           TMPPID=$(getvCorePid ${PROCESSED_SIBLING_LIST[$SIBLING_LIST]} $CUR_DIE_ID 1)
           taskset -pc $HOSTCORE $TMPPID
-          
         else
           echo "    Host core $HOSTCORE not seen before as $SIBLING_LIST"
           echo "Result from sibling check:" ${PROCESSED_SIBLING_LIST[$SIBLING_LIST]}
