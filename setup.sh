@@ -80,7 +80,7 @@ sudo umount tmp_iso_readonly
 echo "Starting stage01..."
 
 sudo expect -c "set timeout -1
-spawn $qemu -smp 4 -m 8G -machine q35 -enable-kvm \
+spawn $qemu -smp 4 -m 8G -machine q35  \
 -drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
 -drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
 -drive if=none,format=raw,id=usbstick,file=$diskfile \
@@ -113,7 +113,7 @@ echo "Starting stage02..."
 
 sudo expect -c "set timeout -1
 set log_user 1
-spawn $qemu -smp 4 -m 8G -machine q35 -enable-kvm \
+spawn $qemu -smp 4 -m 8G -machine q35 \
 -drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
 -drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
 -global driver=cfi.pflash01,property=secure,value=off \
@@ -162,7 +162,7 @@ sudo rm -rf tmp_dkvm
 #cp usbdisk.img usbdisk.img-save-stage02-end
 
 echo "VM started, using vnc to check console. ssh on port 2222(You need to set passwd)"
-sudo $qemu -m 8G -machine q35 -enable-kvm \
+sudo $qemu -m 8G -machine q35 \
 	-smp cpus=4,sockets=1,dies=1 \
 	-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
 	-drive if=pflash,format=raw,unit=1,file=$ovmf_vars \

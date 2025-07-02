@@ -50,6 +50,7 @@ sed -i 's/sda1/usb/' /etc/apk/repositories
 cp /etc/apk/repositories /etc/apk/repositories-edge
 echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories-edge
 echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories-edge
+echo 'http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories-edge
 
 apk update
 apk upgrade
@@ -83,19 +84,14 @@ echo "allow br0" > /etc/qemu/bridge.conf
 echo "set bell-style none" >> /etc/inputrc
 
 # Modules required for basic kvm/vfio setup
-echo "#!/bin/sh
-# Load modules
-modprobe kvm_intel
-modprobe kvm_amd
-modprobe vfio_iommu_type1
-modprobe tun
-modprobe vfio-pci
-modprobe vfio
-rmmod pcspkr
-" >>/etc/local.d/modules.start
+echo "
+kvm_intel
+kvm_amd
+vfio_iommu_type1
+tun
+vfio-pci
+vfio" >> /etc/modules
 
-
-chmod +x /etc/local.d/modules.start
 
 rc-update add local default
 rc-update add ntpd default
@@ -105,7 +101,7 @@ lbu include /root/.ssh
 
 ######### CUSTOM STUFF ##################
 echo "options kvm-intel nested=1 enable_apicv=1
-options kvm-amd nested=1
+options kvm-amd nested=0 avic=1
 options kvm ignore_msrs=1
 blacklist snd_hda_intel
 blacklist amdgpu

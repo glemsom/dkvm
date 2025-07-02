@@ -454,7 +454,7 @@ mainHandlerVM() {
   local VMCPUOPTS=$(getConfigItem $configFile CPUOPTS)
 
   # Build qemu command
-  OPTS="-name \"$VMNAME\",debug-threads=on -nodefaults -no-user-config -accel accel=kvm,kernel-irqchip=on -machine q35,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
+  OPTS="-name \"$VMNAME\",debug-threads=on -nodefaults -no-user-config -accel accel=kvm,kernel-irqchip=split -machine q35,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
   #OPTS+=" -mem-prealloc -overcommit mem-lock=on,cpu-pm=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
   OPTS+=" -mem-prealloc -overcommit mem-lock=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
   OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
@@ -793,23 +793,24 @@ doEditCPUOptions() {
   local options=()
   for opt in "kvm=off" "hv-vendor-id=dkvm" "hv-frequencies" "hv-relaxed" \
             "hv-reset" "hv-runtime" "hv-spinlocks=0x1fff" "hv-stimer" "hv-synic" \
-            "hv-time" "hv-vapic" "hv-vpindex" "topoext=on" "l3-cache=on"; do
+            "hv-time" "hv-vapic" "hv-vpindex" "topoext=on" "l3-cache=on" "x2apic=on"; do
     desc=" "
     case $opt in
-      kvm=off ) desc="Hide KVM Hypervisor signature" ;;
-      hv-vendor-id=dkvm ) desc="Set custom hardware vendor ID" ;;
-      hv-frequencies ) desc="Provides HV_X64_MSR_TSC_FREQUENCY" ;;
-      hv-relaxed ) desc="Disable watchdog timeouts" ;;
-      hv-reset ) desc="Provides HV_X64_MSR_RESET" ;;
-      hv-runtime ) desc="Provides HV_X64_MSR_RUNTIME" ;;
+      kvm=off )             desc="Hide KVM Hypervisor signature" ;;
+      hv-vendor-id=dkvm )   desc="Set custom hardware vendor ID" ;;
+      hv-frequencies )      desc="Provides HV_X64_MSR_TSC_FREQUENCY" ;;
+      hv-relaxed )          desc="Disable watchdog timeouts" ;;
+      hv-reset )            desc="Provides HV_X64_MSR_RESET" ;;
+      hv-runtime )          desc="Provides HV_X64_MSR_RUNTIME" ;;
       hv-spinlocks=0x1fff ) desc="Paravirtualized spinlocks" ;;
-      hv-stimer ) desc="Enables Hyper-V synthetic timers" ;;
-      hv-synic ) desc="Enables Hyper-V Synthetic interrupt controller" ;;
-      hv-time ) desc="Enables two Hyper-V-specific clocksources" ;;
-      hv-vapic ) desc="Provides  VP Assist page MSR" ;;
-      hv-vpindex ) desc="Provides HV_X64_MSR_VP_INDEX MSR" ;;
-      topoext=on ) desc="Enable topology extension" ;;
-      l3-cache=on ) desc="Enable L3 layout cache" ;;
+      hv-stimer )           desc="Enables Hyper-V synthetic timers" ;;
+      hv-synic )            desc="Enables Hyper-V Synthetic interrupt controller" ;;
+      hv-time )             desc="Enables two Hyper-V-specific clocksources" ;;
+      hv-vapic )            desc="Provides VP Assist page MSR" ;;
+      hv-vpindex )          desc="Provides HV_X64_MSR_VP_INDEX MSR" ;;
+      topoext=on )          desc="Enable topology extension" ;;
+      l3-cache=on )         desc="Enable L3 layout cache" ;;
+      x2apic=on )           desc="Enable x2APIC mode" ;;
     esac
 
     state=off
