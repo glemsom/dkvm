@@ -5,8 +5,6 @@ err() {
 	/bin/sh
 }
 
-sleep 5
-
 if ! mountpoint /media/usb; then
 	echo "/media/usb not automounted - binding /dev/sda1"
 	# Sometimes /dev/usbdisk is not correctly mounted under /media/usb
