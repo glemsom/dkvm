@@ -483,11 +483,16 @@ mainHandlerVM() {
 
   if [ ! -z "$VMHARDDISK" ]; then
     COUNT=0
+    THREADCOUNT=0
     OPTS+=" -device virtio-scsi-pci,id=scsi"
     for DISK in $VMHARDDISK; do
+      #OPTS+=" -object iothread,id=iothread${THREADCOUNT}"
+      #OPTS+=" -object iothread,id=iothread$(( ${THREADCOUNT} + 1 ))"
       OPTS+=" -drive if=none,cache=none,aio=native,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK},id=drive${COUNT}"
       OPTS+=" -device scsi-hd,drive=drive${COUNT}"
+      #OPTS+=" --device '{\"driver\":\"virtio-scsi-pci\",\"iothread-vq-mapping\":[{\"iothread\":\"iothread${THREADCOUNT}\"},{\"iothread\":\"iothread$(( ${THREADCOUNT} + 1 ))\"}],\"drive\":\"drive${COUNT}\"}'"
       let COUNT=COUNT+1
+      let THREADCOUNT=THREADCOUNT+2
     done
   fi
   if [ ! -z "$VMCDROM" ]; then
