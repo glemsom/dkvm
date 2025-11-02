@@ -20,7 +20,8 @@ ln -s /media/usb/cache /etc/apk/cache
 
 # Default arguments for Linux kernel
 #extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5"
-extraArgs="rootflags=size=256M mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5 blacklist=amdgpu split_lock_detect=off"
+#extraArgs="rootflags=size=256M mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5 blacklist=amdgpu split_lock_detect=off"
+extraArgs="mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5 blacklist=amdgpu split_lock_detect=off"
 
 # Patch grub2 (uefi boot)
 [ -e /media/usb/boot/grub/grub.cfg.old ] && rm -f /media/usb/boot/grub/grub.cfg.old
@@ -45,9 +46,9 @@ sed -i '/^#.*v3.*community/s/^#/@community /' /etc/apk/repositories
 sed -i 's/sda1/usb/' /etc/apk/repositories
 
 # Add new repository file with edge and testing enabled
-cp /etc/apk/repositories /etc/apk/repositories-edge
+#cp /etc/apk/repositories /etc/apk/repositories-edge
 echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories-edge
-echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories-edge
+#echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories-edge
 echo 'http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories-edge
 
 apk update
@@ -57,7 +58,10 @@ apk upgrade
 apk add ca-certificates wget util-linux bridge bridge-utils qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance hwloc-tools || err "Cannot install packages"
 
 # Upgrade kernel from testing repo
-update-kernel -f stable --repositories-file /etc/apk/repositories-edge -v /media/usb/boot || err "Cannot update kernel"
+bash /usr/sbin/update-kernel -v -f stable --repositories-file /etc/apk/repositories-edge /media/usb/boot || err "Cannot update kernel"
+
+#echo $?
+#exit 1
 sed -i 's/lts/stable/g' /media/usb/boot/grub/grub.cfg || err "Unable to patch grub"
 umount /.modloop
 
@@ -99,7 +103,7 @@ lbu include /root/.ssh
 
 ######### CUSTOM STUFF ##################
 echo "options kvm-intel nested=1 enable_apicv=1
-options kvm-amd nested=0 avic=1
+options kvm-amd nested=1 avic=1
 options kvm ignore_msrs=1
 blacklist snd_hda_intel
 blacklist amdgpu

@@ -1,8 +1,8 @@
 #!/bin/bash
-version=0.5.11
+version=0.5.12
 disksize=2048  #Disk size in MB
 alpineVersion=3.22
-alpineVersionMinor=1
+alpineVersionMinor=2
 alpineISO=alpine-standard-${alpineVersion}.${alpineVersionMinor}-x86_64.iso
 ovmf_code=OVMF_CODE.fd
 ovmf_vars=OVMF_VARS.fd
@@ -74,7 +74,7 @@ chmod +w boot/syslinux/isolinux.bin || err "Cannot modify permissions for isolin
 sed -i 's/quiet/console=ttyS0,9600 quiet/' boot/grub/grub.cfg || err "Cannot patch grub.cfg"
 cd .. && xorriso -as mkisofs -o ${alpineISO}.patched -isohybrid-mbr tmp_iso/boot/syslinux/isohdpfx.bin -c boot/syslinux/boot.cat  -b boot/syslinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/grub/efi.img  -no-emul-boot -isohybrid-gpt-basdat  tmp_iso || err "Cannot build custom ISO"
 
-sudo umount tmp_iso_readonly
+sudo umount tmp_iso_readonly || err "Cannot unmount tmp_iso_readonly"
 
 
 echo "Starting stage01..."
@@ -157,8 +157,6 @@ done
 echo ${loopDevice}p1 unmounted
 sudo rm -rf tmp_dkvm
 
-#echo '* Test boot - make sure the system can start. Then do a PowerOff'
-
 #cp usbdisk.img usbdisk.img-save-stage02-end
 
 echo "VM started, using vnc to check console. ssh on port 2222(You need to set passwd)"
@@ -177,5 +175,4 @@ sudo $qemu -m 8G -machine q35 \
 # Cleanup
 sleep 1
 sudo rm -rf tmp_iso
-sudo umount tmp_iso_readonly
 rm -rf tmp_iso_readonly
