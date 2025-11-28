@@ -748,12 +748,13 @@ doKernelCPUTopology() {
   clear
   mount -oremount,rw /media/usb/ || err "Cannot remount /media/usb"
   cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old || err "Cannot copy grub.cfg"
-  cat /media/usb/boot/grub/grub.cfg.old | sed '/^menuentry "DKVM"/,/^}/s/\(linux.*\)isolcpus=[^ ]*/\1isolcpus='$VMCPU'/; \
-                                          /isolcpus=[^ ]*/!s/\(linux.*\)$/\1 isolcpus='$VMCPU'/; \
-                                          s/\(linux.*\)nohz_full=[^ ]*/\1nohz_full='$VMCPU'/; \
-                                          /nohz_full=[^ ]*/!s/\(linux.*\)$/\1 nohz_full='$VMCPU'/; \
-                                          s/\(linux.*\)rcu_nocbs=[^ ]*/\1rcu_nocbs='$VMCPU'/; \
-                                          /rcu_nocbs=[^ ]*/!s/\(linux.*\)$/\1 rcu_nocbs='$VMCPU'/' > /media/usb/boot/grub/grub.cfg
+  cat /media/usb/boot/grub/grub.cfg.old | sed '/^menuentry "DKVM"/,\|^}|s|\(linux.*\)isolcpus=[^ ]*|\1isolcpus=domain,managed_irq,'$VMCPU'|; \
+                                           /isolcpus=[^ ]*/!s|\(linux.*\)$|\1 isolcpus=domain,managed_irq,'$VMCPU'|; \
+                                           s|\(linux.*\)nohz_full=[^ ]*|\1nohz_full='$VMCPU'|; \
+                                           /nohz_full=[^ ]*/!s|\(linux.*\)$|\1 nohz_full='$VMCPU'|; \
+                                           s|\(linux.*\)rcu_nocbs=[^ ]*|\1rcu_nocbs='$VMCPU'|; \
+                                           /rcu_nocbs=[^ ]*/!s|\(linux.*\)$|\1 rcu_nocbs='$VMCPU'|' > /media/usb/boot/grub/grub.cfg
+
   mount -oremount,ro /media/usb/ || err "Cannot remount /media/usb"
   dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 0 0
 }
@@ -795,7 +796,8 @@ doEditCPUOptions() {
   local options=()
   for opt in "kvm=off" "hv-vendor-id=dkvm" "hv-frequencies" "hv-relaxed" \
             "hv-reset" "hv-runtime" "hv-spinlocks=0x1fff" "hv-stimer" "hv-synic" \
-            "hv-time" "hv-vapic" "hv-vpindex" "topoext=on" "l3-cache=on" "x2apic=on"; do
+            "hv-time" "hv-vapic" "hv-vpindex" "topoext=on" "l3-cache=on" "x2apic=on" \
+            "migratable=off" "invtsc=on"; do
     desc=" "
     case $opt in
       kvm=off )             desc="Hide KVM Hypervisor signature" ;;
@@ -813,6 +815,8 @@ doEditCPUOptions() {
       topoext=on )          desc="Enable topology extension" ;;
       l3-cache=on )         desc="Enable L3 layout cache" ;;
       x2apic=on )           desc="Enable x2APIC mode" ;;
+      migratable=off )      desc="Disable migration support" ;;
+      invtsc=on )           desc="Set invtsc flag" ;;
     esac
 
     state=off
