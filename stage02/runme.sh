@@ -58,12 +58,11 @@ apk upgrade
 apk add ca-certificates wget util-linux bridge bridge-utils amd-ucode intel-ucode qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance hwloc-tools || err "Cannot install packages"
 
 # Upgrade kernel from testing repo
-bash /usr/sbin/update-kernel -v -f stable --repositories-file /etc/apk/repositories-edge /media/usb/boot || err "Cannot update kernel"
+# Not needed 3.23 is currently using the latest 6.18
+# bash /usr/sbin/update-kernel -v -f stable --repositories-file /etc/apk/repositories-edge /media/usb/boot || err "Cannot update kernel"
+#sed -i 's/lts/stable/g' /media/usb/boot/grub/grub.cfg || err "Unable to patch grub"
+#umount /.modloop
 
-#echo $?
-#exit 1
-sed -i 's/lts/stable/g' /media/usb/boot/grub/grub.cfg || err "Unable to patch grub"
-umount /.modloop
 
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
 
