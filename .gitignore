@@ -10,3 +10,4 @@ dkvm_vmconfig.*
 *rsa.pub
 dkvm.log
 .vscode
+.agent
