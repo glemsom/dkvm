@@ -84,6 +84,7 @@ echo "Removing intermediate build files..."
 rm -f stage01.iso stage02.iso
 
 if [ -n "$alpineISO" ]; then
+    rm -f "$alpineISO"
     patched_iso="${alpineISO}.patched"
     if [ -f "$patched_iso" ]; then
          rm -f "$patched_iso"
