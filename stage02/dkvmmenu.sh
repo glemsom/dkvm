@@ -31,6 +31,7 @@ err() {
 	exit 1
 }
 
+# Scans the config directory for VM configurations and builds the menu list
 buildMenuItemVMs() {
 	shopt -s nullglob
 	menuItemsVMs=""
@@ -44,6 +45,7 @@ buildMenuItemVMs() {
 }
 
 # Install OVMF BIOS if not already present
+# Copys the OVMF UEFI firmware files to the VM directory if missing
 doInstallBIOSFiles() {
 	local VMFolder="$1"
 	if [ ! -e ${VMFolder}/OVMF_CODE.fd ]; then
@@ -56,6 +58,7 @@ doInstallBIOSFiles() {
 	fi
 }
 
+# Starts the software TPM (swtpm) for the VM
 doStartTPM() {
 	local vmFolder="$1"
 	# Cleanup if an old was running
@@ -200,7 +203,7 @@ MAC=DE:AD:BE:EF:66:61
 
 	mkdir -p $configDataFolder/${nextVMIndex} || err "Cannot create VM folder"
 	echo "$template" > $configDataFolder/${nextVMIndex}/vm_config || err "Cannot write VM Template"
-	
+
 	doEditVM "$configDataFolder/${nextVMIndex}/vm_config"
 }
 
@@ -221,6 +224,8 @@ doEditVM() {
 	fi
 }
 
+# Detects CPU topology and proposes a split between Host and VM cores
+# Typically reserves Core 0 and its thread sibling for the Host
 writeOptimalCPULayout() {
 	# Pick first core, and any SMT as the host core
 	# TODO: What if we have more sockets / CCX?
@@ -266,6 +271,7 @@ doUSBConfig() {
 	echo "$selectedDevices" > $configPassthroughUSBDevices
 }
 
+# Updates the GRUB configuration to add or remove kernel parameters
 doUpdateGrub() {
 		mount -oremount,rw /media/usb/ || err "Cannot remount /media/usb"
 		local grubFile=/media/usb/boot/grub/grub.cfg
@@ -327,8 +333,8 @@ doPCIConfig() {
 		doUpdateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
 	fi
 	doSaveChanges
-	
-	
+
+
 	IFS=$OLDIFS
 }
 
@@ -362,7 +368,7 @@ mainHandlerInternal() {
 		menuOptions[6]="Edit Custom PCI reload script"
 		menuOptions[7]="Edit CPU options"
 		menuOptions[8]="Save changes"
-		
+
 		local itemString=""
 
 		for item in "${!menuOptions[@]}"; do
@@ -454,14 +460,29 @@ mainHandlerVM() {
 	local VMCPUOPTS=$(getConfigItem $configFile CPUOPTS)
 
 	# Build qemu command
+	# Basic Machine setup (Q35 chipset, KVM accel, Split IRQ chip)
 	OPTS="-name \"$VMNAME\",debug-threads=on -nodefaults -no-user-config -accel accel=kvm,kernel-irqchip=split -machine q35,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
+
+	# Memory and Clock settings (Prealloc memory, lock memory to RAM, Localtime RTC)
 	#OPTS+=" -mem-prealloc -overcommit mem-lock=on,cpu-pm=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
 	OPTS+=" -mem-prealloc -overcommit mem-lock=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
+
+	# Networking (Sourced from bridge helper)
 	OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
+
+	# Hugepages for better memory performance
 	OPTS+=" -m ${VMMEMMB}M -mem-path /dev/hugepages"
+
+	# Disable S3/S4 sleep states
 	OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
+
+	# TPM Device (Linked to swtpm socket)
 	OPTS+=" -chardev socket,id=chrtpm,path=$configDataFolder/${VMID}/tpm.sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
+
+	# QEMU Guest Agent (For host-guest communication)
 	OPTS+=" -device virtio-serial-pci,id=virtio-serial0 -chardev socket,id=guestagent,path=/tmp/qga.sock,server,nowait -device virtserialport,chardev=guestagent,name=org.qemu.guest_agent.0"
+
+	# Boot options and firmware config
 	OPTS+=" -boot menu=on,splash-time=5000"
 	OPTS+=" -fw_cfg opt/ovmf/X-PciMmio64Mb,string=65536"
 	if [ -z "$VNCLISTEN" ]; then
@@ -603,6 +624,9 @@ addvCore() {
 
 printarr() { declare -n __p="$1"; for k in "${!__p[@]}"; do printf "%s=%s\n" "$k" "${__p[$k]}" ; done ;  } 
 
+# Pinning and hotplugging CPUs
+# This function handles the complex mapping of Host Cores -> Guest vCPUs
+# ensuring siblings (HyperThread pairs) are kept together.
 addCPUs() {
 	declare -A PROCESSED_SIBLING_LIST
 
@@ -668,6 +692,7 @@ addCPUs() {
 	done
 }
 
+# Unbinds PCI devices from their host drivers and binds them to vfio-pci for passthrough
 reloadPCIDevices() {
 	if [ -e $configCustomStartStopScript ]; then
 		. $configCustomStartStopScript
@@ -739,6 +764,7 @@ getConfigItem() {
 	echo "$value"
 }
 
+# Configure kernel parameters (isolcpus, nohz_full, rcu_nocbs) to isolate VM cores from the host scheduler
 doKernelCPUTopology() {
 	if [ ! -e $configCPUTopology ]; then
 		err "No cpuTopology file found"
@@ -759,6 +785,7 @@ doKernelCPUTopology() {
 	dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 0 0
 }
 
+# Masks VFIO interrupts from irqbalance to prevent them from landing on non-VM cores (or vice-versa)
 IRQAffinity() {
 	# Replaced with irqbalance
 	source $configCPUTopology
