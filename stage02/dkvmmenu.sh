@@ -264,20 +264,31 @@ EOF
 
 # interactive selection of USB devices for passthrough
 doUSBConfig() {
-	echo "USB Config" | doLog
-	local USBDevices=$(lsusb 2>/dev/null)
-	dialogStr=""
+	echo "USB Config" | doLog # Log entry
+	prevChoice=""
+	if [ -e $configPassthroughUSBDevices ]; then
+		prevChoice=$(cat $configPassthroughUSBDevices) # Get current selection
+	fi
 
-	for USBDevice in $USBDevices; do
-		USBId=$(grep -Eo '(([0-9]|[a-f]){4}|:){3}' <<<$USBDevice)
-		USBName=$(cut -d : -f 2- <<<$USBDevice | sed "s/.*$USBId //g")
-		dialogStr+="\"$USBId\" \"$USBName\" off "
-	done
-	selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select USB devices for passthrough\" 0 0 70 $dialogStr | tr ' ' '\n')
+	local options=()
+	# Get unique USB IDs and their names
+	while read -r line; do
+		USBId=$(echo "$line" | awk '{print $6}') # Extract ID
+		USBName=$(echo "$line" | cut -d ' ' -f 7-) # Extract Name
 
-	[ -z "$selectedDevices" ] && exit 1
+		state=off
+		for prev in $prevChoice; do
+			if [ "$prev" = "$USBId" ]; then
+				state=on # Mark as selected
+				break
+			fi
+		done
+		options+=("$USBId" "$USBName" "$state")
+	done < <(lsusb 2>/dev/null | sort -u -k6,6) # Sort by ID and take unique
 
-	echo "$selectedDevices" > $configPassthroughUSBDevices
+	choice=$(dialog --backtitle "$backtitle" --checklist "Select USB devices for passthrough:" 20 70 10 "${options[@]}" 2>&1 >/dev/tty) # Show dialog
+
+	echo $choice | tr ' ' '\n' > $configPassthroughUSBDevices # Save selection
 }
 
 # Updates the GRUB configuration to add or remove kernel parameters
@@ -311,42 +322,48 @@ doUpdateModprobe() {
 
 # interactive selection of PCI devices for passthrough
 doPCIConfig() {
-	local pciDevices=$(lspci)
-	dialogStr=""
-	declare -a deviceInfo
+	echo "PCI Config" | doLog # Log entry
+	prevChoice=""
+	if [ -e $configPassthroughPCIDevices ]; then
+		prevChoice=$(cat $configPassthroughPCIDevices) # Get current selection
+	fi
 
-	OLDIFS=$IFS
-	IFS="
-"
+	local options=()
+	while read -r line; do
+		pciID=$(echo "$line" | cut -f 1 -d " ") # PCI Address
+		pciName=$(echo "$line" | cut -f 2- -d " ") # Device Name
 
-	for pciDevice in $pciDevices; do
-			pciID=$(cut -f 1  -d " " <<< $pciDevice)
-			pciName=$(cut -f 2- -d " " <<< $pciDevice)
+		state=off
+		for prev in $prevChoice; do
+			if [ "$prev" = "$pciID" ]; then
+				state=on # Mark as selected
+				break
+			fi
+		done
+		options+=("$pciID" "$pciName" "$state")
+	done < <(lspci)
 
-			# Build dialog
-			dialogStr+="\"$pciID\" \"$pciName\" off "
+	choice=$(dialog --backtitle "$backtitle" --checklist "Select PCI devices for passthrough:" 20 70 10 "${options[@]}" 2>&1 >/dev/tty) # Show dialog
+
+	[ -z "$choice" ] && return # Return if nothing selected or canceled
+
+	echo $choice | tr ' ' '\n' > $configPassthroughPCIDevices # Save selection
+
+	vfioIds=""
+	for selectedDevice in $choice; do
+		vfioIds+=$(lspci -n -s $selectedDevice | grep -Eo '(([0-9]|[a-f]){4}|:){3}'),
 	done
+	vfioIds=$(echo $vfioIds | sed 's/,$//') # Clean trailing comma
 
-	selectedDevices=$(eval dialog --stdout --scrollbar --checklist \"Select PCI devices for passthrough\" 0 0 70 $dialogStr | tr ' ' '\n')
-	echo "$selectedDevices" > $configPassthroughPCIDevices
-
-	[ -z "$selectedDevices" ] && exit 1
-
-	for selectedDevice in $selectedDevices; do
-			vfioIds+=$(lspci -n -s $selectedDevice | grep -Eo '(([0-9]|[a-f]){4}|:){3}'),
-	done
 	dialog --yesno "Add vfio-pci.ids to /etc/modprobe.d/vfio?" 0 0
 	if [ "$?" -eq "0" ]; then
-		doUpdateModprobe $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
+		doUpdateModprobe "$vfioIds" # Update modprobe
 	fi
 	dialog --yesno "Add vfio-pci.ids to kernel commandline?" 0 0
 	if [ "$?" -eq "0" ]; then
-		doUpdateGrub vfio-pci.ids $(tr ' ' ',' <<<$vfioIds | sed 's/,$//')
+		doUpdateGrub vfio-pci.ids "$vfioIds" # Update grub
 	fi
-	doSaveChanges
-
-
-	IFS=$OLDIFS
+	doSaveChanges # Save all changes
 }
 
 # Persists changes using lbu commit (Alpine Linux specific)

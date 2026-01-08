@@ -30,25 +30,25 @@ echo "Checking for loop devices..."
 
 cleanup_loop_device() {
     local target_file="$1"
-    
+
     if [ -z "$target_file" ] || [ ! -f "$target_file" ]; then
         return
     fi
 
     # excessive grep to ensure we catch it
     local loopdevs=$(sudo losetup -j "$target_file" | awk -F: '{print $1}')
-    
+
     for dev in $loopdevs; do
         if [ -n "$dev" ]; then
             echo "Found loop device $dev for $target_file"
-            
+
             # Check if any partitions of this loop device are still mounted
             # This handles cases where ${loopDevice}p1 is mounted but not at our expected dir
              grep "$dev" /proc/mounts | awk '{print $2}' | while read -r mountpoint; do
                 echo "Unmounting $mountpoint..."
                 sudo umount "$mountpoint"
             done
-            
+
             echo "Detaching $dev..."
             sudo losetup -d "$dev"
         fi
