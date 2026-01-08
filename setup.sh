@@ -29,7 +29,7 @@ if [ ! -f "$alpineISO" ]; then
 fi
 if [ ! -f "$ovmf_code" ]; then
 	# Try to find OVMF_CODE
-	tmpPaths="/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd /usr/share/ovmf/x64/OVMF_CODE.fd /usr/share/OVMF/OVMF_CODE.fd"
+	tmpPaths="/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd /usr/share/ovmf/x64/OVMF_CODE.fd /usr/share/ovmf/x64/OVMF_CODE.4m.fd /usr/share/OVMF/OVMF_CODE.fd"
 	for tmpPath in $tmpPaths; do
 		[ -f $tmpPath ] && cp "$tmpPath" $ovmf_code && foundCode=yes
 	done
@@ -39,7 +39,7 @@ fi
 
 if [ ! -f "$ovmf_vars" ]; then
 	# Try to find OVMF_VARS
-	tmpPaths="/usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_CODE.fd /usr/share/OVMF/OVMF_VARS.fd"
+	tmpPaths="/usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.4m.fd /usr/share/OVMF/OVMF_VARS.fd"
 	for tmpPath in $tmpPaths; do
 		[ -f $tmpPath ] && cp "$tmpPath" $ovmf_vars && foundVars=yes
 	done
