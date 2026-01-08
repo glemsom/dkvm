@@ -5,6 +5,8 @@ err() {
 	/bin/sh
 }
 
+# Check if /media/usb is mounted properly. If not, try to bind mount from sda1
+# This handles cases where the USB drive is detected but not automatically mounted at the expected location
 if ! mountpoint /media/usb; then
 	echo "/media/usb not automounted - binding /dev/sda1"
 	# Sometimes /dev/usbdisk is not correctly mounted under /media/usb
@@ -12,6 +14,7 @@ if ! mountpoint /media/usb; then
 	mount --bind /media/sda1 /media/usb || err "Bind mount failed"
 fi
 
+# Setup a persistent APK cache on the USB drive to avoid redownloading packages
 echo "Creating persistent apk cache"
 mount -o remount,rw /media/usb || err "Cannot remount /media/usb as readwrite"
 mkdir /media/usb/cache || err "Cannot create cache folder"
@@ -19,17 +22,15 @@ mkdir /media/usb/cache || err "Cannot create cache folder"
 ln -s /media/usb/cache /etc/apk/cache
 
 # Default arguments for Linux kernel
-#extraArgs="nofb consoleblank=0 vga=0 nomodeset i915.modeset=0 nouveau.modeset=0 mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5"
-#extraArgs="rootflags=size=256M mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5 blacklist=amdgpu split_lock_detect=off"
 extraArgs="mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5 blacklist=amdgpu split_lock_detect=off"
 
-# Patch grub2 (uefi boot)
+# Updates GRUB config to include specific kernel arguments for virtualization (IOMMU, isolation, etc.)
 [ -e /media/usb/boot/grub/grub.cfg.old ] && rm -f /media/usb/boot/grub/grub.cfg.old
 
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
 cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g' | sed 's/\(modules=[^ ]*\)/\1,vfio-pci/'  > /media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
 
-# Add br0
+# Configure networking bridge (br0) for VM connectivity and run Alpine setup
 brctl addbr br0
 brctl addif br0 eth0
 
@@ -38,7 +39,7 @@ ip link set dev eth0 up
 setup-alpine -e -f /media/cdrom/answer.txt
 
 #/bin/bash
-# Add extra repositories
+# Enable extra repositories (Edge, Community) for newer packages and QEMU/KVM tools
 echo "Enable extra repositories"
 sed -i '/^#.*v3.*community/s/^#/@community /' /etc/apk/repositories
 
@@ -54,7 +55,7 @@ echo 'http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositor
 apk update
 apk upgrade
 
-# Install required tools
+# Install essential virtualization packages, tools, and firmware (QEMU, OVMF, SWTPM, etc.)
 apk add ca-certificates wget util-linux bridge bridge-utils amd-ucode intel-ucode qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance hwloc-tools || err "Cannot install packages"
 
 # Upgrade kernel from testing repo
@@ -64,13 +65,16 @@ apk add ca-certificates wget util-linux bridge bridge-utils amd-ucode intel-ucod
 #umount /.modloop
 
 
+# Backup changes using LBU (Local Backup Utility) to the USB drive
 LBU_BACKUPDIR=/media/usb lbu commit || err "Cannot commit changes"
 
+# Add startup services (RAID, LVM) to the default runlevel
 # Add startup services
 rc-update add mdadm-raid
 rc-update add lvm default
 #rc-update add irqbalance
 
+# Enable root login via SSH for easier management
 echo "Patching openssh for root login"
 sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config
 
@@ -79,12 +83,12 @@ sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config
 # Disable stp for br0
 #echo "	bridge-stp 0" >> /etc/network/interfaces
 
-# Allow br0 as bridge-device for qemu
+# Allow QEMU to use br0 for bridge networking
 echo "allow br0" > /etc/qemu/bridge.conf
 
 echo "set bell-style none" >> /etc/inputrc
 
-# Modules required for basic kvm/vfio setup
+# Load necessary kernel modules for KVM and VFIO passthrough on boot
 echo "
 kvm_intel
 kvm_amd
@@ -97,9 +101,10 @@ vfio" >> /etc/modules
 rc-update add local default
 rc-update add ntpd default
 
-# keep .ssh under lbu version control
+# Ensure SSH keys are persisted across reboots
 lbu include /root/.ssh
 
+# Configure KVM and VFIO module options (Nested virt, AVIC, blacklist conflicting drivers)
 ######### CUSTOM STUFF ##################
 echo "options kvm-intel nested=1 enable_apicv=1
 options kvm-amd nested=1 avic=1
@@ -117,7 +122,7 @@ mount -a
 ' >> /etc/local.d/dkvm_folder.start
 chmod +x /etc/local.d/dkvm_folder.start
 
-# Copy dkvmmenu and status over
+# Install main DKVM scripts to root's home directory
 cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
 cp /media/cdrom/dkvmlog.sh /root/dkvmlog.sh
 
@@ -126,7 +131,7 @@ chmod +x /root/dkvmlog.sh
 
 lbu include /root
 
-# Patch inittab to start dkvmmenu.sh
+# Set DKVM menu to auto-start on tty1
 cp /etc/inittab /etc/inittab.bak
 cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh#' > /etc/inittab
 
@@ -140,6 +145,7 @@ echo "Migrate to using disk label for APK cache"
 
 umount /media/usb
 
+# Update /etc/fstab for mount persistence (CDROM, USB, Hugepages, Data Partition)
 cat > /etc/fstab <<EOF
 /dev/cdrom	/media/cdrom	iso9660	noauto,ro 0 0
 LABEL=dkvm     /media/usb    vfat   noauto,ro 0 0
@@ -158,7 +164,7 @@ EOF
 # Issue discard by default(LVM)
 sed 's/# issue_discards.*/issue_discards = 1/' -i /etc/lvm/lvm.conf
 
-# Passthrouch ACPI Power Button to Desktop VM
+# Configure ACPI event handler to gracefully shut down the VM when the power button is pressed
 echo $'echo -e \'{ "execute": "qmp_capabilities" }\\n{ "execute": "system_powerdown" }\' | timeout 5 nc localhost 4444' >  /etc/acpi/PWRF/00000080
 
 setup-apkcache /media/usb/cache
