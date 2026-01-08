@@ -44,7 +44,6 @@ buildMenuItemVMs() {
 	shopt -u nullglob
 }
 
-# Install OVMF BIOS if not already present
 # Copys the OVMF UEFI firmware files to the VM directory if missing
 doInstallBIOSFiles() {
 	local VMFolder="$1"
@@ -69,12 +68,14 @@ doStartTPM() {
 	/usr/bin/swtpm socket --tpmstate dir=${vmFolder}/tpm,mode=0600 --ctrl type=unixio,path=${vmFolder}/tpm.sock,mode=0600 --log file=${vmFolder}/tpm.log --terminate --tpm2 &
 }
 
+# Displays the current log status in a dialog box
 doShowStatus() {
 	dialog --backtitle "$backtitle" \
 		--title "Desktop VM" --prgbox "./dkvmlog.sh $configPassthroughUSBDevices $configPassthroughPCIDevices " 25 80
 	clear
 }
 
+# cleaning up potential background processes and running custom stop scripts
 cleanup(){
 	if [ -e $configCustomStartStopScript ]; then
 		. $configCustomStartStopScript
@@ -88,6 +89,7 @@ cleanup(){
 	fi
 }
 
+# Handles logging, clearing logs, or showing the log viewer
 doOut() {
 	local TAILFILE=dkvm.log
 	if [ "$1" == "clear" ]; then
@@ -104,6 +106,7 @@ doOut() {
 	fi
 }
 
+# Compiles the list of menu items from available VMs and internal commands
 buildItems() {
 
 	buildMenuItemVMs
@@ -131,6 +134,7 @@ buildItems() {
 	menuItemsType+=("INT_SHELL")
 }
 
+# Displays the main interaction menu using the dialog utility
 showMainMenu() {
 
 	buildItems
@@ -150,6 +154,7 @@ showMainMenu() {
 	fi
 }
 
+# Processes the user's selection from the main menu
 doSelect() {
 	local type=$(echo $menuAnswer | cut -d "-" -f 1)
 	local item=$(echo $menuAnswer | cut -d "-" -f 2)
@@ -163,10 +168,12 @@ doSelect() {
 	fi
 }
 
+# Finds the highest numbered VM configuration folder to determine the next ID
 getLastVMConfig() {
 	basename $(find $configDataFolder -maxdepth 1 -type d -name "[0-9]" | sort | tail -n 1)
 }
 
+# Creates a new VM with a default template configuration
 doAddVM() {
 	local template='NAME=New VM
 
@@ -207,6 +214,7 @@ MAC=DE:AD:BE:EF:66:61
 	doEditVM "$configDataFolder/${nextVMIndex}/vm_config"
 }
 
+# Opens the editor for the selected VM's configuration file
 doEditVM() {
 	if [ "$1" != "" ]; then
 		# Edit VM directly
@@ -254,6 +262,7 @@ EOF
 	fi
 }
 
+# interactive selection of USB devices for passthrough
 doUSBConfig() {
 	echo "USB Config" | doLog
 	local USBDevices=$(lsusb 2>/dev/null)
@@ -291,6 +300,7 @@ doUpdateGrub() {
 		dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 0 0
 }
 
+# Updates the /etc/modprobe.d/vfio.conf file with the selected PCI IDs
 doUpdateModprobe() {
 	local ids="$1"
 	mount -oremount,rw /media/usb || err "Cannot remount /media/usb"
@@ -299,6 +309,7 @@ doUpdateModprobe() {
 	mount -oremount,ro /media/usb || err "Cannot remount /media/usb"
 }
 
+# interactive selection of PCI devices for passthrough
 doPCIConfig() {
 	local pciDevices=$(lspci)
 	dialogStr=""
@@ -338,12 +349,14 @@ doPCIConfig() {
 	IFS=$OLDIFS
 }
 
+# Persists changes using lbu commit (Alpine Linux specific)
 doSaveChanges() {
 	local changesTxt="Changes saved...
 $(lbu commit)"
 	dialog --backtitle "$backtitle" --msgbox "$changesTxt" 0 0
 }
 
+# Handlers for internal menu commands (config, poweroff, etc.)
 mainHandlerInternal() {
 	local item="$1"
 	if [ "$1" == "INT_SHELL" ]; then
@@ -405,6 +418,7 @@ mainHandlerInternal() {
 	fi
 }
 
+# Optimizes system parameters for real-time virtualization performance
 realTimeTune() {
 	# Reduce vmstat collection
 	[ -e /proc/sys/vm/stat_interval ] && echo 300 >/proc/sys/vm/stat_interval 2>/dev/null
@@ -412,11 +426,13 @@ realTimeTune() {
 	[ -e proc/sys/kernel/watchdog ] && echo 0 >/proc/sys/kernel/watchdog 2>/dev/null
 }
 
+# Checks if a given PCI device address corresponds to a VGA/Display controller
 isGPU() {
 	local device=$1
 	return $(lspci -s $device | grep -q VGA)
 }
 
+# Calculates the amount of memory available for the VM, leaving some for the host
 getVMMemMB() {
 	local reservedMemMB=$1
 	local totalMemKB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
@@ -427,6 +443,7 @@ getVMMemMB() {
 }
 
 
+# Allocates hugepages based on the requested VM memory size
 setupHugePages() {
 	local VMMemMB=$1
 	local pageSizeMB=2
@@ -437,6 +454,7 @@ setupHugePages() {
 	echo $(( $required + 8 )) > /proc/sys/vm/nr_hugepages
 }
 
+# Main entry point for starting a VM. Constructs the QEMU command and manages the lifecycle.
 mainHandlerVM() {
 	local VMID=$1
 	source $configCPUTopology
@@ -559,11 +577,13 @@ mainHandlerVM() {
 	doOut showlog
 }
 
+# Resumes the paused VM via QMP
 continueVM() {
 	echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "cont" }' | timeout 2 nc localhost 4444 > /dev/null 2>&1
 }
 
 
+# Gets the host PID for a specific vCPU thread via QMP
 getvCorePid() {
 	local COREID=$1
 	local DIEID=$2
@@ -572,6 +592,7 @@ getvCorePid() {
 	echo "$PIDS"
 }
 
+# Counts the number of physical CPU dies
 getNumDies() {
 	local CPUS=$1
 	local IFS=',' 
@@ -604,6 +625,7 @@ getNumDies() {
 }
 
 
+# Hotplugs a vCPU into the running VM
 addvCore() {
 		local COREID=$1
 		local DIE_ID=$2
@@ -622,6 +644,7 @@ addvCore() {
 		}' | timeout 1 nc localhost 4444 | grep error
 }
 
+# Helper to print associative arrays
 printarr() { declare -n __p="$1"; for k in "${!__p[@]}"; do printf "%s=%s\n" "$k" "${__p[$k]}" ; done ;  } 
 
 # Pinning and hotplugging CPUs
@@ -730,6 +753,7 @@ reloadPCIDevices() {
 	fi
 }
 
+# Creates or edits the user-defined start/stop script
 setupCustomStartStopScript() {
 	if [ -e $configCustomStartStopScript ]; then
 		vi $configCustomStartStopScript
@@ -751,6 +775,7 @@ EOF
 	vi $configCustomStartStopScript
 }
 
+# Reads a specific key-value pair from a config file
 getConfigItem() {
 	local configFile="$1"
 	local item="$2"
@@ -800,6 +825,7 @@ IRQAffinity() {
 	/usr/sbin/irqbalance --oneshot $IRQLine | doOut
 }
 
+# Displays a warning if the DKVM data directory is not mounted
 doWarnDKVMData() {
 	local txt
 	txt+="DKVM relies on a mountpoint to store VM BIOS and TPM data.\n"
@@ -813,6 +839,7 @@ doWarnDKVMData() {
 	exit 1
 }
 
+# Dialog for selecting CPU features/flags
 doEditCPUOptions() {
 	prevChoice=""
 	if [ -e $configCPUOptions ]; then
@@ -861,6 +888,7 @@ doEditCPUOptions() {
 	echo $choice | tr ' ' '\n'> $configCPUOptions
 }
 
+# outputs the selected CPU options as a comma-separated string for QEMU
 doEchoCPUOptions() {
 	if [ -e $configCPUOptions ]; then
 		cat $configCPUOptions | tr '\n' ',' | sed 's/,*$//g'
