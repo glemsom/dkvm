@@ -5,76 +5,108 @@ shownUSBDevices=false
 shownPCIDevices=false
 shownThreads=false
 
+# Check arguments
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <usbpassthrough file> <pci passthrough file>"
-    exit 1
+	echo "Usage: $0 <usbpassthrough file> <pci passthrough file>"
+	exit 1
 else
-    usbPassthroughFile=$1
-    pciPassthroughFile=$2
+	usbPassthroughFile=$1
+	pciPassthroughFile=$2
 fi
 
-backtitle="DKVM @ $ip   Version: $version"
-
+# Sends a command to QEMU via QMP
 doQMP() {
-    local cmd=$1
-    echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "'$cmd'" }' | timeout 10 nc localhost 4444
+	local cmd=$1
+	# Connect to QMP and send command
+	echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "'$cmd'" }' | timeout 2 nc localhost 4444 2>/dev/null
 }
 
+# Returns the current status of the QEMU instance
 getQEMUStatus() {
-    doQMP query-status |  grep return | tail -n 1 | jq -r .return.status
+	local resp=$(doQMP query-status)
+	if [ -z "$resp" ]; then
+		echo "disconnected" # Connection failed
+	else
+		echo "$resp" | grep return | tail -n 1 | jq -r .return.status 2>/dev/null
+	fi
 }
 
+# Returns the thread IDs of the guest vCPUs
 getQEMUThreads() {
-    doQMP query-cpus-fast | tail -n1 | jq '.return[] | ."thread-id"' 
+	doQMP query-cpus-fast | tail -n1 | jq '.return[] | ."thread-id"' 2>/dev/null
 }
 
+# Displays information about USB devices being passed through
 getUSBPassthroughDevices() {
-    local usbDevices=$(cat $1)
-    for usbDevice in $usbDevices; do
-        lsusb 2>/dev/null| grep $usbDevice
-    done
+	local file=$1
+	if [ -f "$file" ]; then
+		local usbDevices=$(cat "$file")
+		for usbDevice in $usbDevices; do
+			lsusb 2>/dev/null | grep "$usbDevice" # Show device info
+		done
+	else
+		echo "No USB passthrough file found at $file"
+	fi
 }
+
+# Displays information about PCI devices being passed through
 getPCIPassthroughDevices() {
-    local pciDevices=$(cat $1)
-    for pciDevice in $pciDevices; do
-        lspci -s $pciDevice
-    done
+	local file=$1
+	if [ -f "$file" ]; then
+		local pciDevices=$(cat "$file")
+		for pciDevice in $pciDevices; do
+			lspci -s "$pciDevice" # Show device info
+		done
+	else
+		echo "No PCI passthrough file found at $file"
+	fi
 }
 
-# QEMU might not be running yet, give it 30 cycles to startup
+# Main status monitoring loop
 doShowStatus() {
-    loopCount=0
-    echo "Waiting for QEMU to start..."
-    while true; do
-        if ! $qemuStarted; then
-            [ "$(getQEMUStatus)" == "running" ] && echo "QEMU detected with status running" && qemuStarted=true
-            [  $loopCount -ge 30 ] && echo "QEMU not detected - aborting" && exit 1 # We waited 30 cycles for qemu to start, something is wrong - abort
-        else
-            # QEMU has been detected at running
-            if ! $shownThreads; then
-                echo "QEMU Threads: " $(getQEMUThreads)
-                shownThreads=true
-            fi
-            if ! $shownUSBDevices; then
-                echo -e "\nUSB Devices passthrough:"
-                getUSBPassthroughDevices $usbPassthroughFile
-                shownUSBDevices=true
-            fi
-            if ! $shownPCIDevices; then
-                echo -e "\nPCI Devices passthrough:"
-                getPCIPassthroughDevices $pciPassthroughFile
-                shownPCIDevices=true
-            fi
-            # Check if QEMU is still in running state
-            if [ ! "$(getQEMUStatus)" == "running" ] ;then
-                echo "QEMU exited."
-                exit 0
-            fi
-        fi
-        sleep 1
-        let loopCount++
-    done
-
+	loopCount=0
+	echo "Waiting for QEMU to start..."
+	
+	while true; do
+		currentStatus=$(getQEMUStatus) # Get current QEMU status
+		
+		if ! $qemuStarted; then
+			if [ "$currentStatus" == "running" ]; then
+				echo "QEMU detected with status running"
+				qemuStarted=true
+			elif [ $loopCount -ge 30 ]; then
+				echo "QEMU not detected within 30 seconds - aborting" # Timeout
+				exit 1
+			fi
+		else
+			# Show detailed information once QEMU is running
+			if ! $shownThreads; then
+				echo "QEMU Threads: " $(getQEMUThreads | tr '\n' ' ')
+				shownThreads=true
+			fi
+			
+			if ! $shownUSBDevices; then
+				echo -e "\nUSB Devices passthrough:"
+				getUSBPassthroughDevices "$usbPassthroughFile"
+				shownUSBDevices=true
+			fi
+			
+			if ! $shownPCIDevices; then
+				echo -e "\nPCI Devices passthrough:"
+				getPCIPassthroughDevices "$pciPassthroughFile"
+				shownPCIDevices=true
+			fi
+			
+			# Exit loop if QEMU stops or disconnects
+			if [ "$currentStatus" != "running" ]; then
+				echo "QEMU exited or disconnected (Status: $currentStatus)."
+				exit 0
+			fi
+		fi
+		
+		sleep 1 # Wait for next polling cycle
+		let loopCount++
+	done
 }
 
-doShowStatus
+doShowStatus # Start monitoring
