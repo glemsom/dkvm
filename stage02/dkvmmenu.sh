@@ -264,7 +264,7 @@ EOF
 
 # interactive selection of USB devices for passthrough
 doUSBConfig() {
-	echo "USB Config" | doLog # Log entry
+	echo "USB Config" | doOut # Log entry
 	prevChoice=""
 	if [ -e $configPassthroughUSBDevices ]; then
 		prevChoice=$(cat $configPassthroughUSBDevices) # Get current selection
@@ -286,9 +286,10 @@ doUSBConfig() {
 		options+=("$USBId" "$USBName" "$state")
 	done < <(lsusb 2>/dev/null | sort -u -k6,6) # Sort by ID and take unique
 
-	choice=$(dialog --backtitle "$backtitle" --checklist "Select USB devices for passthrough:" 20 70 10 "${options[@]}" 2>&1 >/dev/tty) # Show dialog
+	choice=$(dialog --backtitle "$backtitle" --separate-output --checklist "Select USB devices for passthrough:" 20 70 10 "${options[@]}" 2>&1 >/dev/tty) # Show dialog
+	[ $? -ne 0 ] && return # Return if canceled
 
-	echo $choice | tr ' ' '\n' > $configPassthroughUSBDevices # Save selection
+	echo "$choice" > $configPassthroughUSBDevices # Save selection
 }
 
 # Updates the GRUB configuration to add or remove kernel parameters
@@ -322,7 +323,7 @@ doUpdateModprobe() {
 
 # interactive selection of PCI devices for passthrough
 doPCIConfig() {
-	echo "PCI Config" | doLog # Log entry
+	echo "PCI Config" | doOut # Log entry
 	prevChoice=""
 	if [ -e $configPassthroughPCIDevices ]; then
 		prevChoice=$(cat $configPassthroughPCIDevices) # Get current selection
@@ -343,16 +344,16 @@ doPCIConfig() {
 		options+=("$pciID" "$pciName" "$state")
 	done < <(lspci)
 
-	choice=$(dialog --backtitle "$backtitle" --checklist "Select PCI devices for passthrough:" 20 70 10 "${options[@]}" 2>&1 >/dev/tty) # Show dialog
+	choice=$(dialog --backtitle "$backtitle" --separate-output --checklist "Select PCI devices for passthrough:" 20 70 10 "${options[@]}" 2>&1 >/dev/tty) # Show dialog
+	[ $? -ne 0 ] && return # Return if canceled
 
-	[ -z "$choice" ] && return # Return if nothing selected or canceled
-
-	echo $choice | tr ' ' '\n' > $configPassthroughPCIDevices # Save selection
+	echo "$choice" > $configPassthroughPCIDevices # Save selection
 
 	vfioIds=""
-	for selectedDevice in $choice; do
+	while read -r selectedDevice; do
+		[ -z "$selectedDevice" ] && continue
 		vfioIds+=$(lspci -n -s $selectedDevice | grep -Eo '(([0-9]|[a-f]){4}|:){3}'),
-	done
+	done <<< "$choice"
 	vfioIds=$(echo $vfioIds | sed 's/,$//') # Clean trailing comma
 
 	dialog --yesno "Add vfio-pci.ids to /etc/modprobe.d/vfio?" 0 0
