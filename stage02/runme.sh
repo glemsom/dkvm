@@ -28,7 +28,7 @@ extraArgs="mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop wa
 [ -e /media/usb/boot/grub/grub.cfg.old ] && rm -f /media/usb/boot/grub/grub.cfg.old
 
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
-cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g' | sed 's/\(modules=[^ ]*\)/\1,vfio-pci/'  > /media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
+cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/console=ttyS0,9600//g' | sed 's/\(modules=[^ ]*\)/\1,vfio-pci/' | sed 's#initrd /boot/initramfs-lts#initrd /boot/amd-ucode.img /boot/intel-ucode.img /boot/initramfs-lts#' > /media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
 
 # Configure networking bridge (br0) for VM connectivity and run Alpine setup
 brctl addbr br0
@@ -57,6 +57,10 @@ apk upgrade
 
 # Install essential virtualization packages, tools, and firmware (QEMU, OVMF, SWTPM, etc.)
 apk add ca-certificates wget util-linux bridge bridge-utils amd-ucode intel-ucode qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance hwloc-tools || err "Cannot install packages"
+
+# Copy CPU microcode to USB boot directory
+cp /boot/amd-ucode.img /media/usb/boot/ || echo "amd-ucode.img not found"
+cp /boot/intel-ucode.img /media/usb/boot/ || echo "intel-ucode.img not found"
 
 # Upgrade kernel from testing repo
 # Not needed 3.23 is currently using the latest 6.18
