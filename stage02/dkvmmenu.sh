@@ -5,9 +5,6 @@
 version=$(cat /media/usb/dkvm-release)
 # Change to script directory
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OLDIFS=$IFS
-IFS="
-"
 declare -a menuItems
 declare -a menuItemsType
 declare -a menuItemsVMs
@@ -220,12 +217,12 @@ doEditVM() {
 		# Edit VM directly
 		vi "$1"
 	else
-		local VMFolders=$(find $configDataFolder -type d -maxdepth 1 -name "[0-9]")
 		menuStr=""
-		for VMFolder in $VMFolders; do
+		while read -r VMFolder; do
+			[ -z "$VMFolder" ] && continue
 			local VMName=$(getConfigItem ${VMFolder}/vm_config NAME)
 			local menuStr="$menuStr $(basename $VMFolder) '$VMName'"
-		done
+		done < <(find $configDataFolder -type d -maxdepth 1 -name "[0-9]")
 		local menuAnswer=$(eval "dialog --backtitle "'$backtitle'" --menu 'Choose VM to edit' 0 0 20 $menuStr" --stdout)
 
 		[ "$menuAnswer" != "" ] && vi ${configDataFolder}/${menuAnswer}/vm_config
@@ -277,12 +274,12 @@ doUSBConfig() {
 		USBName=$(echo "$line" | cut -d ' ' -f 7-) # Extract Name
 
 		state=off
-		for prev in $prevChoice; do
+		while read -r prev; do
 			if [ "$prev" = "$USBId" ]; then
 				state=on # Mark as selected
 				break
 			fi
-		done
+		done <<< "$prevChoice"
 		options+=("$USBId" "$USBName" "$state")
 	done < <(lsusb 2>/dev/null | sort -u -k6,6) # Sort by ID and take unique
 
@@ -335,12 +332,12 @@ doPCIConfig() {
 		pciName=$(echo "$line" | cut -f 2- -d " ") # Device Name
 
 		state=off
-		for prev in $prevChoice; do
+		while read -r prev; do
 			if [ "$prev" = "$pciID" ]; then
 				state=on # Mark as selected
 				break
 			fi
-		done
+		done <<< "$prevChoice"
 		options+=("$pciID" "$pciName" "$state")
 	done < <(lspci)
 
@@ -542,7 +539,8 @@ mainHandlerVM() {
 		COUNT=0
 		THREADCOUNT=0
 		OPTS+=" -device virtio-scsi-pci,id=scsi"
-		for DISK in $VMHARDDISK; do
+		while read -r DISK; do
+			[ -z "$DISK" ] && continue
 			#OPTS+=" -object iothread,id=iothread${THREADCOUNT}"
 			#OPTS+=" -object iothread,id=iothread$(( ${THREADCOUNT} + 1 ))"
 			OPTS+=" -drive if=none,cache=none,aio=native,discard=unmap,detect-zeroes=unmap,format=raw,file=${DISK},id=drive${COUNT}"
@@ -550,18 +548,20 @@ mainHandlerVM() {
 			#OPTS+=" --device '{\"driver\":\"virtio-scsi-pci\",\"iothread-vq-mapping\":[{\"iothread\":\"iothread${THREADCOUNT}\"},{\"iothread\":\"iothread$(( ${THREADCOUNT} + 1 ))\"}],\"drive\":\"drive${COUNT}\"}'"
 			let COUNT=COUNT+1
 			let THREADCOUNT=THREADCOUNT+2
-		done
+		done <<< "$VMHARDDISK"
 	fi
 	if [ ! -z "$VMCDROM" ]; then
-		for CD in $VMCDROM; do
+		while read -r CD; do
+			[ -z "$CD" ] && continue
 			OPTS+=" -drive file=${CD},media=cdrom"
-		done
+		done <<< "$VMCDROM"
 	fi
 	if [ ! -z "$VMPASSTHROUGHPCIDEVICES" ]; then
 		# Use PCIE bus
 		OPTS+=" -device pcie-root-port,id=root_port1,chassis=0,slot=0,bus=pcie.0"
 		loopCount=0
-		for VMPASSTHROUGHPCIDEVICE in $VMPASSTHROUGHPCIDEVICES; do
+		while read -r VMPASSTHROUGHPCIDEVICE; do
+			[ -z "$VMPASSTHROUGHPCIDEVICE" ] && continue
 			if isGPU $VMPASSTHROUGHPCIDEVICE; then # If this is a GPU adapter, set multifunction=on
 				[ ! -z "$VMGPUROM" ] && GPUROMSTRING=",romfile=$VMGPUROM" || GPUROMSTRING=""
 				OPTS+=" --device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE},bus=root_port1,addr=00.${loopCount},multifunction=on$GPUROMSTRING"
@@ -569,14 +569,15 @@ mainHandlerVM() {
 				OPTS+=" -device vfio-pci,host=${VMPASSTHROUGHPCIDEVICE},bus=root_port1,addr=00.${loopCount}"
 			fi
 			let loopCount++
-		done
+		done <<< "$VMPASSTHROUGHPCIDEVICES"
 	fi
 	if [ ! -z "$VMPASSTHROUGHUSBDEVICES" ]; then
-		for VMPASSTHROUGHUSBDEVICE in $VMPASSTHROUGHUSBDEVICES; do
+		while read -r VMPASSTHROUGHUSBDEVICE; do
+			[ -z "$VMPASSTHROUGHUSBDEVICE" ] && continue
 			local USBVendor=$(cut -d : -f 1 <<<$VMPASSTHROUGHUSBDEVICE)
 			local USBProduct=$(cut -d : -f 2 <<<$VMPASSTHROUGHUSBDEVICE)
 			OPTS+=" -device qemu-xhci -device usb-host,vendorid=0x${USBVendor},productid=0x${USBProduct}"
-		done
+		done <<< "$VMPASSTHROUGHUSBDEVICES"
 	fi
 
 	if [ -e $configCPUOptions ]; then
@@ -674,12 +675,8 @@ addCPUs() {
 	# The host cores to add to the VM as virtual cores
 	echo "Adding CPUs for $1"
 
-	OLDIFS=$IFS
-
 	# Add cores to array of cores
-	IFS=','
-	read -r -a TMPHOSTCORES <<< $1
-	IFS=$OLDIFS
+	IFS=',' read -r -a TMPHOSTCORES <<< "$1"
 
 	# Cleanup first core from array, as it is already pre-added to the VM
 	if [ ${#TMPHOSTCORES[@]} -gt 0 ]; then
@@ -696,12 +693,10 @@ addCPUs() {
 	fi
 	echo "First core added"
 
-	# Get number of dies in the host system
-	DIES=$(cat /sys/devices/system/cpu/cpu*/topology/die_id | sort | uniq)
-
 	VCORE=1 # Start from 1, as 0 is already attached to the VM
 
-	for DIE in $DIES; do
+	while read -r DIE; do
+		[ -z "$DIE" ] && continue
 		echo "Processing for die $DIE"
 		for HOSTCORE in ${HOSTCORES[@]}; do
 			local CUR_DIE_ID=$(cat /sys/devices/system/cpu/cpu${HOSTCORE}/topology/die_id)
@@ -730,7 +725,7 @@ addCPUs() {
 		done
 		# Reset VCORE for next die (QEMU expects core_id to be reset)
 		VCORE=0
-	done
+	done < <(cat /sys/devices/system/cpu/cpu*/topology/die_id | sort | uniq)
 }
 
 # Unbinds PCI devices from their host drivers and binds them to vfio-pci for passthrough
@@ -836,9 +831,10 @@ IRQAffinity() {
 	# irqbalance will honor isolcpu - so everything will go on $HOSTCPU by default.
 	# Manually exclude VFIO devices, as they prefer to be on the same core as the VM
 	IRQLine=""
-	for IRQ in $(grep vfio /proc/interrupts | cut -d ":" -f 1 | sed 's/ //g'); do
+	while read -r IRQ; do
+		[ -z "$IRQ" ] && continue
 		IRQLine+=" --banirq=$IRQ"
-	done
+	done < <(grep vfio /proc/interrupts | cut -d ":" -f 1 | sed 's/ //g')
 	echo "VFIO IRQ bans for irqbalance: $IRQLine" | doOut
 	/usr/sbin/irqbalance --oneshot $IRQLine | doOut
 }
@@ -892,11 +888,11 @@ doEditCPUOptions() {
 		esac
 
 		state=off
-		for prev in $prevChoice; do
-			if [ $prev = $opt ]; then
+		while read -r prev; do
+			if [ "$prev" = "$opt" ]; then
 				state=on
 			fi
-		done
+		done <<< "$prevChoice"
 
 		options+=($opt $desc $state)
 	done
