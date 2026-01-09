@@ -1,4 +1,6 @@
 #!/bin/bash
+# DKVM Setup
+# Glenn Sommer <glemsom+dkvm AT gmail.com>
 version=0.5.14
 disksize=2048  #Disk size in MB
 alpineVersion=3.23
