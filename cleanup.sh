@@ -1,20 +1,33 @@
 #!/bin/bash
+# DKVM Cleanup
+# Glenn Sommer <glemsom+dkvm AT gmail.com>
 
 # cleanup.sh - Cleans up leftovers from an interrupted setup.sh run
+
+set -e          # Exit on error
+set -u          # Treat unset variables as an error
+set -o pipefail # Exit on pipe failure
 
 # Variables used in setup.sh that we need to track
 diskfile="usbdisk.img"
 # We match the pattern for alpine iso to be version-agnostic
 alpineISO_pattern="alpine-standard-*-x86_64.iso"
-alpineISO=$(ls $alpineISO_pattern 2>/dev/null | head -n 1)
+
+# Better way to find the Alpine ISO without ls
+# shellcheck disable=SC2206
+iso_files=($alpineISO_pattern)
+alpineISO=""
+if [ -e "${iso_files[0]}" ]; then
+	alpineISO="${iso_files[0]}"
+fi
 
 echo "Starting cleanup..."
 
 # 1. Unmount temporary directories
 # setup.sh mounts: tmp_iso_readonly, tmp_dkvm
-DIRS="tmp_dkvm tmp_iso_readonly"
+DIRS=("tmp_dkvm" "tmp_iso_readonly")
 
-for dir in $DIRS; do
+for dir in "${DIRS[@]}"; do
 	if mountpoint -q "$dir"; then
 		echo "Unmounting $dir..."
 		if ! sudo umount "$dir"; then
@@ -34,8 +47,9 @@ cleanup_loop_device() {
 		return
 	fi
 
+	local loopdevs
 	# excessive grep to ensure we catch it
-	local loopdevs=$(sudo losetup -j "$target_file" | awk -F: '{print $1}')
+	loopdevs=$(sudo losetup -j "$target_file" | awk -F: '{print $1}')
 
 	for dev in $loopdevs; do
 		if [ -n "$dev" ]; then
@@ -43,9 +57,9 @@ cleanup_loop_device() {
 
 			# Check if any partitions of this loop device are still mounted
 			# This handles cases where ${loopDevice}p1 is mounted but not at our expected dir
-			sudo grep "$dev" /proc/mounts | awk '{print $2}' | while read -r mountpoint; do
-				echo "Unmounting $mountpoint..."
-				sudo umount "$mountpoint"
+			sudo grep "$dev" /proc/mounts | awk '{print $2}' | while read -r mount_pt; do
+				echo "Unmounting $mount_pt..."
+				sudo umount "$mount_pt"
 			done
 
 			echo "Detaching $dev..."
@@ -65,9 +79,9 @@ fi
 
 # 3. Remove temporary directories
 # setup.sh creates: tmp_iso, tmp_iso_readonly, tmp_dkvm
-TEMP_DIRS="tmp_dkvm tmp_iso tmp_iso_readonly"
+TEMP_DIRS=("tmp_dkvm" "tmp_iso" "tmp_iso_readonly")
 
-for dir in $TEMP_DIRS; do
+for dir in "${TEMP_DIRS[@]}"; do
 	if [ -d "$dir" ]; then
 		echo "Removing directory $dir..."
 		# Safety check: ensure we aren't deleting something important if variable is empty
