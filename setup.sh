@@ -136,3 +136,4 @@ sudo $qemu -m 16G -machine q35 \
 # Cleanup
 sleep 1
 rm -rf alpine_extract
+rm -f scripts.iso
