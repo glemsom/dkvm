@@ -133,7 +133,6 @@ setup-lbu usb
 cat > /etc/fstab <<EOF
 /dev/cdrom	/media/cdrom	iso9660	noauto,ro 0 0
 LABEL=dkvm     /media/usb    vfat   noauto,ro 0 0
-hugetlbfs	/dev/hugepages	hugetlbfs	defaults,pagesize=2M 0 0
 LABEL=dkvmdata /media/dkvmdata  ext4 defaults,discard,nofail 0 0
 EOF
 
