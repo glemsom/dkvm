@@ -1,5 +1,4 @@
 alpine-standard-*-x86_64.iso
-alpine-standard-*-x86_64.iso.patched
 OVMF*
 stage01.iso
 stage02.iso
@@ -8,6 +7,5 @@ usbdisk.img
 *rsa.pub
 dkvm.log
 .vscode
-tmp_iso/
-tmp_iso_readonly/
+alpine_extract/
 tmp_dkvm/

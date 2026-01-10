@@ -60,23 +60,10 @@ echo "Recreate stage01 and stage02 iso"
 mkisofs -o stage01.iso stage01 || err "Cannot make stage01 iso"
 mkisofs -o stage02.iso stage02 || err "Cannot make stage02 iso"
 
-clear
-
-
-echo "Patching stock Alpine ISO"
-# Patch ISO to support console output
-mkdir tmp_iso
-mkdir tmp_iso_readonly
-sudo mount -t iso9660 -o loop $alpineISO tmp_iso_readonly || err "Cannot mount Alpine ISO"
-cd tmp_iso_readonly && tar cf - . | (cd ../tmp_iso; tar xfp -) || err "Cannot copy Alpine ISO content"
-cd ../tmp_iso
-chmod +xw boot/grub/ || err "Cannot modify permissions for grub"
-chmod +w boot/syslinux/isolinux.bin || err "Cannot modify permissions for isolinux.bin"
-# Add console ttyS0 to grub
-sed -i 's/quiet/console=ttyS0,9600 quiet/' boot/grub/grub.cfg || err "Cannot patch grub.cfg"
-cd .. && xorriso -as mkisofs -o ${alpineISO}.patched -isohybrid-mbr tmp_iso/boot/syslinux/isohdpfx.bin -c boot/syslinux/boot.cat  -b boot/syslinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/grub/efi.img  -no-emul-boot -isohybrid-gpt-basdat  tmp_iso || err "Cannot build custom ISO"
-
-sudo umount tmp_iso_readonly || err "Cannot unmount tmp_iso_readonly"
+echo "Extracting kernel and initramfs from Alpine ISO"
+mkdir -p alpine_extract
+xorriso -osirrox on -indev "$alpineISO" -extract /boot/vmlinuz-lts alpine_extract/vmlinuz-lts 2>/dev/null || err "Cannot extract vmlinuz-lts"
+xorriso -osirrox on -indev "$alpineISO" -extract /boot/initramfs-lts alpine_extract/initramfs-lts 2>/dev/null || err "Cannot extract initramfs-lts"
 
 
 echo "Starting stage01..."
@@ -87,7 +74,10 @@ spawn $qemu -smp 4 -m 16G -machine q35  \
 -drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
 -drive if=none,format=raw,id=usbstick,file=$diskfile \
 -usb -device usb-storage,drive=usbstick \
--drive format=raw,media=cdrom,readonly,file=${alpineISO}.patched \
+-kernel alpine_extract/vmlinuz-lts \
+-initrd alpine_extract/initramfs-lts \
+-append \"console=ttyS0,9600 modules=loop,squashfs modloop=/dev/sr0:/boot/modloop-lts quiet\" \
+-drive format=raw,media=cdrom,readonly,file=${alpineISO} \
 -drive format=raw,media=cdrom,readonly,file=stage01.iso \
 -netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
 -device e1000,netdev=mynet0 \
@@ -176,5 +166,4 @@ sudo $qemu -m 16G -machine q35 \
 
 # Cleanup
 sleep 1
-sudo rm -rf tmp_iso
-rm -rf tmp_iso_readonly
+rm -rf alpine_extract

@@ -24,8 +24,8 @@ fi
 echo "Starting cleanup..."
 
 # 1. Unmount temporary directories
-# setup.sh mounts: tmp_iso_readonly, tmp_dkvm
-DIRS=("tmp_dkvm" "tmp_iso_readonly")
+# setup.sh mounts: tmp_dkvm
+DIRS=("tmp_dkvm")
 
 for dir in "${DIRS[@]}"; do
 	if mountpoint -q "$dir"; then
@@ -78,8 +78,8 @@ fi
 
 
 # 3. Remove temporary directories
-# setup.sh creates: tmp_iso, tmp_iso_readonly, tmp_dkvm
-TEMP_DIRS=("tmp_dkvm" "tmp_iso" "tmp_iso_readonly")
+# setup.sh creates: tmp_dkvm, alpine_extract
+TEMP_DIRS=("tmp_dkvm" "alpine_extract")
 
 for dir in "${TEMP_DIRS[@]}"; do
 	if [ -d "$dir" ]; then
@@ -98,11 +98,6 @@ rm -f stage01.iso stage02.iso "$diskfile" OVMF_CODE.fd OVMF_VARS.fd
 
 if [ -n "$alpineISO" ]; then
 	rm -f "$alpineISO"
-	patched_iso="${alpineISO}.patched"
-	if [ -f "$patched_iso" ]; then
-		rm -f "$patched_iso"
-		echo "Removed $patched_iso"
-	fi
 fi
 
 echo "Cleanup complete."
