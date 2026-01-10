@@ -56,9 +56,8 @@ echo "Creating new disk in $diskfile @ ${disksize}MB"
 dd if=/dev/zero of=$diskfile bs=1M count=$disksize || err "Cannot make $diskfile"
 
 # Re-create scripts ISO
-echo "Recreate stage01 and stage02 iso"
-mkisofs -o stage01.iso stage01 || err "Cannot make stage01 iso"
-mkisofs -o stage02.iso stage02 || err "Cannot make stage02 iso"
+echo "Recreate scripts iso"
+mkisofs -o scripts.iso scripts || err "Cannot make scripts iso"
 
 echo "Extracting kernel and initramfs from Alpine ISO"
 mkdir -p alpine_extract
@@ -66,7 +65,7 @@ xorriso -osirrox on -indev "$alpineISO" -extract /boot/vmlinuz-lts alpine_extrac
 xorriso -osirrox on -indev "$alpineISO" -extract /boot/initramfs-lts alpine_extract/initramfs-lts 2>/dev/null || err "Cannot extract initramfs-lts"
 
 
-echo "Starting stage01..."
+echo "Starting installation..."
 
 sudo expect -c "set timeout -1
 spawn $qemu -smp 4 -m 16G -machine q35  \
@@ -78,7 +77,7 @@ spawn $qemu -smp 4 -m 16G -machine q35  \
 -initrd alpine_extract/initramfs-lts \
 -append \"console=ttyS0,9600 modules=loop,squashfs modloop=/dev/sr0:/boot/modloop-lts quiet\" \
 -drive format=raw,media=cdrom,readonly,file=${alpineISO} \
--drive format=raw,media=cdrom,readonly,file=stage01.iso \
+-drive format=raw,media=cdrom,readonly,file=scripts.iso \
 -netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
 -device e1000,netdev=mynet0 \
 -nographic \
@@ -88,42 +87,12 @@ spawn $qemu -smp 4 -m 16G -machine q35  \
 expect \"login: \"
 send \"root\n\"
 expect \"localhost:~# \"
-send whoami\n
-send \"mkdir /media/sr1\n\"
-send \"mount /dev/sr1 /media/sr1\n\"
-send \"sh /media/sr1/runme.sh /dev/sda\n\"
-send \"echo ALL DONE\n\"
-expect \"ALL DONE\"
-" || err "Error in stage01"
-
-clear
-
-#cp usbdisk.img usbdisk.img-save-stage01
-sleep 2
-
-echo "Starting stage02..."
-
-sudo expect -c "set timeout -1
-set log_user 1
-spawn $qemu -smp 4 -m 16G -machine q35 \
--drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
--drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
--global driver=cfi.pflash01,property=secure,value=off \
--drive if=none,format=raw,id=usbstick,file=$diskfile \
--usb -device usb-storage,drive=usbstick \
--drive format=raw,media=cdrom,readonly,file=stage02.iso \
--netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10,hostfwd=tcp::2222-:22 \
--device e1000,netdev=mynet0 \
--nographic \
--boot menu=on,splash-time=12000 \
--global ICH9-LPC.disable_s3=0
-expect \"login: \"
-send root\n
-expect \"localhost:~# \"
-send \"mount /media/cdrom\n\"
-send \"/media/cdrom/runme.sh\n\"
-expect \"Exiting stage02\"
-" || err "Error in stage02"
+send \"mkdir -p /media/cdrom\n\"
+send \"mount /dev/sr1 /media/cdrom\n\"
+send \"sh /media/cdrom/runme.sh /dev/sda\n\"
+send \"echo INSTALLATION DONE\n\"
+expect \"INSTALLATION DONE\"
+" || err "Error during installation"
 
 #clear
 #cp usbdisk.img usbdisk.img-save-stage02
