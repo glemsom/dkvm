@@ -4,10 +4,10 @@ OVMF*
 stage01.iso
 stage02.iso
 usbdisk.img
-dkvm_vmconfig.*
-!dkvm_vmconfig.sam
 .PKGINFO
 *rsa.pub
 dkvm.log
 .vscode
-.agent
+tmp_iso/
+tmp_iso_readonly/
+tmp_dkvm/
