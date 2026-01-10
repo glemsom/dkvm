@@ -660,7 +660,7 @@ mainHandlerVM() {
 		local MEM_PER_NODE=$(( VMMEMMB / NODE_COUNT ))
 		while read -r PHYS_NODE; do
 			[ -z "$PHYS_NODE" ] && continue
-			OPTS+=" -object memory-backend-memfd,id=mem${node_id},size=${MEM_PER_NODE}M,hugetlb=on,hugetlbsize=2M,prealloc=on,reserve=off"
+			OPTS+=" -object memory-backend-memfd,id=mem${node_id},size=${MEM_PER_NODE}M,hugetlb=on,hugetlbsize=2M,prealloc=on"
 			OPTS+=" -numa node,nodeid=${node_id},memdev=mem${node_id}"
 			let node_id++
 		done < <(echo $VMCPU | tr ',' '\n' | xargs -I{} sh -c 'basename /sys/devices/system/cpu/cpu$1/node* | sed s/node//' -- {} | sort -u)
