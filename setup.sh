@@ -14,7 +14,7 @@ qemu=/usr/bin/qemu-system-x86_64
 diskfile="usbdisk.img"
 
 err() {
-	echo "Error occured $@"
+	echo "Error occured $*"
 	exit 1
 }
 
@@ -22,38 +22,38 @@ err() {
 deps="wget expect mkisofs dd xorriso zip $qemu"
 
 for dep in $deps; do
-	which $dep || err "Missing $dep"
+	which "$dep" || err "Missing $dep"
 done
 
 if [ ! -f "$alpineISO" ]; then
 	echo "Downloading Alpine Linux ISO"
-	wget http://dl-cdn.alpinelinux.org/alpine/v${alpineVersion}/releases/x86_64/${alpineISO} -O ${alpineISO} || err "Cannot download ISO"
+	wget "http://dl-cdn.alpinelinux.org/alpine/v${alpineVersion}/releases/x86_64/${alpineISO}" -O "${alpineISO}" || err "Cannot download ISO"
 fi
 if [ ! -f "$ovmf_code" ]; then
 	# Try to find OVMF_CODE
 	tmpPaths="/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd /usr/share/ovmf/x64/OVMF_CODE.fd /usr/share/ovmf/x64/OVMF_CODE.4m.fd /usr/share/OVMF/OVMF_CODE.fd"
 	for tmpPath in $tmpPaths; do
-		[ -f $tmpPath ] && cp "$tmpPath" $ovmf_code && foundCode=yes
+		[ -f "$tmpPath" ] && cp "$tmpPath" "$ovmf_code" && foundCode=yes
 	done
 	# We did not find it
-	[ ! $foundCode ] && err "Cannot find $ovmf_code. Please copy it to $ovmf_code"
+	[ ! "$foundCode" ] && err "Cannot find $ovmf_code. Please copy it to $ovmf_code"
 fi
 
 if [ ! -f "$ovmf_vars" ]; then
 	# Try to find OVMF_VARS
 	tmpPaths="/usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.4m.fd /usr/share/OVMF/OVMF_VARS.fd"
 	for tmpPath in $tmpPaths; do
-		[ -f $tmpPath ] && cp "$tmpPath" $ovmf_vars && foundVars=yes
+		[ -f "$tmpPath" ] && cp "$tmpPath" "$ovmf_vars" && foundVars=yes
 	done
 	# We did not find it
-	[ ! $foundVars ] && err "Cannot find $ovmf_vars. Please copy it to $ovmf_vars"
+	[ ! "$foundVars" ] && err "Cannot find $ovmf_vars. Please copy it to $ovmf_vars"
 fi
 
 clear
 
 # Creating disk
 echo "Creating new disk in $diskfile @ ${disksize}MB"
-dd if=/dev/zero of=$diskfile bs=1M count=$disksize || err "Cannot make $diskfile"
+dd if=/dev/zero of="$diskfile" bs=1M count="$disksize" || err "Cannot make $diskfile"
 
 # Re-create scripts ISO
 echo "Recreate scripts iso"
@@ -69,14 +69,14 @@ echo "Starting installation..."
 
 sudo expect -c "set timeout -1
 spawn $qemu -smp 4 -m 16G -machine q35  \
--drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
--drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
--drive if=none,format=raw,id=usbstick,file=$diskfile \
+-drive if=pflash,format=raw,unit=0,file=\"$ovmf_code\",readonly=on \
+-drive if=pflash,format=raw,unit=1,file=\"$ovmf_vars\" \
+-drive if=none,format=raw,id=usbstick,file=\"$diskfile\" \
 -usb -device usb-storage,drive=usbstick \
 -kernel alpine_extract/vmlinuz-lts \
 -initrd alpine_extract/initramfs-lts \
 -append \"console=ttyS0,9600 modules=loop,squashfs modloop=/dev/sr0:/boot/modloop-lts quiet\" \
--drive format=raw,media=cdrom,readonly,file=${alpineISO} \
+-drive format=raw,media=cdrom,readonly,file=\"${alpineISO}\" \
 -drive format=raw,media=cdrom,readonly,file=scripts.iso \
 -netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
 -device e1000,netdev=mynet0 \
@@ -99,7 +99,7 @@ expect \"INSTALLATION DONE\"
 
 loopDevice=$(sudo losetup --show -f -P "$diskfile" 2>&1)
 mkdir tmp_dkvm
-sudo mount -o loop ${loopDevice}p1 tmp_dkvm || err "Cannot mount ${loopDevice}p1"
+sudo mount -o loop "${loopDevice}p1" tmp_dkvm || err "Cannot mount ${loopDevice}p1"
 
 ls -l tmp_dkvm
 # Write version
@@ -107,7 +107,7 @@ echo -n "Version: "
 echo $version | sudo tee tmp_dkvm/dkvm-release
 
 # Cleanup mount
-while mount | grep ${loopDevice}p1 -q; do
+while mount | grep "${loopDevice}p1" -q; do
 	echo "${loopDevice}p1 still mounted - trying to cleanup"
 	mountPoint=$(mount | grep "${loopDevice}p1" | awk '{print $3}')
 	sudo umount "${loopDevice}p1"
@@ -115,16 +115,16 @@ while mount | grep ${loopDevice}p1 -q; do
 	sudo losetup -D
 	sleep 5
 done
-echo ${loopDevice}p1 unmounted
+echo "${loopDevice}p1" unmounted
 sudo rm -rf tmp_dkvm
 
 #cp usbdisk.img usbdisk.img-save-stage02-end
 
 echo "VM started, using vnc to check console. ssh on port 2222(You need to set passwd)"
-sudo $qemu -m 16G -machine q35 \
+sudo "$qemu" -m 16G -machine q35 \
 	-smp cpus=4,sockets=1,dies=1 \
-	-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
-	-drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
+	-drive if=pflash,format=raw,unit=0,file="$ovmf_code",readonly=on \
+	-drive if=pflash,format=raw,unit=1,file="$ovmf_vars" \
 	-global driver=cfi.pflash01,property=secure,value=off \
 	-drive if=none,format=raw,id=usbstick,file="$diskfile" \
 	-usb -device usb-storage,drive=usbstick \
