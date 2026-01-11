@@ -35,7 +35,8 @@ waitForQMP() {
 	local attempt=1
 	echo "Waiting for QMP to become ready..." | doOut
 	while [ $attempt -le $max_attempts ]; do
-		if echo -e '{ "execute": "qmp_capabilities" }' | timeout 1 nc localhost 4444 >/dev/null 2>&1; then
+		echo -e '{ "execute": "qmp_capabilities" }' | timeout 1 nc localhost 4444 |& doOut
+		if [ "${PIPESTATUS[1]}" -eq 0 ]; then
 			echo "QMP is ready." | doOut
 			return 0
 		fi
