@@ -69,14 +69,14 @@ echo "Starting installation..."
 
 sudo expect -c "set timeout -1
 spawn $qemu -smp 4 -m 16G -machine q35  \
--drive if=pflash,format=raw,unit=0,file=\"$ovmf_code\",readonly=on \
--drive if=pflash,format=raw,unit=1,file=\"$ovmf_vars\" \
--drive if=none,format=raw,id=usbstick,file=\"$diskfile\" \
+-drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
+-drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
+-drive if=none,format=raw,id=usbstick,file="$diskfile" \
 -usb -device usb-storage,drive=usbstick \
 -kernel alpine_extract/vmlinuz-lts \
 -initrd alpine_extract/initramfs-lts \
 -append \"console=ttyS0,9600 modules=loop,squashfs modloop=/dev/sr0:/boot/modloop-lts quiet\" \
--drive format=raw,media=cdrom,readonly,file=\"${alpineISO}\" \
+-drive format=raw,media=cdrom,readonly,file=${alpineISO} \
 -drive format=raw,media=cdrom,readonly,file=scripts.iso \
 -netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10 \
 -device e1000,netdev=mynet0 \
