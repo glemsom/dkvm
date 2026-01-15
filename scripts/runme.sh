@@ -55,14 +55,16 @@ setup-bootable /media/sr0 ${installDisk}1
 # 6. DKVM specific: Setup APK cache on USB
 echo "Creating persistent apk cache"
 mkdir -p /media/usb/cache || err "Cannot create cache folder"
-ln -s /media/usb/cache /etc/apk/cache
+# Check if symlink exists, if not create it
+if [ ! -L /etc/apk/cache ]; then
+	ln -s /media/usb/cache /etc/apk/cache || err "Cannot create apk cache symink"
+fi
+
 
 # 7. DKVM specific: Packages
 echo "Enable extra repositories"
 sed -i '/^#.*v3.*community/s/^#/@community /' /etc/apk/repositories
 # Add new repository file with edge and testing enabled
-echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories-edge
-echo 'http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories-edge
 
 apk update
 apk upgrade
@@ -77,6 +79,9 @@ cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {
 # Copy microcode
 cp /boot/amd-ucode.img /media/usb/boot/ || echo "amd-ucode.img not found"
 cp /boot/intel-ucode.img /media/usb/boot/ || echo "intel-ucode.img not found"
+
+# Update to latest LTS kernel in repository
+update-kernel /media/usb/boot/
 
 # 9. DKVM specific: Network and Services
 rc-update add mdadm-raid
