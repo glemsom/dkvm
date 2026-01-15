@@ -9,3 +9,4 @@ dkvm.log
 .vscode
 alpine_extract/
 tmp_dkvm/
+scripts.iso
