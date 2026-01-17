@@ -66,12 +66,12 @@ xorriso -osirrox on -indev "$alpineISO" -extract /boot/initramfs-lts alpine_extr
 
 
 echo "Starting installation..."
-
+# shellcheck disable=SC1078
 sudo expect -c "set timeout -1
 spawn $qemu -smp 4 -m 16G -machine q35  \
--drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on \
--drive if=pflash,format=raw,unit=1,file=$ovmf_vars \
--drive if=none,format=raw,id=usbstick,file="$diskfile" \
+-drive if=pflash,format=raw,unit=0,file=${ovmf_code},readonly=on \
+-drive if=pflash,format=raw,unit=1,file=${ovmf_vars} \
+-drive if=none,format=raw,id=usbstick,file=${diskfile} \
 -usb -device usb-storage,drive=usbstick \
 -kernel alpine_extract/vmlinuz-lts \
 -initrd alpine_extract/initramfs-lts \
