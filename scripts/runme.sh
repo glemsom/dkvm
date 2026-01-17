@@ -1,7 +1,7 @@
 #!/bin/sh
 
 err() {
-	echo "ERROR $@"
+	echo "ERROR" "$@"
 	/bin/sh
 }
 
@@ -10,7 +10,7 @@ if [ -z "$1" ]; then
 	echo "For example $0 /dev/sda"
 	exit 1
 else
-	if [ -e $1 ]; then
+	if [ -e "$1" ]; then
 		installDisk="$1"
 	else
 		echo "Error, $1 does not exist"
@@ -37,11 +37,11 @@ w
 # 2. Format disk
 modprobe vfat
 echo "Formatting usb disk"
-mkfs.vfat -n dkvm ${installDisk}1
+mkfs.vfat -n dkvm "${installDisk}1"
 
 # 3. Mount disk
 mkdir -p /media/usb
-mount ${installDisk}1 /media/usb || err "Cannot mount ${installDisk}1 to /media/usb"
+mount "${installDisk}1" /media/usb || err "Cannot mount ${installDisk}1 to /media/usb"
 
 # 4. Setup Alpine
 # We use the answer file provided in the scripts ISO (cdrom)
@@ -50,7 +50,7 @@ setup-alpine -e -f /media/cdrom/answer.txt
 # 5. Make disk bootable
 echo "Making usb disk bootable"
 # /media/sr0 is the Alpine ISO
-setup-bootable /media/sr0 ${installDisk}1
+setup-bootable /media/sr0 "${installDisk}1"
 
 # 6. DKVM specific: Setup APK cache on USB
 echo "Creating persistent apk cache"
@@ -143,7 +143,7 @@ EOF
 
 # ACPI and LVM discards
 sed 's/# issue_discards.*/issue_discards = 1/' -i /etc/lvm/lvm.conf
-echo $'echo -e \'{ "execute": "qmp_capabilities" }\\n{ "execute": "system_powerdown" }\' | timeout 5 nc localhost 4444' > /etc/acpi/PWRF/00000080
+printf 'echo -e \x27{ "execute": "qmp_capabilities" }\\n{ "execute": "system_powerdown" }\x27 | timeout 5 nc localhost 4444' > /etc/acpi/PWRF/00000080
 
 apk cache -v sync
 lbu commit -d -v
