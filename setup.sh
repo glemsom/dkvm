@@ -118,9 +118,7 @@ done
 echo "${loopDevice}p1" unmounted
 sudo rm -rf tmp_dkvm
 
-#cp usbdisk.img usbdisk.img-save-stage02-end
-
-echo "VM started, using vnc to check console. ssh on port 2222(You need to set passwd)"
+echo "VM started, use vnc to check console or ssh on port 2222 (You need to set passwd)"
 sudo "$qemu" -m 16G -machine q35 \
 	-smp cpus=4,sockets=1,dies=1 \
 	-drive if=pflash,format=raw,unit=0,file="$ovmf_code",readonly=on \
