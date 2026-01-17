@@ -38,13 +38,6 @@ jobs:
         chmod +x setup.sh
         sudo ./setup.sh
 
-    - name: Upload DKVM Image Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: dkvm-image
-        path: dkvm-*.img
-        if-no-files-found: error
-        retention-days: 5
 
     - name: Create GitHub Release
       if: github.ref_type == 'tag'
