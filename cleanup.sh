@@ -9,7 +9,7 @@ set -u          # Treat unset variables as an error
 set -o pipefail # Exit on pipe failure
 
 # Variables used in setup.sh that we need to track
-diskfile="usbdisk.img"
+diskfile="dkvm-*.img"
 # We match the pattern for alpine iso to be version-agnostic
 alpineISO_pattern="alpine-standard-*-x86_64.iso"
 

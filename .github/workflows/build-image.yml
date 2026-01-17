@@ -34,9 +34,9 @@ jobs:
       env:
         VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
       run: |
-        # Ensure we have a clean environment
         chmod +x setup.sh
         sudo ./setup.sh
+        zip -r dkvm-${{ github.ref_name }}.zip dkvm-${{ github.ref_name }}.img README.md
 
 
     - name: Create GitHub Release
@@ -44,7 +44,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          dkvm-*.img
+          dkvm-*.zip
           README.md
         generate_release_notes: true
         draft: false
