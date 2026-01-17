@@ -22,7 +22,7 @@ err() {
 deps="wget expect mkisofs dd xorriso zip $qemu"
 
 for dep in $deps; do
-	which "$dep" || err "Missing $dep"
+	command -v "$dep" >/dev/null 2>&1 || err "Missing dependency:$dep"
 done
 
 if [ ! -f "$alpineISO" ]; then
