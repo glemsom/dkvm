@@ -23,8 +23,7 @@ fi
 
 echo "Starting cleanup..."
 
-# 1. Unmount temporary directories
-# setup.sh mounts: tmp_dkvm
+# Unmount temporary directories
 DIRS=("tmp_dkvm")
 
 for dir in "${DIRS[@]}"; do
@@ -37,7 +36,7 @@ for dir in "${DIRS[@]}"; do
 	fi
 done
 
-# 2. Detach loop devices
+# Detach loop devices
 echo "Checking for loop devices..."
 
 cleanup_loop_device() {
@@ -77,8 +76,7 @@ if [ -n "$alpineISO" ]; then
 fi
 
 
-# 3. Remove temporary directories
-# setup.sh creates: tmp_dkvm, alpine_extract
+# Remove temporary directories
 TEMP_DIRS=("tmp_dkvm" "alpine_extract")
 
 for dir in "${TEMP_DIRS[@]}"; do
@@ -91,8 +89,7 @@ for dir in "${TEMP_DIRS[@]}"; do
 	fi
 done
 
-# 4. Remove intermediate files (leftovers)
-# setup.sh creates: scripts.iso, ${alpineISO}.patched, usbdisk.img, OVMF files
+# Remove intermediate files (leftovers)
 echo "Removing intermediate build files..."
 rm -f scripts.iso "$diskfile" OVMF_CODE.fd OVMF_VARS.fd
 
