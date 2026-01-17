@@ -1,7 +1,8 @@
 #!/bin/bash
 # DKVM Setup
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
-version=0.5.14
+# Version: Use environment variable if set, otherwise default
+version=${VERSION:-0.5.14}
 disksize=2048  #Disk size in MB
 alpineVersion=3.23
 alpineVersionMinor=2
@@ -11,7 +12,8 @@ ovmf_vars=OVMF_VARS.fd
 # qemu binary, might differ on other distrobutions
 qemu=/usr/bin/qemu-system-x86_64
 
-diskfile="usbdisk.img"
+diskfile="dkvm-${version}.img"
+
 
 err() {
 	echo "Error occured $*"
@@ -31,7 +33,7 @@ if [ ! -f "$alpineISO" ]; then
 fi
 if [ ! -f "$ovmf_code" ]; then
 	# Try to find OVMF_CODE
-	tmpPaths="/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd /usr/share/ovmf/x64/OVMF_CODE.fd /usr/share/ovmf/x64/OVMF_CODE.4m.fd /usr/share/OVMF/OVMF_CODE.fd"
+	tmpPaths="/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd /usr/share/ovmf/x64/OVMF_CODE.fd /usr/share/ovmf/x64/OVMF_CODE.4m.fd /usr/share/OVMF/OVMF_CODE.fd /usr/share/edk2/x64/OVMF_CODE.fd"
 	for tmpPath in $tmpPaths; do
 		[ -f "$tmpPath" ] && cp "$tmpPath" "$ovmf_code" && foundCode=yes
 	done
@@ -41,7 +43,7 @@ fi
 
 if [ ! -f "$ovmf_vars" ]; then
 	# Try to find OVMF_VARS
-	tmpPaths="/usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.4m.fd /usr/share/OVMF/OVMF_VARS.fd"
+	tmpPaths="/usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.4m.fd /usr/share/OVMF/OVMF_VARS.fd /usr/share/edk2/x64/OVMF_VARS.fd"
 	for tmpPath in $tmpPaths; do
 		[ -f "$tmpPath" ] && cp "$tmpPath" "$ovmf_vars" && foundVars=yes
 	done
@@ -118,18 +120,9 @@ done
 echo "${loopDevice}p1" unmounted
 sudo rm -rf tmp_dkvm
 
-echo "VM started, use vnc to check console or ssh on port 2222 (You need to set passwd)"
-sudo "$qemu" -m 16G -machine q35 \
-	-smp cpus=4,sockets=1,dies=1 \
-	-drive if=pflash,format=raw,unit=0,file="$ovmf_code",readonly=on \
-	-drive if=pflash,format=raw,unit=1,file="$ovmf_vars" \
-	-global driver=cfi.pflash01,property=secure,value=off \
-	-drive if=none,format=raw,id=usbstick,file="$diskfile" \
-	-usb -device usb-storage,drive=usbstick \
-	-netdev user,id=mynet0,net=10.200.200.0/24,dhcpstart=10.200.200.10,hostfwd=tcp::2222-:22  \
-	-device e1000,netdev=mynet0 \
-	-boot menu=on,splash-time=4000 \
-	-global ICH9-LPC.disable_s3=0 -vnc 0.0.0.0:0 || err "Cannot start qemu"
+echo "BUILD COMPLETED: $diskfile is ready."
+echo "To verify the image, you can run:"
+echo "sudo $qemu -m 4G -machine q35 -drive if=pflash,format=raw,unit=0,file=$ovmf_code,readonly=on -drive if=pflash,format=raw,unit=1,file=$ovmf_vars -drive if=none,format=raw,id=usbstick,file=$diskfile -usb -device usb-storage,drive=usbstick -netdev user,id=mynet0,hostfwd=tcp::2222-:22 -device e1000,netdev=mynet0"
 
 # Cleanup
 sleep 1
