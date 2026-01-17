@@ -19,7 +19,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y wget expect xorriso qemu-system-x86_64 ovmf qemu-utils genisoimage
+        sudo apt-get install -y wget expect xorriso qemu-system-x86 ovmf qemu-utils genisoimage
 
     - name: Run setup script
       env:
