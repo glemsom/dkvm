@@ -33,9 +33,9 @@ if [ ! -f "$alpineISO" ]; then
 fi
 if [ ! -f "$ovmf_code" ]; then
 	# Try to find OVMF_CODE
-	tmpPaths="/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd /usr/share/ovmf/x64/OVMF_CODE.fd /usr/share/ovmf/x64/OVMF_CODE.4m.fd /usr/share/OVMF/OVMF_CODE.fd /usr/share/edk2/x64/OVMF_CODE.fd"
+	tmpPaths="/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd /usr/share/ovmf/x64/OVMF_CODE.fd /usr/share/ovmf/x64/OVMF_CODE.4m.fd /usr/share/OVMF/OVMF_CODE.fd /usr/share/edk2/x64/OVMF_CODE.fd /usr/share/OVMF/OVMF_CODE_4M.fd /usr/share/ovmf/OVMF.fd"
 	for tmpPath in $tmpPaths; do
-		[ -f "$tmpPath" ] && cp "$tmpPath" "$ovmf_code" && foundCode=yes
+		[ -f "$tmpPath" ] && cp "$tmpPath" "$ovmf_code" && foundCode=yes && break
 	done
 	# We did not find it
 	[ ! "$foundCode" ] && err "Cannot find $ovmf_code. Please copy it to $ovmf_code"
@@ -43,9 +43,9 @@ fi
 
 if [ ! -f "$ovmf_vars" ]; then
 	# Try to find OVMF_VARS
-	tmpPaths="/usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.4m.fd /usr/share/OVMF/OVMF_VARS.fd /usr/share/edk2/x64/OVMF_VARS.fd"
+	tmpPaths="/usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.4m.fd /usr/share/OVMF/OVMF_VARS.fd /usr/share/edk2/x64/OVMF_VARS.fd /usr/share/OVMF/OVMF_VARS_4M.fd"
 	for tmpPath in $tmpPaths; do
-		[ -f "$tmpPath" ] && cp "$tmpPath" "$ovmf_vars" && foundVars=yes
+		[ -f "$tmpPath" ] && cp "$tmpPath" "$ovmf_vars" && foundVars=yes && break
 	done
 	# We did not find it
 	[ ! "$foundVars" ] && err "Cannot find $ovmf_vars. Please copy it to $ovmf_vars"
