@@ -96,17 +96,13 @@ send \"echo INSTALLATION DONE\n\"
 expect \"INSTALLATION DONE\"
 " || err "Error during installation"
 
-#clear
-#cp usbdisk.img usbdisk.img-save-stage02
-
 loopDevice=$(sudo losetup --show -f -P "$diskfile" 2>&1)
 mkdir tmp_dkvm
 sudo mount -o loop "${loopDevice}p1" tmp_dkvm || err "Cannot mount ${loopDevice}p1"
 
-ls -l tmp_dkvm
 # Write version
 echo -n "Version: "
-echo $version | sudo tee tmp_dkvm/dkvm-release
+echo "${version}" | sudo tee tmp_dkvm/dkvm-release
 
 # Cleanup mount
 while mount | grep "${loopDevice}p1" -q; do
