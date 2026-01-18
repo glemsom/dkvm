@@ -146,9 +146,10 @@ sed 's/# issue_discards.*/issue_discards = 1/' -i /etc/lvm/lvm.conf
 printf 'echo -e \x27{ "execute": "qmp_capabilities" }\\n{ "execute": "system_powerdown" }\x27 | timeout 5 nc localhost 4444' > /etc/acpi/PWRF/00000080
 
 # Cleanup apk cache
+rm -rf /media/usb/cache/linux-*
 for c in $(seq 1 10); do dd if=/dev/zero of=/media/usb/cache/linux-zero-fill bs=1M count=1024; done
 rm -f /media/usb/cache/linux-zero-fill
-rm -rf /media/usb/cache/linux-*
+
 
 apk cache -v sync
 lbu commit -d -v
