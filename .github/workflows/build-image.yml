@@ -34,11 +34,8 @@ jobs:
       env:
         VERSION: ${{ github.ref_name }}
       run: |
-        chmod +x setup.sh
-        sudo ./setup.sh
+        bash ./setup.sh
         zip -r dkvm-${{ github.ref_name }}.zip dkvm-${{ github.ref_name }}.img README.md
-
-
     - name: Create GitHub Release
       if: github.ref_type == 'tag'
       uses: softprops/action-gh-release@v2
