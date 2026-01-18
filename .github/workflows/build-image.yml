@@ -61,7 +61,6 @@ jobs:
       with:
         files: |
           dkvm-*.zip
-          README.md
         body: ${{ steps.changelog.outputs.body }}
         generate_release_notes: ${{ steps.changelog.outputs.body == '' }}
         draft: false
