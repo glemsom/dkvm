@@ -18,7 +18,7 @@ else
 	fi
 fi
 
-# 1. Partition disk
+# Partition disk
 echo "Creating partition-table"
 echo "
 n
@@ -34,25 +34,24 @@ a
 w
 " | fdisk "$installDisk"
 
-# 2. Format disk
+# Format disk
 modprobe vfat
 echo "Formatting usb disk"
 mkfs.vfat -n dkvm "${installDisk}1"
 
-# 3. Mount disk
+# Mount disk
 mkdir -p /media/usb
 mount "${installDisk}1" /media/usb || err "Cannot mount ${installDisk}1 to /media/usb"
 
-# 4. Setup Alpine
+# Setup Alpine
 # We use the answer file provided in the scripts ISO (cdrom)
 setup-alpine -e -f /media/cdrom/answer.txt
 
-# 5. Make disk bootable
-echo "Making usb disk bootable"
+# Make disk bootable
 # /media/sr0 is the Alpine ISO
 setup-bootable /media/sr0 "${installDisk}1"
 
-# 6. DKVM specific: Setup APK cache on USB
+# DKVM specific: Setup APK cache on USB
 echo "Creating persistent apk cache"
 mkdir -p /media/usb/cache || err "Cannot create cache folder"
 # Check if symlink exists, if not create it
@@ -60,8 +59,7 @@ if [ ! -L /etc/apk/cache ]; then
 	ln -s /media/usb/cache /etc/apk/cache || err "Cannot create apk cache symink"
 fi
 
-
-# 7. DKVM specific: Packages
+# DKVM specific: Packages
 echo "Enable extra repositories"
 sed -i '/^#.*v3.*community/s/^#/@community /' /etc/apk/repositories
 # Add new repository file with edge and testing enabled
@@ -70,7 +68,7 @@ apk update
 apk upgrade
 apk add ca-certificates wget util-linux bridge bridge-utils amd-ucode intel-ucode qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance hwloc-tools || err "Cannot install packages"
 
-# 8. DKVM specific: GRUB and Kernel args
+# DKVM specific: GRUB and Kernel args
 extraArgs="mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5 blacklist=amdgpu split_lock_detect=off"
 [ -e /media/usb/boot/grub/grub.cfg.old ] && rm -f /media/usb/boot/grub/grub.cfg.old
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
@@ -83,8 +81,7 @@ cp /boot/intel-ucode.img /media/usb/boot/ || echo "intel-ucode.img not found"
 # Update to latest LTS kernel in repository
 update-kernel /media/usb/boot/
 
-# 9. DKVM specific: Network and Services
-rc-update add mdadm-raid
+# DKVM specific: Network and Services
 rc-update add lvm default
 rc-update add local default
 rc-update add ntpd default
@@ -121,7 +118,7 @@ mount -a
 ' >> /etc/local.d/dkvm_folder.start
 chmod +x /etc/local.d/dkvm_folder.start
 
-# 10. Install dkvmmenu.sh
+# Install dkvmmenu.sh
 cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
 chmod +x /root/dkvmmenu.sh
 lbu include /root
@@ -130,7 +127,7 @@ lbu include /root
 cp /etc/inittab /etc/inittab.bak
 cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh#' > /etc/inittab
 
-# 11. Finalizing
+# Finalizing
 setup-apkcache /media/usb/cache
 setup-lbu usb
 
