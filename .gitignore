@@ -10,3 +10,4 @@ dkvm.log
 alpine_extract/
 tmp_dkvm/
 scripts.iso
+dkvm-*.zip
