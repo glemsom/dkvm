@@ -2,13 +2,13 @@
 # DKVM Cleanup
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 
-# cleanup.sh - Cleans up leftovers from an interrupted setup.sh run
+# cleanup.sh - Cleans up leftovers from an interrupted build.sh run
 
 set -e          # Exit on error
 set -u          # Treat unset variables as an error
 set -o pipefail # Exit on pipe failure
 
-# Variables used in setup.sh that we need to track
+# Variables used in build.sh that we need to track
 diskfile="dkvm-*.img"
 # We match the pattern for alpine iso to be version-agnostic
 alpineISO_pattern="alpine-standard-*-x86_64.iso"

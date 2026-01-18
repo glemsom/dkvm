@@ -34,7 +34,7 @@ jobs:
       env:
         VERSION: ${{ github.ref_name }}
       run: |
-        bash ./setup.sh
+        bash ./build.sh
         zip -r dkvm-${{ github.ref_name }}.zip dkvm-${{ github.ref_name }}.img README.md
     - name: Extract Changelog
       if: github.ref_type == 'tag'
