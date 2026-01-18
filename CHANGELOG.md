@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Versioned disk image output (dkvm-<version>.img format)
 - Support for pre-release tags (e.g., v0.6.1-dev)
 - CHANGELOG.md to track project changes
-- Agent workflow for changelog verification (.agent/workflows/verify-changelog.md)
 
 ### Changed
 - Unified build path by removing interactive QEMU step at end of setup.sh
