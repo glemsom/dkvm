@@ -5,8 +5,13 @@ DKVM is a minimal hypervisor that runs entirely from RAM, enabling you to virtua
 
 The project builds a bootable USB image containing an Alpine Linux base, the required virtualization packages, and a custom DKVM menu (`dkvmmenu.sh`).
 
+## Features
+- **GPU (VGA) Passthrough** – Direct access to your graphics card for high‑performance graphics.
+- **PCI‑e Device Assignment** – Attach other devices such as network cards or USB controllers.
+- **Minimal Overhead** – Runs from RAM.
+
 ## Build Process
-Pre-built images are automatically generated via GitHub Actions and available in the [GitHub Releases](https://github.com/glemsom/dkvm/releases) section of this project.
+Pre-built images are available in the [GitHub Releases](https://github.com/glemsom/dkvm/releases) section of this project.
 
 If you wish to build the image manually:
 1. Run `./setup.sh`. The script:
@@ -28,11 +33,26 @@ Write the resulting `.img` file to your USB stick using `dd`:
 ```bash
 # Replace /dev/sdX with your actual USB device (e.g., /dev/sdb)
 # WARNING: This will erase all data on the target device!
-sudo dd if=dkvm-*.img of=/dev/sdX bs=4M status=progress && sync
+sudo dd if=dkvm-<version>.img of=/dev/sdX bs=4M status=progress && sync
 ```
 
 ### 3. Boot
 Configure your system’s BIOS/UEFI to boot from the USB device. After boot, the DKVM menu appears, allowing you to start the VM with GPU passthrough and other options.
+
+### 4. Storage Configuration (`dkvmdata`)
+DKVM requires a persistent storage area for VM data (hard disks, ISOs, TPM state, and configurations). For automatic mounting, the partition **MUST** have the filesystem label `DKVMDATA`.
+
+It will be mounted at:
+```
+/media/dkvmdata
+```
+
+**Example (formatting and labeling a partition as ext4):**
+```bash
+# Replace /dev/sdXY with your target partition
+sudo mkfs.ext4 -L DKVMDATA /dev/sdXY
+```
+The DKVM menu will look for VM configurations and data in this directory.
 
 ## Custom Launcher Menu (`dkvmmenu.sh`)
 The interactive menu provides a convenient way to configure and launch the VM:
@@ -42,13 +62,6 @@ The interactive menu provides a convenient way to configure and launch the VM:
 - **VM Creation & Editing** – Create new VM configurations, edit existing ones, and adjust disk, CDROM, and other parameters.
 - **Hugepages & Memory Allocation** – Configures hugepages and reserves memory for the VM.
 - **TPM Support** – Starts a software TPM (`swtpm`) for the guest.
-- **Live Monitoring** – Shows QEMU thread IDs, passed‑through devices, and VM status via QMP.
 - **Persistence** – Changes are saved using Alpine’s `lbu commit` to ensure they survive reboots.
-
-## Features
-- **GPU (VGA) Passthrough** – Direct access to your graphics card for high‑performance graphics.
-- **PCI‑e Device Assignment** – Attach other devices such as network cards or USB controllers.
-- **Minimal Overhead** – Runs from RAM, no persistent host OS required.
-- **Persistent Configuration** – Changes made inside the USB image are saved via Alpine’s LBU system.
 
 For more details, see the blog post: [GlemSom Tech](https://glemsomtechs.blogspot.com/2018/07/dkvm-desktop-kvm.html)
