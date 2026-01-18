@@ -37,7 +37,9 @@ sudo dd if=dkvm-<version>.img of=/dev/sdX bs=4M status=progress && sync
 ```
 
 ### 3. Boot
-Configure your system’s BIOS/UEFI to boot from the USB device. After boot, the DKVM menu appears, allowing you to start the VM with GPU passthrough and other options.
+Configure your system’s BIOS/UEFI to boot from the USB device.
+On the first boot, you should configure the storage partition as described in the next section - and reboot the system.
+After rebooting, you should configure CPU Affinity, PCI Passthrough, USB Passthrough and other settings in the DKVM menu.
 
 ### 4. Storage Configuration (`dkvmdata`)
 DKVM requires a persistent storage area for VM data (hard disks, ISOs, TPM state, and configurations). For automatic mounting, the partition **MUST** have the filesystem label `DKVMDATA`.
@@ -54,7 +56,7 @@ sudo mkfs.ext4 -L DKVMDATA /dev/sdXY
 ```
 The DKVM menu will look for VM configurations and data in this directory.
 
-## Custom Launcher Menu (`dkvmmenu.sh`)
+## Custom Launcher Menu
 The interactive menu provides a convenient way to configure and launch the VM:
 - **CPU Pinning & Topology** – Detects host CPU topology, reserves cores for the host, and pins guest vCPUs to specific host threads for optimal performance.
 - **PCI Passthrough** – Lets you select PCI devices (including GPUs) to pass through to the VM.
