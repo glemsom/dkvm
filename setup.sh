@@ -2,7 +2,7 @@
 # DKVM Setup
 # Glenn Sommer <glemsom+dkvm AT gmail.com>
 # Version: Use environment variable if set, otherwise default
-version=${VERSION:-0.5.14}
+version=${VERSION:-v0.6.1}
 disksize=2048  #Disk size in MB
 alpineVersion=3.23
 alpineVersionMinor=2

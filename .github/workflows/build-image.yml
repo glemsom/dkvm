@@ -3,8 +3,8 @@ name: Build DKVM Image
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+*'
-      - '*-dev'
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+      - 'v*-dev'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -36,6 +36,25 @@ jobs:
       run: |
         bash ./setup.sh
         zip -r dkvm-${{ github.ref_name }}.zip dkvm-${{ github.ref_name }}.img README.md
+    - name: Extract Changelog
+      if: github.ref_type == 'tag'
+      id: changelog
+      run: |
+        # Extract the changelog section for this version
+        VERSION=${{ github.ref_name }}
+        # Get content between this version and the next version header
+        CHANGELOG=$(sed -n "/## \[$VERSION\]/,/## \[/p" CHANGELOG.md | sed '$d' | tail -n +2)
+        # If empty, fall back to auto-generated notes
+        if [ -z "$CHANGELOG" ]; then
+          echo "No changelog entry found for $VERSION, will use auto-generated notes"
+          echo "body=" >> $GITHUB_OUTPUT
+        else
+          # Escape for GitHub Actions output
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
+
     - name: Create GitHub Release
       if: github.ref_type == 'tag'
       uses: softprops/action-gh-release@v2
@@ -43,7 +62,8 @@ jobs:
         files: |
           dkvm-*.zip
           README.md
-        generate_release_notes: true
+        body: ${{ steps.changelog.outputs.body }}
+        generate_release_notes: ${{ steps.changelog.outputs.body == '' }}
         draft: false
         prerelease: ${{ contains(github.ref_name, '-dev') }}
       env:
