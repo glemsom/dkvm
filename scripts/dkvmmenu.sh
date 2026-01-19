@@ -495,6 +495,30 @@ $(lbu commit)"
 	dialog --backtitle "$backtitle" --msgbox "$changesTxt" 0 0
 }
 
+# Set SSH password
+doSetSSHPassword() {
+	local pass1
+	local pass2
+
+	pass1=$(dialog --backtitle "$backtitle" --title "SSH Password" --insecure --passwordbox "Enter new SSH password" 8 50 --stdout)
+	[ $? -ne 0 ] && return
+
+	pass2=$(dialog --backtitle "$backtitle" --title "SSH Password" --insecure --passwordbox "Confirm new SSH password" 8 50 --stdout)
+	[ $? -ne 0 ] && return
+
+	if [ "$pass1" == "$pass2" ]; then
+		echo "root:$pass1" | chpasswd
+		if [ $? -eq 0 ]; then
+			doSaveChanges
+		else
+			dialog --title "Error" --msgbox "Failed to set password." 0 0
+		fi
+	else
+		dialog --title "Error" --msgbox "Passwords do not match. Please try again." 0 0
+		doSetSSHPassword
+	fi
+}
+
 # Handlers for internal menu commands (config, poweroff, etc.)
 mainHandlerInternal() {
 	local item="$1"
@@ -519,7 +543,8 @@ mainHandlerInternal() {
 		menuOptions[5]="Edit USB Passthrough"
 		menuOptions[6]="Edit Custom PCI reload script"
 		menuOptions[7]="Edit CPU options"
-		menuOptions[8]="Save changes"
+		menuOptions[8]="Set SSH password"
+		menuOptions[9]="Save changes"
 
 		local itemString=""
 
@@ -548,6 +573,8 @@ mainHandlerInternal() {
 		elif [ "$menuAnswer" == "7" ]; then
 			doEditCPUOptions
 		elif [ "$menuAnswer" == "8" ]; then
+			doSetSSHPassword
+		elif [ "$menuAnswer" == "9" ]; then
 			doSaveChanges
 		fi
 		showMainMenu && doSelect
