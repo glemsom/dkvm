@@ -6,22 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+(leave empty for next development cycle)
+
+## [v0.6.2] - 2026-01-19
 
 ### Added
-- Automatic extraction of version-specific release notes from `CHANGELOG.md` during GitHub Actions builds.
 - Feature to set and persist the root SSH password directly from the DKVM configuration menu.
-- Documentation for the `DKVMDATA` filesystem label requirement to enable automatic mount of storage at `/media/dkvmdata`.
+- Documentation for the `DKVMDATA` filesystem label requirement to enable automatic storage mounting at `/media/dkvmdata`.
+- Automatic extraction of version-specific release notes from `CHANGELOG.md` during GitHub Actions builds.
 
 ### Changed
-- Renamed `setup.sh` to `build.sh` for better clarity of its purpose.
-- Refined and cleaned up comments and steps in `scripts/runme.sh`.
-- Updated documentation with clearer first-boot instructions and storage configuration details.
-- Standardized tag trigger pattern in GitHub Actions to match `vX.Y.Z` or `vX.Y.Z-dev` format.
-- Improved `cleanup.sh` to be more robust when cleaning up loop devices and temporary files.
-- Optimized GitHub Release assets to include a single versioned ZIP file containing both the disk image and README.
+- Renamed `setup.sh` to `build.sh` for better clarity.
+- Refined build process instructions in README.md by removing manual configuration of `setup.sh`.
+- Improved `cleanup.sh` robustness for loop devices and temporary file handling.
+- Optimized GitHub Release assets to include a single versioned ZIP file.
+- Standardized tag trigger patterns in CI for `vX.Y.Z` consistency.
 
 ### Fixed
-- Improved glob expansion handling in `cleanup.sh` to ensure all intermediate build files are correctly removed.
+- Improved glob expansion handling in `cleanup.sh`.
 
 ## [v0.6.1] - 2026-01-18
 
