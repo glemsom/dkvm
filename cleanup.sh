@@ -91,7 +91,7 @@ done
 
 # Remove intermediate files (leftovers)
 echo "Removing intermediate build files..."
-rm -f scripts.iso "$diskfile" OVMF_CODE.fd OVMF_VARS.fd
+rm -f scripts.iso ${diskfile} OVMF_CODE.fd OVMF_VARS.fd
 
 if [ -n "$alpineISO" ]; then
 	rm -f "$alpineISO"
