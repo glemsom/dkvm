@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Automatic extraction of version-specific release notes from `CHANGELOG.md` during GitHub Actions builds.
+- Feature to set and persist the root SSH password directly from the DKVM configuration menu.
+- Documentation for the `DKVMDATA` filesystem label requirement to enable automatic mount of storage at `/media/dkvmdata`.
 
 ### Changed
 - Renamed `setup.sh` to `build.sh` for better clarity of its purpose.
@@ -17,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Standardized tag trigger pattern in GitHub Actions to match `vX.Y.Z` or `vX.Y.Z-dev` format.
 - Improved `cleanup.sh` to be more robust when cleaning up loop devices and temporary files.
 - Optimized GitHub Release assets to include a single versioned ZIP file containing both the disk image and README.
+
+### Fixed
+- Improved glob expansion handling in `cleanup.sh` to ensure all intermediate build files are correctly removed.
 
 ## [v0.6.1] - 2026-01-18
 
