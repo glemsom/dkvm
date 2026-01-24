@@ -14,7 +14,7 @@
 #
 # Requirements:
 #   - bash, lscpu, taskset, yes (in guest)
-#   - ssh root access to host
+#   - ssh root access to host with passwordless authentication
 
 HOST_IP="192.168.50.21"
 TOPOLOGY_FILE="/media/dkvmdata/cpuTopology"
