@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 (leave empty for next development cycle)
 
+## [v0.6.3] - 2026-01-24
+
+### Added
+- Example start/stop script for AMD 9000 series CPUs with advanced CPU pinning and NUMA configuration.
+
+### Changed
+- Improved documentation in `verify_pinning.sh` to clarify SSH passwordless authentication requirement.
+
 ## [v0.6.2] - 2026-01-19
 
 ### Added
