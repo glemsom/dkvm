@@ -1,16 +1,15 @@
 #!/bin/bash
-# DKVM CPU Pinning Verification Utility
-#
-# Usage:
-#   This script should be executed INSIDE the guest VM.
-#   It requires SSH key access to the DKVM Host (Adjust $HOST_IP as needed).
-#
-# Description:
-#   1. Correlates Guest CPU IDs to Guest Physical Cores.
-#   2. Fetches Host CPU topology.
-#   3. Sequentially generates CPU load on each guest vCPU.
-#   4. Checks on the Host which physical core is handling the load.
-#   5. Verifies if the pinned core belongs to the DKVM-reserved VMCPU set.
+
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ FILE:        verify_pinning.sh
+# ║ USAGE:       ./verify_pinning.sh
+# ║
+# ║ DESCRIPTION: DKVM CPU Pinning Verification Utility
+# ║              Should be executed INSIDE the guest VM.
+# ║              Correlates Guest CPU IDs to Guest Physical Cores,
+# ║              fetches Host CPU topology, generates CPU load on each
+# ║              guest vCPU, and verifies pinned cores match DKVM-reserved VMCPU set.
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 #
 # Requirements:
 #   - bash, lscpu, taskset, yes (in guest)
@@ -21,7 +20,9 @@ TOPOLOGY_FILE="/media/dkvmdata/cpuTopology"
 
 echo "--- Fetching Topologies ---"
 
-# 1. Fetch Guest Topology
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Fetch Guest Topology - Maps Guest CPU IDs to physical cores
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 declare -A GUEST_CPU_TO_CORE
 while read -r line; do
 	[[ $line =~ ^# ]] && continue
@@ -32,14 +33,17 @@ done < <(lscpu -p=CPU,Core)
 
 GUEST_CPU_COUNT=${#GUEST_CPU_TO_CORE[@]}
 
-# 2. Fetch Host topology data
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Fetch Host topology data via SSH - Collects CPU ID, core ID, L3 cache size
+# ║                                    and CPPC highest performance values
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 HOST_DATA=$(ssh root@${HOST_IP} "
 	for i in /sys/devices/system/cpu/cpu[0-9]*; do
 		cpu=\${i##*cpu}
 		core=\$(cat \$i/topology/core_id)
 		l3_size=\$(cat \$i/cache/index3/size 2>/dev/null || echo 'N/A')
 		cppc_perf=\$(cat \$i/acpi_cppc/highest_perf 2>/dev/null || echo 'N/A')
-		echo \"\$cpu,\$core,\$l3_size,\$cppc_perf\"
+		echo "\$cpu,\$core,\$l3_size,\$cppc_perf"
 	done
 ")
 
@@ -50,28 +54,35 @@ while IFS=',' read -r cpu core l3 cppc; do
 	HOST_CPU_TO_CORE[$cpu]=$core
 	HOST_CPU_TO_L3[$cpu]=$l3
 	HOST_CPU_TO_CPPC[$cpu]=$cppc
-done <<< "$HOST_DATA"
+done <<<"$HOST_DATA"
 
-# 3. Fetch Expected VMCPUs
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Fetch Expected VMCPUs - Load VMCPU configuration from host topology file
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 # shellcheck disable=SC1090
 source <(ssh root@${HOST_IP} "cat ${TOPOLOGY_FILE}")
-IFS=',' read -r -a VM_HOST_CPUS <<< "$VMCPU"
+IFS=',' read -r -a VM_HOST_CPUS <<<"$VMCPU"
 
 echo "--- Starting Pinning Verification ---"
 printf "%-12s | %-12s | %-12s | %-12s | %-10s | %-8s | %-8s\n" "Guest CPU" "Guest Core" "Host CPU" "Host Core" "L3 Cache" "CPPC" "Status"
 echo "-------------|--------------|--------------|--------------|------------|----------|----------"
 
-for (( i=0; i<GUEST_CPU_COUNT; i++ )); do
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Main Verification Loop - For each guest vCPU: generate load, detect which host
+# ║                          physical core handles it, 
+# ║                          and verify it's in the reserved set
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
+for ((i = 0; i < GUEST_CPU_COUNT; i++)); do
 	G_CPU=$i
 	G_CORE=${GUEST_CPU_TO_CORE[$G_CPU]}
 
-	# Start load
-	yes > /dev/null &
+	# Start load generator pinned to this guest CPU
+	yes >/dev/null &
 	LOAD_PID=$!
-	taskset -pc "$G_CPU" $LOAD_PID > /dev/null
+	taskset -pc "$G_CPU" $LOAD_PID >/dev/null
 	sleep 3
 
-	# Detect Host CPU
+	# Detect which host CPU is handling the load by comparing /proc/stat snapshots
 	DETECTION_RESULT=$(ssh root@${HOST_IP} "bash -c '
 		declare -A t1
 		while read -r l; do [[ \$l =~ ^cpu([0-9]+) ]] || continue; t1[\${BASH_REMATCH[1]}]=\$l; done < /proc/stat
@@ -80,8 +91,8 @@ for (( i=0; i<GUEST_CPU_COUNT; i++ )); do
 		while read -r l; do
 			[[ \$l =~ ^cpu([0-9]+) ]] || continue
 			c=\${BASH_REMATCH[1]}
-			read -r _ u1 n1 s1 i1 io1 ir1 sir1 st1 g1 gn1 <<< \"\${t1[\$c]}\"
-			read -r _ u2 n2 s2 i2 io2 ir2 sir2 st2 g2 gn2 <<< \"\$l\"
+			read -r _ u1 n1 s1 i1 io1 ir1 sir1 st1 g1 gn1 <<< "\${t1[\$c]}"
+			read -r _ u2 n2 s2 i2 io2 ir2 sir2 st2 g2 gn2 <<< "\$l"
 			busy=\$(( (u2+n2+s2+ir2+sir2+st2) - (u1+n1+s1+ir1+sir1+st1) ))
 			if [ \$busy -gt \$max_busy ]; then max_busy=\$busy; max_core=\$c; fi
 		done < /proc/stat
@@ -94,7 +105,7 @@ for (( i=0; i<GUEST_CPU_COUNT; i++ )); do
 	H_L3=${HOST_CPU_TO_L3[$H_CPU]}
 	H_CPPC=${HOST_CPU_TO_CPPC[$H_CPU]}
 
-	# Simple verification: Does the detected Host CPU belong to the set of reserved VMCPUs?
+	# Verify detected Host CPU is in the expected VMCPUs set
 	IS_EXPECTED="FAIL"
 	for expected in "${VM_HOST_CPUS[@]}"; do
 		if [ "$H_CPU" == "$expected" ]; then
