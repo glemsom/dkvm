@@ -14,11 +14,14 @@ The project builds a bootable USB image containing an Alpine Linux base, the req
 Pre-built images are available in the [GitHub Releases](https://github.com/glemsom/dkvm/releases) section of this project.
 
 If you wish to build the image manually:
-1. Run `./build.sh`. The script:
-   - Sets up an Alpine Linux environment.
-   - Extracts the kernel and initramfs.
+1. Verify dependencies: `make verify-deps`
+2. Run `make build`. This will:
+   - Download Alpine Linux ISO (if needed)
+   - Find and copy OVMF files (if needed)
+   - Set up an Alpine Linux environment.
+   - Extract the kernel and initramfs.
    - Boots a temporary QEMU VM and runs `scripts/runme.sh` via `expect` to automate the installation.
-   - Generates `dkvm-<version>.img`.
+   - Generate `dkvm-<version>.img`.
 
 ## Usage (Linux)
 
