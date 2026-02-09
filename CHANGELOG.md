@@ -6,7 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-(leave empty for next development cycle)
+
+## [v0.7.0] - 2026-02-09
+
+### Added
+- New Makefile-based build system for simplified project management.
+- `install.expect` script for automated installation processes.
+
+### Changed
+- Migrated build process from `build.sh` and `cleanup.sh` to Makefile targets (`make build`, `make clean`).
+- Updated build instructions in README.md to reflect the new Makefile workflow.
+
+### Removed
+- Deprecated `build.sh` and `cleanup.sh` scripts (functionality now in Makefile).
 
 ## [v0.6.3] - 2026-01-24
 
