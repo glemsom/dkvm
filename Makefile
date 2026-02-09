@@ -1,26 +1,48 @@
-# DKVM Makefile
-# Glenn Sommer <glemsom+dkvm AT gmail.com>
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ FILE:  Makefile                                                                    
+# ║ AUTHOR: Glenn Sommer <glemsom+dkvm AT gmail.com>                                  
+# ║                                                                                   
+# ║ DESCRIPTION: Build system for DKVM (Desktop KVM) - a minimal hypervisor that      
+# ║              runs entirely from RAM with GPU passthrough support                  
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 
-# Configuration (can be overridden via environment or make args)
-VERSION ?= v0.6.3
-DISK_SIZE ?= 2048
-ALPINE_VERSION ?= 3.23
-ALPINE_MINOR ?= 2
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ CONFIGURATION                                                                      
+# ║ These variables can be overridden via environment variables or make arguments     
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
+VERSION ?= v0.6.3        # DKVM release version
+DISK_SIZE ?= 2048        # Disk image size in megabytes
+ALPINE_VERSION ?= 3.23   # Alpine Linux major version
+ALPINE_MINOR ?= 2        # Alpine Linux minor version
 
-# Derived variables
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ DERIVED VARIABLES                                                                  
+# ║ Computed values based on configuration settings                                   
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 ALPINE_ISO := alpine-standard-$(ALPINE_VERSION).$(ALPINE_MINOR)-x86_64.iso
-OVMF_CODE := OVMF_CODE.fd
-OVMF_VARS := OVMF_VARS.fd
-DISK_FILE := dkvm-$(VERSION).img
+OVMF_CODE := OVMF_CODE.fd        # UEFI firmware code file
+OVMF_VARS := OVMF_VARS.fd        # UEFI firmware variables file
+DISK_FILE := dkvm-$(VERSION).img # Output disk image filename
 QEMU := /usr/bin/qemu-system-x86_64
 
-# Dependencies to check
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ DEPENDENCIES                                                                       
+# ║ Required tools that must be installed on the build system                         
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 DEPS := wget expect mkisofs dd xorriso zip $(QEMU) losetup mount sudo
 
 .PHONY: all build verify-deps cleanup run help
 
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ DEFAULT TARGET                                                                     
+# ║ Build the DKVM disk image when no target is specified                             
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 all: build
 
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: help                                                                       
+# ║ Display usage information and available build targets                             
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 help:
 	@echo "DKVM Build System"
 	@echo ""
@@ -37,6 +59,10 @@ help:
 	@echo "  ALPINE_VERSION=$(ALPINE_VERSION)"
 	@echo "  ALPINE_MINOR=$(ALPINE_MINOR)"
 
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: verify-deps                                                                
+# ║ Check that all required build dependencies are installed and available            
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 verify-deps:
 	@echo "Checking dependencies..."
 	@for dep in $(DEPS); do \
@@ -47,12 +73,18 @@ verify-deps:
 	done
 	@echo "All dependencies found."
 
-# Download Alpine ISO if not present
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: $(ALPINE_ISO)                                                              
+# ║ Download Alpine Linux ISO from official mirror if not already present             
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 $(ALPINE_ISO):
 	@echo "Downloading Alpine Linux ISO..."
 	wget "http://dl-cdn.alpinelinux.org/alpine/v$(ALPINE_VERSION)/releases/x86_64/$(ALPINE_ISO)" -O "$(ALPINE_ISO)"
 
-# Find and copy OVMF_CODE.fd
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: $(OVMF_CODE)                                                               
+# ║ Locate and copy UEFI firmware code from common system locations                   
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 $(OVMF_CODE):
 	@echo "Looking for OVMF_CODE.fd..."
 	@for path in /usr/share/edk2/ovmf/OVMF_CODE.secboot.fd /usr/share/ovmf/x64/OVMF_CODE.fd /usr/share/ovmf/x64/OVMF_CODE.4m.fd /usr/share/OVMF/OVMF_CODE.fd /usr/share/edk2/x64/OVMF_CODE.fd /usr/share/OVMF/OVMF_CODE_4M.fd /usr/share/ovmf/OVMF.fd; do \
@@ -65,7 +97,10 @@ $(OVMF_CODE):
 	echo "Error: Cannot find $(OVMF_CODE). Please copy it to $(OVMF_CODE)"; \
 	exit 1
 
-# Find and copy OVMF_VARS.fd
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: $(OVMF_VARS)                                                               
+# ║ Locate and copy UEFI firmware variables template from system                      
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 $(OVMF_VARS):
 	@echo "Looking for OVMF_VARS.fd..."
 	@for path in /usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.fd /usr/share/ovmf/x64/OVMF_VARS.4m.fd /usr/share/OVMF/OVMF_VARS.fd /usr/share/edk2/x64/OVMF_VARS.fd /usr/share/OVMF/OVMF_VARS_4M.fd; do \
@@ -78,23 +113,36 @@ $(OVMF_VARS):
 	echo "Error: Cannot find $(OVMF_VARS). Please copy it to $(OVMF_VARS)"; \
 	exit 1
 
-# Create scripts ISO
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: scripts.iso                                                                
+# ║ Create ISO image containing DKVM setup scripts for automated installation         
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 scripts.iso: scripts/runme.sh scripts/dkvmmenu.sh scripts/answer.txt
 	@echo "Creating scripts ISO..."
 	mkisofs -o scripts.iso scripts
 
-# Extract kernel and initramfs
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: alpine_extract/vmlinuz-lts                                                 
+# ║ Extract the Linux kernel (LTS version) from Alpine ISO for DKVM boot              
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 alpine_extract/vmlinuz-lts: $(ALPINE_ISO)
 	@echo "Extracting kernel from Alpine ISO..."
 	@mkdir -p alpine_extract
 	xorriso -osirrox on -indev "$(ALPINE_ISO)" -extract /boot/vmlinuz-lts alpine_extract/vmlinuz-lts 2>/dev/null
 
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: alpine_extract/initramfs-lts                                               
+# ║ Extract the initramfs image from Alpine ISO for DKVM boot                         
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 alpine_extract/initramfs-lts: $(ALPINE_ISO)
 	@echo "Extracting initramfs from Alpine ISO..."
 	@mkdir -p alpine_extract
 	xorriso -osirrox on -indev "$(ALPINE_ISO)" -extract /boot/initramfs-lts alpine_extract/initramfs-lts 2>/dev/null
 
-# Main build target
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: build                                                                      
+# ║ Main build target - creates bootable DKVM disk image with all components          
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 build: verify-deps $(OVMF_CODE) $(OVMF_VARS) scripts.iso alpine_extract/vmlinuz-lts alpine_extract/initramfs-lts
 	@echo "Creating disk image $(DISK_FILE) @ $(DISK_SIZE)MB..."
 	@rm -f "$(DISK_FILE)"
@@ -118,8 +166,12 @@ build: verify-deps $(OVMF_CODE) $(OVMF_VARS) scripts.iso alpine_extract/vmlinuz-
 	sudo rm -rf tmp_dkvm
 	@echo "BUILD COMPLETED: $(DISK_FILE) is ready."
 	@echo "To run the image: make run VERSION=$(VERSION)"
-	@rm -rf alpine_extract scripts.iso
+	@	rm -rf alpine_extract scripts.iso
 
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: run                                                                        
+# ║ Launch the built DKVM image in QEMU for testing                                   
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 run: $(DISK_FILE) $(OVMF_CODE) $(OVMF_VARS)
 	@echo "Running DKVM image $(DISK_FILE)..."
 	@sudo $(QEMU) -m 4G -machine q35 \
@@ -130,6 +182,10 @@ run: $(DISK_FILE) $(OVMF_CODE) $(OVMF_VARS)
 	-netdev user,id=mynet0,hostfwd=tcp::2222-:22 \
 	-device e1000,netdev=mynet0
 
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: cleanup                                                                    
+# ║ Remove all generated files, disk images, and temporary directories                
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 cleanup:
 	@echo "Starting cleanup..."
 	@echo "Unmounting temporary directories..."
