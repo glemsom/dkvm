@@ -1,5 +1,17 @@
 #!/bin/sh
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ FILE:  runme.sh
+# ║
+# ║ USAGE: runme.sh INSTALL_DISK
+# ║
+# ║ DKVM installation script for setting up Alpine Linux with
+# ║ KVM virtualization support, GPU passthrough, and VFIO.
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ NAME: err
+# ║ Display error message and spawn recovery shell
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 err() {
 	echo "ERROR" "$@"
 	/bin/sh
@@ -18,7 +30,9 @@ else
 	fi
 fi
 
-# Partition disk
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Create bootable partition on target disk
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 echo "Creating partition-table"
 echo "
 n
@@ -34,119 +48,156 @@ a
 w
 " | fdisk "$installDisk"
 
-# Format disk
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Format the newly created partition as FAT32
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 modprobe vfat
 echo "Formatting usb disk"
 mkfs.vfat -n dkvm "${installDisk}1"
 
-# Mount disk
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Mount the USB disk for installation
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 mkdir -p /media/usb
 mount "${installDisk}1" /media/usb || err "Cannot mount ${installDisk}1 to /media/usb"
 
-# Setup Alpine
-# We use the answer file provided in the scripts ISO (cdrom)
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Run Alpine Linux setup using answer file from ISO
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 setup-alpine -e -f /media/cdrom/answer.txt
 
-# Make disk bootable
-# /media/sr0 is the Alpine ISO
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Make the USB disk bootable using Alpine ISO
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 setup-bootable /media/sr0 "${installDisk}1"
 
-# DKVM specific: Setup APK cache on USB
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Setup persistent APK cache on USB for offline package management
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 echo "Creating persistent apk cache"
 mkdir -p /media/usb/cache || err "Cannot create cache folder"
-# Check if symlink exists, if not create it
 if [ ! -L /etc/apk/cache ]; then
 	ln -s /media/usb/cache /etc/apk/cache || err "Cannot create apk cache symink"
 fi
 
-# DKVM specific: Packages
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Enable community repositories and install DKVM required packages
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 echo "Enable extra repositories"
 sed -i '/^#.*v3.*community/s/^#/@community /' /etc/apk/repositories
-# Add new repository file with edge and testing enabled
 
 apk update
 apk upgrade
 apk add ca-certificates wget util-linux bridge bridge-utils amd-ucode intel-ucode qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@community ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance hwloc-tools || err "Cannot install packages"
 
-# DKVM specific: GRUB and Kernel args
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Configure GRUB with IOMMU and VFIO kernel parameters for DKVM
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 extraArgs="mitigations=off intel_iommu=on amd_iommu=on iommu=pt elevator=noop waitusb=5 blacklist=amdgpu split_lock_detect=off"
 [ -e /media/usb/boot/grub/grub.cfg.old ] && rm -f /media/usb/boot/grub/grub.cfg.old
 cp /media/usb/boot/grub/grub.cfg /media/usb/boot/grub/grub.cfg.old
-cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/\(modules=[^ ]*\)/\1,vfio-pci/' | sed 's#initrd.*/boot/initramfs-lts#initrd /boot/amd-ucode.img /boot/intel-ucode.img /boot/initramfs-lts#' > /media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
+cat /media/usb/boot/grub/grub.cfg.old | sed 's/^menuentry .*{/menuentry "DKVM" {/g' | sed "/^linux/ s/$/ $extraArgs /" | sed 's/quiet//g' | sed 's/\(modules=[^ ]*\)/\1,vfio-pci/' | sed 's#initrd.*/boot/initramfs-lts#initrd /boot/amd-ucode.img /boot/intel-ucode.img /boot/initramfs-lts#' >/media/usb/boot/grub/grub.cfg || err "Cannot patch grub"
 
-# Copy microcode
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Copy CPU microcode updates to boot partition
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 cp /boot/amd-ucode.img /media/usb/boot/ || echo "amd-ucode.img not found"
 cp /boot/intel-ucode.img /media/usb/boot/ || echo "intel-ucode.img not found"
 
-# Update to latest LTS kernel in repository
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Update to latest LTS kernel in repository
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 update-kernel /media/usb/boot/
 
-# DKVM specific: Network and Services
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Configure system services and network for DKVM
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 rc-update add lvm default
 rc-update add local default
 rc-update add ntpd default
 
-# SSH setup
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Enable root SSH login
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config
 
-# QEMU bridge helper
-echo "allow br0" > /etc/qemu/bridge.conf
-echo "set bell-style none" >> /etc/inputrc
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Configure QEMU bridge helper permissions
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
+echo "allow br0" >/etc/qemu/bridge.conf
+echo "set bell-style none" >>/etc/inputrc
 
-# Kernel modules
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Load KVM and VFIO kernel modules for virtualization
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 echo "
 kvm_intel
 kvm_amd
 vfio_iommu_type1
 tun
 vfio-pci
-vfio" >> /etc/modules
+vfio" >>/etc/modules
 
-# VFIO config
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Configure VFIO and KVM module parameters
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 echo "options kvm-intel nested=1 enable_apicv=1
 options kvm-amd nested=1 avic=1
 options kvm ignore_msrs=1
 blacklist snd_hda_intel
 blacklist amdgpu
-" > /etc/modprobe.d/vfio.conf
+" >/etc/modprobe.d/vfio.conf
 
-# Local script for data folder
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Create local script to mount DKVM data folder from fstab
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 echo '#!/bin/sh
-# Add DKVM Data folder (Mounted from fstab)
+# Mount DKVM data folder from fstab
 mkdir /media/dkvmdata
 mount -a
-' >> /etc/local.d/dkvm_folder.start
+' >>/etc/local.d/dkvm_folder.start
 chmod +x /etc/local.d/dkvm_folder.start
 
-# Install dkvmmenu.sh
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Install DKVM menu script to root home directory
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
 chmod +x /root/dkvmmenu.sh
 lbu include /root
 
-# TTY1 respawn
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Configure TTY1 to auto-respawn dkvmmenu.sh on login
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 cp /etc/inittab /etc/inittab.bak
-cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh#' > /etc/inittab
+cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh#' >/etc/inittab
 
-# Finalizing
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Finalize installation with APK cache and local backup
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 setup-apkcache /media/usb/cache
 setup-lbu usb
 
-# Update fstab
-cat > /etc/fstab <<EOF
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Update fstab with DKVM mount points
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
+cat >/etc/fstab <<EOF
 /dev/cdrom	/media/cdrom	iso9660	noauto,ro 0 0
 LABEL=dkvm     /media/usb    vfat   noauto,ro 0 0
 LABEL=dkvmdata /media/dkvmdata  ext4 defaults,discard,nofail 0 0
 EOF
 
-# ACPI and LVM discards
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Configure LVM discards and ACPI power button handling
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 sed 's/# issue_discards.*/issue_discards = 1/' -i /etc/lvm/lvm.conf
-printf 'echo -e \x27{ "execute": "qmp_capabilities" }\\n{ "execute": "system_powerdown" }\x27 | timeout 5 nc localhost 4444' > /etc/acpi/PWRF/00000080
+printf 'echo -e \x27{ "execute": "qmp_capabilities" }\\n{ "execute": "system_powerdown" }\x27 | timeout 5 nc localhost 4444' >/etc/acpi/PWRF/00000080
 
-# Cleanup apk cache
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Clean up APK cache and zero-fill free space
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 rm -rf /media/usb/cache/linux-*
 for c in $(seq 1 10); do dd if=/dev/zero of=/media/usb/cache/linux-zero-fill bs=1M count=1024; done
 rm -f /media/usb/cache/linux-zero-fill
-
 
 apk cache -v sync
 lbu commit -d -v
