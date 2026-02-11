@@ -358,11 +358,11 @@ doEditVM() {
 writeOptimalCPULayout() {
 	# Pick first core, and any SMT as the host core
 	# TODO: What if we have more sockets / CCX?
-	HOSTCPU=$(lscpu -p| grep -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
-	VMCPU=$(lscpu -p| grep -v \# | grep -v -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
-	CPUTHREADS=$(lscpu |grep Thread | cut -d: -f2|tr -d ' ')
-	if [ ! -z "$HOSTCPU" ] && [ ! -z "$VMCPU" ]; then  
-	cat > $configCPUTopology <<EOF
+	HOSTCPU=$(lscpu -p | grep -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
+	VMCPU=$(lscpu -p | grep -v \# | grep -v -E '(^[0-9]+),0' | cut -d, -f1 | tr '\n' ',')
+	CPUTHREADS=$(lscpu | grep Thread | cut -d: -f2 | tr -d ' ')
+	if [ ! -z "$HOSTCPU" ] && [ ! -z "$VMCPU" ]; then
+		cat >$configCPUTopology <<EOF
 # This file is auto-generated upon first start-up.
 # To regenerate, just delete this file
 #
@@ -602,22 +602,21 @@ isGPU() {
 getVMMemMB() {
 	local reservedMemMB=$1
 	local totalMemKB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-	local totalMemMB=$(( $totalMemKB / 1024 ))
+	local totalMemMB=$(($totalMemKB / 1024))
 
-	VMMemMB=$(( $totalMemMB - $reservedMemMB ))
-	echo $(( ${VMMemMB%.*} /2 * 2 ))
+	VMMemMB=$(($totalMemMB - $reservedMemMB))
+	echo $((${VMMemMB%.*} / 2 * 2))
 }
-
 
 # Allocates hugepages based on the requested VM memory size
 setupHugePages() {
 	local VMMemMB=$1
 	local pageSizeMB=2
-	local required=$(( $VMMemMB / $pageSizeMB ))
-	echo 1 > /proc/sys/vm/compact_memory
-	echo 'never' > /sys/kernel/mm/transparent_hugepage/defrag
-	echo 'never' > /sys/kernel/mm/transparent_hugepage/enabled
-	echo $(( $required + 8 )) > /proc/sys/vm/nr_hugepages
+	local required=$(($VMMemMB / $pageSizeMB))
+	echo 1 >/proc/sys/vm/compact_memory
+	echo 'never' >/sys/kernel/mm/transparent_hugepage/defrag
+	echo 'never' >/sys/kernel/mm/transparent_hugepage/enabled
+	echo $(($required + 8)) >/proc/sys/vm/nr_hugepages
 }
 
 # Main entry point for starting a VM. Constructs the QEMU command and manages the lifecycle.
@@ -655,7 +654,8 @@ mainHandlerVM() {
 	OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
 
 	# Hugepages for better memory performance
-	OPTS+=" -m ${VMMEMMB}M"
+	OPTS+=" -object memory-backend-memfd,id=mem,size=${VMMEMMB}M,hugetlb=on,hugetlbsize=2M,prealloc=on"
+	OPTS+=" -machine memory-backend=mem"
 
 	# Disable S3/S4 sleep states
 	OPTS+=" -global ICH9-LPC.disable_s3=1 -global ICH9-LPC.disable_s4=1 -global kvm-pit.lost_tick_policy=discard "
@@ -675,23 +675,11 @@ mainHandlerVM() {
 		OPTS+=" -vga std -vnc $VNCLISTEN"
 	fi
 	if [ ! -z "$VMCPU" ] && [ ! -z "$CPUTHREADS" ]; then
-		local TMPALLCORES=$(echo $VMCPU | sed 's/,/ /g'|wc -w)
-		local TMPCORES=$(echo ${TMPALLCORES}/${CPUTHREADS} | bc)
+		local NUM_VCORES=$(echo $VMCPU | tr ',' ' ' | wc -w)
 		local DIES=$(getNumDies $VMCPU)
-		#OPTS+=" -smp threads=${CPUTHREADS},cores=${TMPCORES}"
-		# Start with 1 cpu (required), and make room to add the others later
-		OPTS+=" -smp cpus=1,threads=$CPUTHREADS,sockets=1,maxcpus=32,dies=$DIES"
-
-		# Setup vNUMA nodes matching host NUMA nodes
-		node_id=0
-		local NODE_COUNT=$(echo $VMCPU | tr ',' '\n' | xargs -I{} sh -c 'basename /sys/devices/system/cpu/cpu$1/node* | sed s/node//' -- {} | sort -u | wc -l)
-		local MEM_PER_NODE=$(( VMMEMMB / NODE_COUNT ))
-		while read -r PHYS_NODE; do
-			[ -z "$PHYS_NODE" ] && continue
-			OPTS+=" -object memory-backend-memfd,id=mem${node_id},size=${MEM_PER_NODE}M,hugetlb=on,hugetlbsize=2M,prealloc=on"
-			OPTS+=" -numa node,nodeid=${node_id},memdev=mem${node_id}"
-			let node_id++
-		done < <(echo $VMCPU | tr ',' '\n' | xargs -I{} sh -c 'basename /sys/devices/system/cpu/cpu$1/node* | sed s/node//' -- {} | sort -u)
+		# Use cpus=1 since QEMU creates first vCPU via -smp, rest added via -device
+		OPTS+=" -smp 1,maxcpus=32,threads=$CPUTHREADS,sockets=1,dies=$DIES"
+		OPTS+=" $(generateVCPUDevices "$VMCPU")"
 	fi
 	if [ ! -z "$VMBIOS" ] && [ ! -z "$VMBIOS_VARS" ]; then
 		OPTS+=" -drive if=pflash,format=raw,readonly=on,file=${VMBIOS} -drive if=pflash,format=raw,file=${VMBIOS_VARS}"
@@ -753,31 +741,16 @@ mainHandlerVM() {
 	realTimeTune | doOut
 	IRQAffinity | doOut
 	reloadPCIDevices $VMPASSTHROUGHPCIDEVICES
-	eval qemu-system-x86_64 -S $OPTS 2>&1 | doOut &
-	waitForQMP && addCPUs $VMCPU 2>&1 | doOut && continueVM &
+	eval qemu-system-x86_64 $OPTS 2>&1 | doOut &
+	waitForQMP && pinVCPUs "$VMCPU" 2>&1 | doOut &
 	doOut showlog
-}
-
-# Resumes the paused VM via QMP
-continueVM() {
-	echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "cont" }' | timeout 2 nc localhost 4444 > /dev/null 2>&1
-}
-
-
-# Gets the host PID for a specific vCPU thread via QMP
-getvCorePid() {
-	local COREID=$1
-	local DIEID=$2
-	local THREADID=$3
-	local PIDS=$(echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "query-cpus-fast" }' | timeout 0.5 nc localhost 4444 | tail -n1 | jq ".return[] | select(.\"props\".\"core-id\" == $COREID and .\"props\".\"die-id\" == $DIEID and .\"props\".\"thread-id\" == $THREADID) | .\"thread-id\"") 2>/dev/null
-	echo "$PIDS"
 }
 
 # Counts the number of physical CPU dies
 getNumDies() {
 	local CPUS=$1
-	local IFS=',' 
-	read -r -a CPU_CORES <<< "$CPUS"
+	local IFS=','
+	read -r -a CPU_CORES <<<"$CPUS"
 	local DIE_IDS=()
 
 	# Iterate over each CPU core
@@ -805,106 +778,94 @@ getNumDies() {
 	echo "${#DIE_IDS[@]}"
 }
 
-
-# Hotplugs a vCPU into the running VM
-addvCore() {
-	local COREID=$1
-	local DIE_ID=$2
-	local THREAD_ID=$3
-	local SOCKET=$4
-	local HOSTCORE=$5
-	local NODE_ID=$6
-	echo "Adding vCore: Host Core Id: $HOSTCORE, Guest Core ID=$COREID, Die ID=$DIE_ID, vThread ID=$THREAD_ID, Node ID=$NODE_ID"
-	
-	local qmp_args='{ 
-		"core-id": '$COREID', 
-		"driver": "host-x86_64-cpu", 
-		"id": "cpu-'${HOSTCORE}'", 
-		"die-id": '$DIE_ID', 
-		"socket-id": '$SOCKET', 
-		"thread-id": '$THREAD_ID',
-		"node-id": '$NODE_ID'
-	}'
-	
-	echo -e '{ "execute": "qmp_capabilities" }
-	{ "execute": "device_add", "arguments": '$qmp_args' }' | timeout 1 nc localhost 4444 | grep error
+# Helper to print associative arrays
+printarr() {
+	declare -n __p="$1"
+	for k in "${!__p[@]}"; do printf "%s=%s\n" "$k" "${__p[$k]}"; done
 }
 
-# Helper to print associative arrays
-printarr() { declare -n __p="$1"; for k in "${!__p[@]}"; do printf "%s=%s\n" "$k" "${__p[$k]}" ; done ;  } 
+# Generates -device host-x86_64-cpu entries for each host core
+# Topology preserved: die-id, core-id (per die), thread-id (0/1 for siblings)
+# Note: First core is skipped as QEMU creates it automatically via -smp
+generateVCPUDevices() {
+	local VMCPU=$1
+	local -A PROCESSED_SIBLING_LIST
+	local vcpu_devices=""
+	local FIRST_CORE_ADDED=false
 
-# Pinning and hotplugging CPUs
-# This function handles the complex mapping of Host Cores -> Guest vCPUs
-# ensuring siblings (HyperThread pairs) are kept together.
-addCPUs() {
-	declare -A PROCESSED_SIBLING_LIST
-	declare -A HOST_NODE_TO_GUEST_NODE
-
-	# The host cores to add to the VM as virtual cores
-	echo "Adding CPUs for $1"
-
-	# Add cores to array of cores
-	IFS=',' read -r -a TMPHOSTCORES <<< "$1"
-
-	# Map physical host nodes to guest node IDs
-	local node_idx=0
-	while read -r PHYS_NODE; do
-		[ -z "$PHYS_NODE" ] && continue
-		HOST_NODE_TO_GUEST_NODE[$PHYS_NODE]=$node_idx
-		let node_idx++
-	done < <(echo $1 | tr ',' '\n' | xargs -I{} sh -c 'basename /sys/devices/system/cpu/cpu$1/node* | sed s/node//' -- {} | sort -u)
-
-	# Cleanup first core from array, as it is already pre-added to the VM
-	if [ ${#TMPHOSTCORES[@]} -gt 0 ]; then
-		local FIRST_CORE=${TMPHOSTCORES[0]}
-		local SIBLINGS=$(cat /sys/devices/system/cpu/cpu${FIRST_CORE}/topology/thread_siblings_list)
-		local PHYS_NODE=$(basename /sys/devices/system/cpu/cpu${FIRST_CORE}/node* | sed 's/node//')
-		local DIE_ID=$(cat /sys/devices/system/cpu/cpu${FIRST_CORE}/topology/die_id)
-		local NODE_ID=${HOST_NODE_TO_GUEST_NODE[$PHYS_NODE]}
-		
-		# Get PID for core
-		TMPPID=$(getvCorePid 0 0 0) # QEMU boots with core-id 0, die-id 0, thread-id 0
-		taskset -pc $FIRST_CORE $TMPPID
-		PROCESSED_SIBLING_LIST[$SIBLINGS]=0
-		echo "Already pinned core $FIRST_CORE (part of $SIBLINGS) to vCore 0"
-		unset 'TMPHOSTCORES[0]'
-		HOSTCORES=("${TMPHOSTCORES[@]}") # Re-index the array
-	fi
-	echo "First core pinned"
-
-	VCORE=1 # Start from 1 for the first die, as 0 is already attached
+	IFS=',' read -r -a HOSTCORES <<<"$VMCPU"
 
 	while read -r DIE; do
 		[ -z "$DIE" ] && continue
-		echo "Processing for die $DIE"
-		
-		for HOSTCORE in ${HOSTCORES[@]}; do
-			local CUR_DIE_ID=$(cat /sys/devices/system/cpu/cpu${HOSTCORE}/topology/die_id)
+		local VCORE=0
+
+		for HOSTCORE in "${HOSTCORES[@]}"; do
+			local CUR_DIE_ID=$(cat /sys/devices/system/cpu/cpu${HOSTCORE}/topology/die_id 2>/dev/null)
 			if [ "$CUR_DIE_ID" == "$DIE" ]; then
-				local SIBLING_LIST=$(cat /sys/devices/system/cpu/cpu${HOSTCORE}/topology/thread_siblings_list)
-				local PHYS_NODE=$(basename /sys/devices/system/cpu/cpu${HOSTCORE}/node* | sed 's/node//')
-				local NODE_ID=${HOST_NODE_TO_GUEST_NODE[$PHYS_NODE]}
-				echo "Processing hostcore $HOSTCORE @ die $DIE (host node $PHYS_NODE -> guest node $NODE_ID) with siblings_list $SIBLING_LIST"
-				
+				local SIBLING_LIST=$(cat /sys/devices/system/cpu/cpu${HOSTCORE}/topology/thread_siblings_list 2>/dev/null)
+
+				# Skip first core (already created by QEMU via -smp)
+				if [ "$FIRST_CORE_ADDED" == "false" ]; then
+					FIRST_CORE_ADDED=true
+					PROCESSED_SIBLING_LIST[$SIBLING_LIST]=$VCORE
+					let VCORE++
+					continue
+				fi
+
 				if [ ! -z "${PROCESSED_SIBLING_LIST[$SIBLING_LIST]}" ]; then
 					local GUEST_CORE_ID=${PROCESSED_SIBLING_LIST[$SIBLING_LIST]}
-					echo "    Host core $HOSTCORE is a sibling. Adding as thread 1 of guest core $GUEST_CORE_ID"
-					addvCore $GUEST_CORE_ID $CUR_DIE_ID 1 0 $HOSTCORE $NODE_ID
-					TMPPID=$(getvCorePid $GUEST_CORE_ID $CUR_DIE_ID 1)
-					taskset -pc $HOSTCORE $TMPPID
+					vcpu_devices+=" -device host-x86_64-cpu,socket-id=0,die-id=$DIE,core-id=$GUEST_CORE_ID,thread-id=1,id=cpu-host${HOSTCORE}"
 				else
-					echo "    Host core $HOSTCORE is a new core. Adding as thread 0 of guest core $VCORE"
-					addvCore $VCORE $CUR_DIE_ID 0 0 $HOSTCORE $NODE_ID
+					vcpu_devices+=" -device host-x86_64-cpu,socket-id=0,die-id=$DIE,core-id=$VCORE,thread-id=0,id=cpu-host${HOSTCORE}"
 					PROCESSED_SIBLING_LIST[$SIBLING_LIST]=$VCORE
-					TMPPID=$(getvCorePid $VCORE $CUR_DIE_ID 0)
-					taskset -pc $HOSTCORE $TMPPID
 					let VCORE++
 				fi
 			fi
 		done
-		# Reset VCORE for next die (QEMU expects core_id to be reset per die)
-		VCORE=0
-	done < <(echo $1 | tr ',' '\n' | xargs -I{} cat /sys/devices/system/cpu/cpu{}/topology/die_id | sort -u)
+	done < <(echo "$VMCPU" | tr ',' '\n' | xargs -I{} cat /sys/devices/system/cpu/cpu{}/topology/die_id 2>/dev/null | sort -u)
+
+	echo "$vcpu_devices"
+}
+
+# Pins vCPU threads to their corresponding host cores
+# Queries QEMU for thread IDs and uses taskset to pin
+pinVCPUs() {
+	local VMCPU=$1
+	echo "Pinning vCPUs for $VMCPU"
+
+	local cpu_info=$(doQMP query-cpus-fast | tail -n1)
+
+	IFS=',' read -r -a HOSTCORES <<<"$VMCPU"
+	local FIRST_CORE=${HOSTCORES[0]}
+	local FIRST_DIE=$(cat /sys/devices/system/cpu/cpu${FIRST_CORE}/topology/die_id 2>/dev/null)
+	local FIRST_CORE_HANDLED=false
+
+	for HOSTCORE in "${HOSTCORES[@]}"; do
+		local thread_id=""
+		local CUR_SIBLINGS=$(cat /sys/devices/system/cpu/cpu${HOSTCORE}/topology/thread_siblings_list 2>/dev/null)
+		local FIRST_SIBLINGS=$(cat /sys/devices/system/cpu/cpu${FIRST_CORE}/topology/thread_siblings_list 2>/dev/null)
+
+		# Check if this belongs to the first core's sibling list (no id property in QEMU)
+		if [ "$CUR_SIBLINGS" == "$FIRST_SIBLINGS" ]; then
+			if [ "$FIRST_CORE_HANDLED" == "false" ]; then
+				# First core is thread 0
+				thread_id=$(echo "$cpu_info" | jq -r ".return[] | select(.\"props\".\"core-id\" == 0 and .\"props\".\"die-id\" == $FIRST_DIE and .\"props\".\"thread-id\" == 0) | .\"thread-id\"" 2>/dev/null)
+				FIRST_CORE_HANDLED=true
+			else
+				# Sibling is thread 1
+				thread_id=$(echo "$cpu_info" | jq -r ".return[] | select(.\"props\".\"core-id\" == 0 and .\"props\".\"die-id\" == $FIRST_DIE and .\"props\".\"thread-id\" == 1) | .\"thread-id\"" 2>/dev/null)
+			fi
+		else
+			# All other cores have id property
+			thread_id=$(echo "$cpu_info" | jq -r ".return[] | select(.\"props\".\"id\" == \"cpu-host${HOSTCORE}\") | .\"thread-id\"" 2>/dev/null)
+		fi
+
+		if [ ! -z "$thread_id" ] && [ "$thread_id" != "null" ]; then
+			echo "Pinning host core $HOSTCORE (thread $thread_id)"
+			taskset -pc $HOSTCORE $thread_id 2>/dev/null
+		fi
+	done
+	echo "vCPU pinning complete"
 }
 
 # Unbinds PCI devices from their host drivers and binds them to vfio-pci for passthrough
@@ -950,19 +911,19 @@ setupCustomStartStopScript() {
 	if [ -e $configCustomStartStopScript ]; then
 		vi $configCustomStartStopScript
 	else
-		cat <<-'EOF' > $configCustomStartStopScript
-# Sample startStopScript
-# Look at examples at https://github.com/glemsom/dkvm/tree/master/examples
-customVMStart() {
-	echo "Starting custom start script"
-	echo "Done with custom start script"
-}
+		cat <<-'EOF' >$configCustomStartStopScript
+			# Sample startStopScript
+			# Look at examples at https://github.com/glemsom/dkvm/tree/master/examples
+			customVMStart() {
+				echo "Starting custom start script"
+				echo "Done with custom start script"
+			}
 
-customVMStop() {
-	echo "Starting custom stop script"
-	echo "Done with custom stop script"
-}
-EOF
+			customVMStop() {
+				echo "Starting custom stop script"
+				echo "Done with custom stop script"
+			}
+		EOF
 	fi
 	vi $configCustomStartStopScript
 }
