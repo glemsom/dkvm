@@ -857,7 +857,7 @@ pinVCPUs() {
 			fi
 		else
 			# All other cores have id property
-			thread_id=$(echo "$cpu_info" | jq -r ".return[] | select(.\"id\" == \"cpu-host${HOSTCORE}\") | .\"thread-id\"" 2>/dev/null)
+			thread_id=$(echo "$cpu_info" | jq -r ".return[] | select(.\"qom-path\" | endswith(\"cpu-host${HOSTCORE}\")) | .\"thread-id\"" 2>/dev/null)
 		fi
 
 		if [ ! -z "$thread_id" ] && [ "$thread_id" != "null" ]; then
