@@ -1,6 +1,9 @@
 #!/bin/bash
-# DKVM Menu
-# Glenn Sommer <glemsom+dkvm AT gmail.com>
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ FILE:  dkvmmenu.sh                                                               
+# ║ USAGE: ./dkvmmenu.sh                                                             
+# ║ DESCRIPTION: DKVM Menu - Interactive shell menu for managing DKVM virtualization
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 
 version=$(cat /media/usb/dkvm-release)
 # Change to script directory
@@ -23,6 +26,10 @@ configBIOSVARS=/usr/share/OVMF/OVMF_VARS.fd
 configReservedMemMB=$(( 1024 * 4 )) # 4GB
 
 # Sends a command to QEMU via QMP
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doQMP "command"                                                           
+# ║ DESCRIPTION: Sends a command to QEMU via QMP                                       
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doQMP() {
 	local cmd=$1
 	# Connect to QMP and send command
@@ -30,6 +37,10 @@ doQMP() {
 }
 
 # Returns the current status of the QEMU instance
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: waitForQMP                                                               
+# ║ DESCRIPTION: Waits for QEMU QMP to become ready                                 
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 waitForQMP() {
 	local max_attempts=30
 	local attempt=1
@@ -56,11 +67,19 @@ getQEMUStatus() {
 }
 
 # Returns the thread IDs of the guest vCPUs
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: getQEMUThreads                                                            
+# ║ DESCRIPTION: Returns the thread IDs of the guest vCPUs                          
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 getQEMUThreads() {
 	doQMP query-cpus-fast | tail -n1 | jq '.return[] | ."thread-id"' 2>/dev/null
 }
 
 # Displays information about USB devices being passed through
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: getUSBPassthroughDevices "file"                                           
+# ║ DESCRIPTION: Displays information about USB devices being passed through         
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 getUSBPassthroughDevices() {
 	local file=$1
 	if [ -f "$file" ]; then
@@ -74,6 +93,10 @@ getUSBPassthroughDevices() {
 }
 
 # Displays information about PCI devices being passed through
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: getPCIPassthroughDevices "file"                                           
+# ║ DESCRIPTION: Displays information about PCI devices being passed through          
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 getPCIPassthroughDevices() {
 	local file=$1
 	if [ -f "$file" ]; then
@@ -87,6 +110,10 @@ getPCIPassthroughDevices() {
 }
 
 # Main status monitoring loop
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doLogViewerLoop                                                          
+# ║ DESCRIPTION: Main status monitoring loop                                         
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doLogViewerLoop() {
 	local usbPassthroughFile=$1
 	local pciPassthroughFile=$2
@@ -153,6 +180,10 @@ err() {
 }
 
 # Scans the config directory for VM configurations and builds the menu list
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: buildMenuItemVMs                                                          
+# ║ DESCRIPTION: Scans the config directory for VM configurations                    
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 buildMenuItemVMs() {
 	shopt -s nullglob
 	menuItemsVMs=""
@@ -166,6 +197,10 @@ buildMenuItemVMs() {
 }
 
 # Copys the OVMF UEFI firmware files to the VM directory if missing
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doInstallBIOSFiles "vm_folder"                                            
+# ║ DESCRIPTION: Copies OVMF UEFI firmware files to VM directory                    
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doInstallBIOSFiles() {
 	local VMFolder="$1"
 	if [ ! -e ${VMFolder}/OVMF_CODE.fd ]; then
@@ -179,6 +214,10 @@ doInstallBIOSFiles() {
 }
 
 # Starts the software TPM (swtpm) for the VM
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doStartTPM "vm_folder"                                                   
+# ║ DESCRIPTION: Starts software TPM for the VM                                     
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doStartTPM() {
 	local vmFolder="$1"
 	# Cleanup if an old was running
@@ -190,6 +229,10 @@ doStartTPM() {
 }
 
 # Displays the current log status in a dialog box
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doShowStatus                                                              
+# ║ DESCRIPTION: Displays the current log status in a dialog box                    
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doShowStatus() {
 	dialog --backtitle "$backtitle" \
 		--title "Desktop VM" --prgbox "$0 --logviewer $configPassthroughUSBDevices $configPassthroughPCIDevices" 25 80
@@ -197,6 +240,10 @@ doShowStatus() {
 }
 
 # cleaning up potential background processes and running custom stop scripts
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: cleanup                                                                   
+# ║ DESCRIPTION: Cleans up background processes and runs custom stop scripts         
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 cleanup(){
 	if [ -e $configCustomStartStopScript ]; then
 		. $configCustomStartStopScript
@@ -211,6 +258,10 @@ cleanup(){
 }
 
 # Handles logging, clearing logs, or showing the log viewer
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doOut                                                                     
+# ║ DESCRIPTION: Handles logging, clearing logs, or showing the log viewer         
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doOut() {
 	local TAILFILE=dkvm.log
 	if [ "$1" == "clear" ]; then
@@ -228,6 +279,10 @@ doOut() {
 }
 
 # Compiles the list of menu items from available VMs and internal commands
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: buildItems                                                                
+# ║ DESCRIPTION: Compiles the list of menu items from available VMs                  
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 buildItems() {
 
 	buildMenuItemVMs
@@ -256,6 +311,10 @@ buildItems() {
 }
 
 # Displays the main interaction menu using the dialog utility
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: showMainMenu                                                               
+# ║ DESCRIPTION: Displays the main interaction menu using dialog                     
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 showMainMenu() {
 
 	buildItems
@@ -276,6 +335,10 @@ showMainMenu() {
 }
 
 # Processes the user's selection from the main menu
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doSelect                                                                  
+# ║ DESCRIPTION: Processes the user's selection from the main menu               
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doSelect() {
 	local type=$(echo $menuAnswer | cut -d "-" -f 1)
 	local item=$(echo $menuAnswer | cut -d "-" -f 2)
@@ -290,11 +353,19 @@ doSelect() {
 }
 
 # Finds the highest numbered VM configuration folder to determine the next ID
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: getLastVMConfig                                                            
+# ║ DESCRIPTION: Finds highest numbered VM configuration folder                     
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 getLastVMConfig() {
 	basename $(find $configDataFolder -maxdepth 1 -type d -name "[0-9]" | sort | tail -n 1)
 }
 
 # Creates a new VM with a default template configuration
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doAddVM                                                                   
+# ║ DESCRIPTION: Creates a new VM with default template configuration                 
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doAddVM() {
 	local template='NAME=New VM
 
@@ -336,6 +407,10 @@ MAC=DE:AD:BE:EF:66:61
 }
 
 # Opens the editor for the selected VM's configuration file
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doEditVM                                                                  
+# ║ DESCRIPTION: Opens the editor for selected VM's configuration file            
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doEditVM() {
 	if [ "$1" != "" ]; then
 		# Edit VM directly
@@ -354,6 +429,10 @@ doEditVM() {
 }
 
 # Detects CPU topology and proposes a split between Host and VM cores
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: writeOptimalCPULayout                                                      
+# ║ DESCRIPTION: Detects CPU topology and proposes split between Host and VM cores    
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 # Typically reserves Core 0 and its thread sibling for the Host
 writeOptimalCPULayout() {
 	# Pick first core, and any SMT as the host core
@@ -384,6 +463,10 @@ EOF
 }
 
 # interactive selection of USB devices for passthrough
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doUSBConfig                                                                
+# ║ DESCRIPTION: Interactive selection of USB devices for passthrough                 
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doUSBConfig() {
 	echo "USB Config" | doOut # Log entry
 	prevChoice=""
@@ -414,6 +497,10 @@ doUSBConfig() {
 }
 
 # Updates the GRUB configuration to add or remove kernel parameters
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doUpdateGrub                                                               
+# ║ DESCRIPTION: Updates GRUB configuration to add or remove kernel parameters        
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doUpdateGrub() {
 		mount -oremount,rw /media/usb/ || err "Cannot remount /media/usb"
 		local grubFile=/media/usb/boot/grub/grub.cfg
@@ -434,6 +521,10 @@ doUpdateGrub() {
 }
 
 # Updates the /etc/modprobe.d/vfio.conf file with the selected PCI IDs
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doUpdateModprobe                                                           
+# ║ DESCRIPTION: Updates /etc/modprobe.d/vfio.conf with selected PCI IDs              
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doUpdateModprobe() {
 	local ids="$1"
 	mount -oremount,rw /media/usb || err "Cannot remount /media/usb"
@@ -443,6 +534,10 @@ doUpdateModprobe() {
 }
 
 # interactive selection of PCI devices for passthrough
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doPCIConfig                                                                
+# ║ DESCRIPTION: Interactive selection of PCI devices for passthrough                 
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doPCIConfig() {
 	echo "PCI Config" | doOut # Log entry
 	prevChoice=""
@@ -489,6 +584,10 @@ doPCIConfig() {
 }
 
 # Persists changes using lbu commit (Alpine Linux specific)
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doSaveChanges                                                              
+# ║ DESCRIPTION: Persists changes using lbu commit                                    
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doSaveChanges() {
 	local changesTxt="Changes saved...
 $(lbu commit)"
@@ -496,6 +595,10 @@ $(lbu commit)"
 }
 
 # Set SSH password
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doSetSSHPassword                                                           
+# ║ DESCRIPTION: Sets SSH password                                                    
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doSetSSHPassword() {
 	local pass1
 	local pass2
@@ -520,6 +623,10 @@ doSetSSHPassword() {
 }
 
 # Handlers for internal menu commands (config, poweroff, etc.)
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: mainHandlerInternal                                                        
+# ║ DESCRIPTION: Handles internal menu commands                                      
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 mainHandlerInternal() {
 	local item="$1"
 	if [ "$1" == "INT_SHELL" ]; then
@@ -585,6 +692,10 @@ mainHandlerInternal() {
 }
 
 # Optimizes system parameters for real-time virtualization performance
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: realTimeTune                                                               
+# ║ DESCRIPTION: Optimizes system parameters for real-time virtualization             
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 realTimeTune() {
 	# Reduce vmstat collection
 	[ -e /proc/sys/vm/stat_interval ] && echo 300 >/proc/sys/vm/stat_interval 2>/dev/null
@@ -593,12 +704,20 @@ realTimeTune() {
 }
 
 # Checks if a given PCI device address corresponds to a VGA/Display controller
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: isGPU                                                                     
+# ║ DESCRIPTION: Checks if a PCI device is a VGA/Display controller                 
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 isGPU() {
 	local device=$1
 	return $(lspci -s $device | grep -q VGA)
 }
 
 # Calculates the amount of memory available for the VM, leaving some for the host
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: getVMMemMB                                                                 
+# ║ DESCRIPTION: Calculates memory available for the VM                             
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 getVMMemMB() {
 	local reservedMemMB=$1
 	local totalMemKB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
@@ -609,6 +728,10 @@ getVMMemMB() {
 }
 
 # Allocates hugepages based on the requested VM memory size
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: setupHugePages                                                             
+# ║ DESCRIPTION: Allocates hugepages based on VM memory size                         
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 setupHugePages() {
 	local VMMemMB=$1
 	local pageSizeMB=2
@@ -620,6 +743,10 @@ setupHugePages() {
 }
 
 # Main entry point for starting a VM. Constructs the QEMU command and manages the lifecycle.
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: mainHandlerVM                                                              
+# ║ DESCRIPTION: Main entry point for starting a VM                                  
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 mainHandlerVM() {
 	local VMID=$1
 	source $configCPUTopology
@@ -747,6 +874,10 @@ mainHandlerVM() {
 }
 
 # Counts the number of physical CPU dies
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: getNumDies                                                                 
+# ║ DESCRIPTION: Counts the number of physical CPU dies                              
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 getNumDies() {
 	local CPUS=$1
 	local IFS=','
@@ -779,12 +910,20 @@ getNumDies() {
 }
 
 # Helper to print associative arrays
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: printarr                                                                   
+# ║ DESCRIPTION: Helper to print associative arrays                                  
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 printarr() {
 	declare -n __p="$1"
 	for k in "${!__p[@]}"; do printf "%s=%s\n" "$k" "${__p[$k]}"; done
 }
 
 # Generates -device host-x86_64-cpu entries for each host core
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: generateVCPUDevices                                                        
+# ║ DESCRIPTION: Generates -device host-x86_64-cpu entries for each host core        
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 # Topology preserved: die-id, core-id (per die), thread-id (0/1 for siblings)
 # Note: First core is skipped as QEMU creates it automatically via -smp
 generateVCPUDevices() {
@@ -828,6 +967,10 @@ generateVCPUDevices() {
 }
 
 # Pins vCPU threads to their corresponding host cores
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: pinVCPUs                                                                   
+# ║ DESCRIPTION: Pins vCPU threads to their corresponding host cores                  
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 # Queries QEMU for thread IDs and uses taskset to pin
 pinVCPUs() {
 	local VMCPU=$1
@@ -869,6 +1012,10 @@ pinVCPUs() {
 }
 
 # Unbinds PCI devices from their host drivers and binds them to vfio-pci for passthrough
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: reloadPCIDevices                                                           
+# ║ DESCRIPTION: Unbinds PCI devices and binds them to vfio-pci                      
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 reloadPCIDevices() {
 	if [ -e $configCustomStartStopScript ]; then
 		. $configCustomStartStopScript
@@ -907,6 +1054,10 @@ reloadPCIDevices() {
 }
 
 # Creates or edits the user-defined start/stop script
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: setupCustomStartStopScript                                                
+# ║ DESCRIPTION: Creates or edits user-defined start/stop script                     
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 setupCustomStartStopScript() {
 	if [ -e $configCustomStartStopScript ]; then
 		vi $configCustomStartStopScript
@@ -929,6 +1080,10 @@ setupCustomStartStopScript() {
 }
 
 # Reads a specific key-value pair from a config file
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: getConfigItem                                                              
+# ║ DESCRIPTION: Reads a specific key-value pair from a config file                  
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 getConfigItem() {
 	local configFile="$1"
 	local item="$2"
@@ -943,6 +1098,10 @@ getConfigItem() {
 }
 
 # Configure kernel parameters (isolcpus, nohz_full, rcu_nocbs) to isolate VM cores from the host scheduler
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doKernelCPUTopology                                                        
+# ║ DESCRIPTION: Configures kernel parameters for VM core isolation                  
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doKernelCPUTopology() {
 	if [ ! -e $configCPUTopology ]; then
 		err "No cpuTopology file found"
@@ -964,6 +1123,10 @@ doKernelCPUTopology() {
 }
 
 # Masks VFIO interrupts from irqbalance to prevent them from landing on non-VM cores (or vice-versa)
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: IRQAffinity                                                                
+# ║ DESCRIPTION: Masks VFIO interrupts from irqbalance                               
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 IRQAffinity() {
 	# Replaced with irqbalance
 	source $configCPUTopology
@@ -980,6 +1143,10 @@ IRQAffinity() {
 }
 
 # Displays a warning if the DKVM data directory is not mounted
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doWarnDKVMData                                                             
+# ║ DESCRIPTION: Displays a warning if DKVM data directory is not mounted            
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doWarnDKVMData() {
 	local txt
 	txt+="DKVM relies on a mountpoint to store VM BIOS and TPM data.\n"
@@ -994,6 +1161,10 @@ doWarnDKVMData() {
 }
 
 # Dialog for selecting CPU features/flags
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doEditCPUOptions                                                           
+# ║ DESCRIPTION: Dialog for selecting CPU features/flags                              
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doEditCPUOptions() {
 	prevChoice=""
 	if [ -e $configCPUOptions ]; then
@@ -1043,6 +1214,10 @@ doEditCPUOptions() {
 }
 
 # outputs the selected CPU options as a comma-separated string for QEMU
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: doEchoCPUOptions                                                           
+# ║ DESCRIPTION: Outputs selected CPU options as comma-separated string for QEMU    
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 doEchoCPUOptions() {
 	if [ -e $configCPUOptions ]; then
 		cat $configCPUOptions | tr '\n' ',' | sed 's/,*$//g'
