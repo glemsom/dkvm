@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.2] - 2026-02-28
+
+### Added
+- Support for custom PCI USB Controller configuration.
+
+### Changed
+- Refactored vCPU affinity logic for improved performance and reliability.
+- Updated base Alpine Linux version for the build environment.
+- Enhanced example verification scripts for better clarity and usability.
+
+### Fixed
+- Resolved issues affecting CPU pinning configuration.
+
+
 ## [v0.7.1] - 2026-02-09
 
 ### Changed
