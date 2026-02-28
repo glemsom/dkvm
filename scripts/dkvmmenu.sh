@@ -533,6 +533,39 @@ doUpdateModprobe() {
 	mount -oremount,ro /media/usb || err "Cannot remount /media/usb"
 }
 
+# Returns true if a PCI address belongs to a USB controller (class 0x0c03xx)
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: isPCIUSBController <pci_address>                                           
+# ║ DESCRIPTION: Checks if a PCI device is a USB controller via sysfs class           
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
+isPCIUSBController() {
+	local pci_class
+	pci_class=$(cat "/sys/bus/pci/devices/0000:$1/class" 2>/dev/null)
+	[[ "$pci_class" == 0x0c03* ]]
+}
+
+# Lists non-root-hub USB devices attached to a given PCI USB controller via sysfs
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: getUSBDevicesForPCI <pci_address>                                          
+# ║ DESCRIPTION: Maps PCI addr → USB bus numbers → attached device names              
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
+getUSBDevicesForPCI() {
+	local pci_addr="0000:$1"
+	local devs=""
+	for usbdir in /sys/bus/pci/devices/$pci_addr/usb*; do
+		[ -d "$usbdir" ] || continue
+		local busnum
+		busnum=$(cat "$usbdir/busnum" 2>/dev/null)
+		[ -z "$busnum" ] && continue
+		while IFS= read -r dev; do
+			devs+="  $dev"$'\n'
+		done < <(lsusb 2>/dev/null | \
+			awk -v b=$(printf '%03d' "$busnum") \
+				'$2 == b && !/root hub/ { print $6, substr($0, index($0,$7)) }')
+	done
+	echo -n "$devs"
+}
+
 # interactive selection of PCI devices for passthrough
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doPCIConfig                                                                
@@ -562,6 +595,32 @@ doPCIConfig() {
 
 	choice=$(dialog --backtitle "$backtitle" --separate-output --checklist "Select PCI devices for passthrough:" 20 70 10 "${options[@]}" 2>&1 >/dev/tty) # Show dialog
 	[ $? -ne 0 ] && return # Return if canceled
+
+	# Collect all USB controllers and their attached devices into one warning
+	local all_usb_warn=""
+	while read -r selectedPCI; do
+		[ -z "$selectedPCI" ] && continue
+		if isPCIUSBController "$selectedPCI"; then
+			local usb_devs
+			usb_devs=$(getUSBDevicesForPCI "$selectedPCI")
+			all_usb_warn+="$selectedPCI:\n"
+			if [ -n "$usb_devs" ]; then
+				all_usb_warn+="${usb_devs}\n"
+			else
+				all_usb_warn+="  (no devices currently attached)\n"
+			fi
+		fi
+	done <<< "$choice"
+
+	# Show a single consolidated warning if any USB controllers were selected
+	if [ -n "$all_usb_warn" ]; then
+		local msg="The following USB controller(s) and their attached devices will be unavailable to the host:\n\n${all_usb_warn}\nContinue with passthrough?"
+		dialog --backtitle "$backtitle" \
+			--title "USB Controller Warning" \
+			--yesno "$msg" 20 72
+		[ $? -ne 0 ] && return # User declined — abort without saving
+	fi
+
 
 	echo "$choice" > $configPassthroughPCIDevices # Save selection
 
