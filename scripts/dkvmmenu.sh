@@ -1205,6 +1205,9 @@ doEditCPUOptions() {
 			hv-time )             desc="Enables two Hyper-V-specific clocksources" ;;
 			hv-vapic )            desc="Provides VP Assist page MSR" ;;
 			hv-vpindex )          desc="Provides HV_X64_MSR_VP_INDEX MSR" ;;
+			hv-no-nonarch-coresharing ) desc="Disable non-architectural core sharing" ;;
+			hv-tlbflush )         desc="Enable TLB flush on VM exit" ;;
+			hv-tlbflush-ext )     desc="Enable extended TLB flush" ;;
 			topoext=on )          desc="Enable topology extension" ;;
 			l3-cache=on )         desc="Enable L3 layout cache" ;;
 			x2apic=on )           desc="Enable x2APIC mode" ;;
