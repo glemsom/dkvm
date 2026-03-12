@@ -25,7 +25,6 @@ configBIOSVARS=/usr/share/OVMF/OVMF_VARS.fd
 
 configReservedMemMB=$(( 1024 * 4 )) # 4GB
 
-# Sends a command to QEMU via QMP
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doQMP "command"                                                           
 # ║ DESCRIPTION: Sends a command to QEMU via QMP                                       
@@ -36,7 +35,6 @@ doQMP() {
 	echo -e '{ "execute": "qmp_capabilities" }\n{ "execute": "'$cmd'" }' | timeout 2 nc localhost 4444 2>/dev/null
 }
 
-# Returns the current status of the QEMU instance
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: waitForQMP                                                               
 # ║ DESCRIPTION: Waits for QEMU QMP to become ready                                 
@@ -66,7 +64,6 @@ getQEMUStatus() {
 	fi
 }
 
-# Returns the thread IDs of the guest vCPUs
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: getQEMUThreads                                                            
 # ║ DESCRIPTION: Returns the thread IDs of the guest vCPUs                          
@@ -75,7 +72,6 @@ getQEMUThreads() {
 	doQMP query-cpus-fast | tail -n1 | jq '.return[] | ."thread-id"' 2>/dev/null
 }
 
-# Displays information about USB devices being passed through
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: getUSBPassthroughDevices "file"                                           
 # ║ DESCRIPTION: Displays information about USB devices being passed through         
@@ -92,7 +88,6 @@ getUSBPassthroughDevices() {
 	fi
 }
 
-# Displays information about PCI devices being passed through
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: getPCIPassthroughDevices "file"                                           
 # ║ DESCRIPTION: Displays information about PCI devices being passed through          
@@ -109,7 +104,6 @@ getPCIPassthroughDevices() {
 	fi
 }
 
-# Main status monitoring loop
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doLogViewerLoop                                                          
 # ║ DESCRIPTION: Main status monitoring loop                                         
@@ -179,7 +173,6 @@ err() {
 	exit 1
 }
 
-# Scans the config directory for VM configurations and builds the menu list
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: buildMenuItemVMs                                                          
 # ║ DESCRIPTION: Scans the config directory for VM configurations                    
@@ -196,7 +189,6 @@ buildMenuItemVMs() {
 	shopt -u nullglob
 }
 
-# Copys the OVMF UEFI firmware files to the VM directory if missing
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doInstallBIOSFiles "vm_folder"                                            
 # ║ DESCRIPTION: Copies OVMF UEFI firmware files to VM directory                    
@@ -213,7 +205,6 @@ doInstallBIOSFiles() {
 	fi
 }
 
-# Starts the software TPM (swtpm) for the VM
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doStartTPM "vm_folder"                                                   
 # ║ DESCRIPTION: Starts software TPM for the VM                                     
@@ -228,7 +219,6 @@ doStartTPM() {
 	/usr/bin/swtpm socket --tpmstate dir=${vmFolder}/tpm,mode=0600 --ctrl type=unixio,path=${vmFolder}/tpm.sock,mode=0600 --log file=${vmFolder}/tpm.log --terminate --tpm2 &
 }
 
-# Displays the current log status in a dialog box
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doShowStatus                                                              
 # ║ DESCRIPTION: Displays the current log status in a dialog box                    
@@ -239,7 +229,6 @@ doShowStatus() {
 	clear
 }
 
-# cleaning up potential background processes and running custom stop scripts
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: cleanup                                                                   
 # ║ DESCRIPTION: Cleans up background processes and runs custom stop scripts         
@@ -257,7 +246,6 @@ cleanup(){
 	fi
 }
 
-# Handles logging, clearing logs, or showing the log viewer
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doOut                                                                     
 # ║ DESCRIPTION: Handles logging, clearing logs, or showing the log viewer         
@@ -278,7 +266,6 @@ doOut() {
 	fi
 }
 
-# Compiles the list of menu items from available VMs and internal commands
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: buildItems                                                                
 # ║ DESCRIPTION: Compiles the list of menu items from available VMs                  
@@ -310,7 +297,6 @@ buildItems() {
 	menuItemsType+=("INT_SHELL")
 }
 
-# Displays the main interaction menu using the dialog utility
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: showMainMenu                                                               
 # ║ DESCRIPTION: Displays the main interaction menu using dialog                     
@@ -334,7 +320,6 @@ showMainMenu() {
 	fi
 }
 
-# Processes the user's selection from the main menu
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doSelect                                                                  
 # ║ DESCRIPTION: Processes the user's selection from the main menu               
@@ -352,7 +337,6 @@ doSelect() {
 	fi
 }
 
-# Finds the highest numbered VM configuration folder to determine the next ID
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: getLastVMConfig                                                            
 # ║ DESCRIPTION: Finds highest numbered VM configuration folder                     
@@ -361,7 +345,6 @@ getLastVMConfig() {
 	basename $(find $configDataFolder -maxdepth 1 -type d -name "[0-9]" | sort | tail -n 1)
 }
 
-# Creates a new VM with a default template configuration
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doAddVM                                                                   
 # ║ DESCRIPTION: Creates a new VM with default template configuration                 
@@ -406,7 +389,6 @@ MAC=DE:AD:BE:EF:66:61
 	doEditVM "$configDataFolder/${nextVMIndex}/vm_config"
 }
 
-# Opens the editor for the selected VM's configuration file
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doEditVM                                                                  
 # ║ DESCRIPTION: Opens the editor for selected VM's configuration file            
@@ -428,7 +410,6 @@ doEditVM() {
 	fi
 }
 
-# Detects CPU topology and proposes a split between Host and VM cores
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: writeOptimalCPULayout                                                      
 # ║ DESCRIPTION: Detects CPU topology and proposes split between Host and VM cores    
@@ -462,7 +443,6 @@ EOF
 	fi
 }
 
-# interactive selection of USB devices for passthrough
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doUSBConfig                                                                
 # ║ DESCRIPTION: Interactive selection of USB devices for passthrough                 
@@ -496,7 +476,6 @@ doUSBConfig() {
 	echo "$choice" > $configPassthroughUSBDevices # Save selection
 }
 
-# Updates the GRUB configuration to add or remove kernel parameters
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doUpdateGrub                                                               
 # ║ DESCRIPTION: Updates GRUB configuration to add or remove kernel parameters        
@@ -520,7 +499,6 @@ doUpdateGrub() {
 		dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 0 0
 }
 
-# Updates the /etc/modprobe.d/vfio.conf file with the selected PCI IDs
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doUpdateModprobe                                                           
 # ║ DESCRIPTION: Updates /etc/modprobe.d/vfio.conf with selected PCI IDs              
@@ -533,7 +511,6 @@ doUpdateModprobe() {
 	mount -oremount,ro /media/usb || err "Cannot remount /media/usb"
 }
 
-# Returns true if a PCI address belongs to a USB controller (class 0x0c03xx)
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: isPCIUSBController <pci_address>                                           
 # ║ DESCRIPTION: Checks if a PCI device is a USB controller via sysfs class           
@@ -544,7 +521,6 @@ isPCIUSBController() {
 	[[ "$pci_class" == 0x0c03* ]]
 }
 
-# Lists non-root-hub USB devices attached to a given PCI USB controller via sysfs
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: getUSBDevicesForPCI <pci_address>                                          
 # ║ DESCRIPTION: Maps PCI addr → USB bus numbers → attached device names              
@@ -566,7 +542,6 @@ getUSBDevicesForPCI() {
 	echo -n "$devs"
 }
 
-# interactive selection of PCI devices for passthrough
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doPCIConfig                                                                
 # ║ DESCRIPTION: Interactive selection of PCI devices for passthrough                 
@@ -642,7 +617,6 @@ doPCIConfig() {
 	doSaveChanges # Save all changes
 }
 
-# Persists changes using lbu commit (Alpine Linux specific)
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doSaveChanges                                                              
 # ║ DESCRIPTION: Persists changes using lbu commit                                    
@@ -653,7 +627,6 @@ $(lbu commit)"
 	dialog --backtitle "$backtitle" --msgbox "$changesTxt" 0 0
 }
 
-# Set SSH password
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doSetSSHPassword                                                           
 # ║ DESCRIPTION: Sets SSH password                                                    
@@ -681,7 +654,6 @@ doSetSSHPassword() {
 	fi
 }
 
-# Handlers for internal menu commands (config, poweroff, etc.)
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: mainHandlerInternal                                                        
 # ║ DESCRIPTION: Handles internal menu commands                                      
@@ -750,7 +722,6 @@ mainHandlerInternal() {
 	fi
 }
 
-# Optimizes system parameters for real-time virtualization performance
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: realTimeTune                                                               
 # ║ DESCRIPTION: Optimizes system parameters for real-time virtualization             
@@ -762,7 +733,6 @@ realTimeTune() {
 	[ -e proc/sys/kernel/watchdog ] && echo 0 >/proc/sys/kernel/watchdog 2>/dev/null
 }
 
-# Checks if a given PCI device address corresponds to a VGA/Display controller
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: isGPU                                                                     
 # ║ DESCRIPTION: Checks if a PCI device is a VGA/Display controller                 
@@ -772,7 +742,6 @@ isGPU() {
 	return $(lspci -s $device | grep -q VGA)
 }
 
-# Calculates the amount of memory available for the VM, leaving some for the host
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: getVMMemMB                                                                 
 # ║ DESCRIPTION: Calculates memory available for the VM                             
@@ -786,7 +755,6 @@ getVMMemMB() {
 	echo $((${VMMemMB%.*} / 2 * 2))
 }
 
-# Allocates hugepages based on the requested VM memory size
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: setupHugePages                                                             
 # ║ DESCRIPTION: Allocates hugepages based on VM memory size                         
@@ -801,7 +769,6 @@ setupHugePages() {
 	echo $(($required + 8)) >/proc/sys/vm/nr_hugepages
 }
 
-# Main entry point for starting a VM. Constructs the QEMU command and manages the lifecycle.
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: mainHandlerVM                                                              
 # ║ DESCRIPTION: Main entry point for starting a VM                                  
@@ -932,7 +899,6 @@ mainHandlerVM() {
 	doOut showlog
 }
 
-# Counts the number of physical CPU dies
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: getNumDies                                                                 
 # ║ DESCRIPTION: Counts the number of physical CPU dies                              
@@ -968,7 +934,6 @@ getNumDies() {
 	echo "${#DIE_IDS[@]}"
 }
 
-# Helper to print associative arrays
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: printarr                                                                   
 # ║ DESCRIPTION: Helper to print associative arrays                                  
@@ -978,13 +943,12 @@ printarr() {
 	for k in "${!__p[@]}"; do printf "%s=%s\n" "$k" "${__p[$k]}"; done
 }
 
-# Generates -device host-x86_64-cpu entries for each host core
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: generateVCPUDevices                                                        
 # ║ DESCRIPTION: Generates -device host-x86_64-cpu entries for each host core        
+# ║              Topology preserved: die-id, core-id (per die), thread-id (0/1 for siblings)
+# ║              Note: First core is skipped as QEMU creates it automatically via -smp
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-# Topology preserved: die-id, core-id (per die), thread-id (0/1 for siblings)
-# Note: First core is skipped as QEMU creates it automatically via -smp
 generateVCPUDevices() {
 	local VMCPU=$1
 	local -A PROCESSED_SIBLING_LIST
@@ -1025,12 +989,10 @@ generateVCPUDevices() {
 	echo "$vcpu_devices"
 }
 
-# Pins vCPU threads to their corresponding host cores
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: pinVCPUs                                                                   
 # ║ DESCRIPTION: Pins vCPU threads to their corresponding host cores                  
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-# Queries QEMU for thread IDs and uses taskset to pin
 pinVCPUs() {
 	local VMCPU=$1
 	echo "Pinning vCPUs for $VMCPU"
@@ -1070,7 +1032,6 @@ pinVCPUs() {
 	echo "vCPU pinning complete"
 }
 
-# Unbinds PCI devices from their host drivers and binds them to vfio-pci for passthrough
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: reloadPCIDevices                                                           
 # ║ DESCRIPTION: Unbinds PCI devices and binds them to vfio-pci                      
@@ -1112,7 +1073,6 @@ reloadPCIDevices() {
 	fi
 }
 
-# Creates or edits the user-defined start/stop script
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: setupCustomStartStopScript                                                
 # ║ DESCRIPTION: Creates or edits user-defined start/stop script                     
@@ -1138,7 +1098,6 @@ setupCustomStartStopScript() {
 	vi $configCustomStartStopScript
 }
 
-# Reads a specific key-value pair from a config file
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: getConfigItem                                                              
 # ║ DESCRIPTION: Reads a specific key-value pair from a config file                  
@@ -1156,7 +1115,6 @@ getConfigItem() {
 	echo "$value"
 }
 
-# Configure kernel parameters (isolcpus, nohz_full, rcu_nocbs) to isolate VM cores from the host scheduler
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doKernelCPUTopology                                                        
 # ║ DESCRIPTION: Configures kernel parameters for VM core isolation                  
@@ -1181,7 +1139,6 @@ doKernelCPUTopology() {
 	dialog --title "Restart required" --msgbox "You need to restart your computer for the kernel settings to take effect." 0 0
 }
 
-# Masks VFIO interrupts from irqbalance to prevent them from landing on non-VM cores (or vice-versa)
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: IRQAffinity                                                                
 # ║ DESCRIPTION: Masks VFIO interrupts from irqbalance                               
@@ -1201,7 +1158,6 @@ IRQAffinity() {
 	/usr/sbin/irqbalance --oneshot $IRQLine | doOut
 }
 
-# Displays a warning if the DKVM data directory is not mounted
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doWarnDKVMData                                                             
 # ║ DESCRIPTION: Displays a warning if DKVM data directory is not mounted            
@@ -1219,7 +1175,6 @@ doWarnDKVMData() {
 	exit 1
 }
 
-# Dialog for selecting CPU features/flags
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doEditCPUOptions                                                           
 # ║ DESCRIPTION: Dialog for selecting CPU features/flags                              
@@ -1272,7 +1227,6 @@ doEditCPUOptions() {
 	echo "$choice" > $configCPUOptions
 }
 
-# outputs the selected CPU options as a comma-separated string for QEMU
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ USAGE: doEchoCPUOptions                                                           
 # ║ DESCRIPTION: Outputs selected CPU options as comma-separated string for QEMU    
