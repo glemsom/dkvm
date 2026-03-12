@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.3] - 2026-03-12
+
+### Added
+- Added support for additional Hyper-V enlightened flags to improve Windows guest performance.
+
+### Changed
+- Miscellaneous comment and documentation cleanup in scripts.
+
 ## [v0.7.2] - 2026-02-28
 
 ### Added
