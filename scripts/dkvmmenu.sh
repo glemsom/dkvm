@@ -1189,7 +1189,8 @@ doEditCPUOptions() {
 	local options=()
 	for opt in "kvm=off" "hv-vendor-id=dkvm" "hv-frequencies" "hv-relaxed" \
 						"hv-reset" "hv-runtime" "hv-spinlocks=0x1fff" "hv-stimer" "hv-synic" \
-						"hv-time" "hv-vapic" "hv-vpindex" "topoext=on" "l3-cache=on" "x2apic=on" \
+						"hv-time" "hv-vapic" "hv-vpindex" "hv-no-nonarch-coresharing" "hv-tlbflush" \
+						"hv-tlbflush-ext" "topoext=on" "l3-cache=on" "x2apic=on" \
 						"migratable=off" "invtsc=on"; do
 		desc=" "
 		case $opt in
