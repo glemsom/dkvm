@@ -800,11 +800,17 @@ mainHandlerVM() {
 	OPTS="-name \"$VMNAME\",debug-threads=on -nodefaults -no-user-config -accel accel=kvm,kernel-irqchip=split -machine q35,mem-merge=off,vmport=off,dump-guest-core=off -qmp tcp:localhost:4444,server,nowait "
 
 	# Memory and Clock settings (Prealloc memory, lock memory to RAM, Localtime RTC)
-	#OPTS+=" -mem-prealloc -overcommit mem-lock=on,cpu-pm=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
-	OPTS+=" -mem-prealloc -overcommit mem-lock=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
+	# cpu-pm=on: allow guest to manage host CPU power states directly (no VM exit on HLT), safe because cores are dedicated/pinned
+	OPTS+=" -mem-prealloc -overcommit mem-lock=on,cpu-pm=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
 
 	# Networking (Sourced from bridge helper)
-	OPTS+=" -netdev bridge,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=$VMMAC"
+	# vhost=on: offloads virtqueue processing into the kernel (eliminates userspace context switches)
+	# mq=on + vectors: enable multiqueue so each vCPU can process network traffic in parallel
+	local NUM_VCPUS
+	NUM_VCPUS=$(echo "${VMCPU}" | tr ',' '\n' | grep -c .)
+	local VIRTIO_NET_VECTORS=$(( NUM_VCPUS * 2 + 2 ))
+	OPTS+=" -netdev bridge,id=hostnet0,vhost=on"
+	OPTS+=" -device virtio-net-pci,netdev=hostnet0,id=net0,mac=${VMMAC},mq=on,vectors=${VIRTIO_NET_VECTORS}"
 
 	# Hugepages for better memory performance
 	OPTS+=" -object memory-backend-memfd,id=mem,size=${VMMEMMB}M,hugetlb=on,hugetlbsize=2M,prealloc=on"
@@ -1024,9 +1030,11 @@ pinVCPUs() {
 			thread_id=$(echo "$cpu_info" | jq -r ".return[] | select(.\"qom-path\" | endswith(\"cpu-host${HOSTCORE}\")) | .\"thread-id\"" 2>/dev/null)
 		fi
 
-		if [ ! -z "$thread_id" ] && [ "$thread_id" != "null" ]; then
-			echo "Pinning host core $HOSTCORE (thread $thread_id)"
-			taskset -pc $HOSTCORE $thread_id 2>/dev/null
+		if [[ -n "${thread_id}" ]] && [[ "${thread_id}" != "null" ]]; then
+			echo "Pinning host core ${HOSTCORE} (thread ${thread_id})"
+			taskset --pid --cpu-list "${HOSTCORE}" "${thread_id}" 2>/dev/null
+			# Promote vCPU thread to SCHED_FIFO to reduce scheduling jitter on pinned cores
+			chrt --fifo --pid 1 "${thread_id}" 2>/dev/null
 		fi
 	done
 	echo "vCPU pinning complete"
@@ -1190,7 +1198,7 @@ doEditCPUOptions() {
 	for opt in "kvm=off" "hv-vendor-id=dkvm" "hv-frequencies" "hv-relaxed" \
 						"hv-reset" "hv-runtime" "hv-spinlocks=0x1fff" "hv-stimer" "hv-synic" \
 						"hv-time" "hv-vapic" "hv-vpindex" "hv-no-nonarch-coresharing" "hv-tlbflush" \
-						"hv-tlbflush-ext" "topoext=on" "l3-cache=on" "x2apic=on" \
+						"hv-tlbflush-ext" "hv-ipi" "hv-avic" "topoext=on" "l3-cache=on" "x2apic=on" \
 						"migratable=off" "invtsc=on"; do
 		desc=" "
 		case $opt in
@@ -1209,6 +1217,8 @@ doEditCPUOptions() {
 			hv-no-nonarch-coresharing ) desc="Disable non-architectural core sharing" ;;
 			hv-tlbflush )         desc="Enable TLB flush on VM exit" ;;
 			hv-tlbflush-ext )     desc="Enable extended TLB flush" ;;
+			hv-ipi )              desc="Paravirtualized IPIs (faster inter-vCPU signalling)" ;;
+			hv-avic )             desc="AMD: reduce VM exits for APIC access (AMD AVIC/APICV)" ;;
 			topoext=on )          desc="Enable topology extension" ;;
 			l3-cache=on )         desc="Enable L3 layout cache" ;;
 			x2apic=on )           desc="Enable x2APIC mode" ;;
