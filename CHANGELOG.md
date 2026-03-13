@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.4] - 2026-03-13
+
+### Changed
+- Enabled `cpu-pm=on` to allow guest to manage host CPU power states directly, eliminating VM exits on HLT instructions (safe with dedicated pinned cores).
+- vCPU threads are now promoted to `SCHED_FIFO` real-time scheduling (priority 1) after pinning to reduce scheduling jitter.
+- Enabled `vhost=on` on the virtio-net backend to offload virtqueue processing into the kernel, reducing context switch overhead.
+- Enabled virtio-net multiqueue (`mq=on`) with queue count matched to vCPU count for parallel per-vCPU network processing.
+
+### Added
+- Added `hv-ipi` (paravirtualized IPIs) and `hv-avic` (AMD APIC virtualisation) as selectable options in the CPU options dialog.
+
 ## [v0.7.3] - 2026-03-12
 
 ### Added
