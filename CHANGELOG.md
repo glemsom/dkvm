@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.6] - 2026-03-14
+
+### Added
+- Added `vhost_net` kernel module to the boot configuration to support vhost networking.
+
 ## [v0.7.5] - 2026-03-14
 
 ### Changed
