@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.5] - 2026-03-14
+
+### Changed
+- Switched from `-netdev bridge` to `-netdev tap` with bridge helper to support `vhost=on`, as the `bridge` backend does not support it.
+
+### Added
+- Note to `verify_pinning.sh` regarding the need to disable `cpu-pm` for the script to work correctly.
+
 ## [v0.7.4] - 2026-03-13
 
 ### Changed
