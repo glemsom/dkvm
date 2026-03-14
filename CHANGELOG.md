@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.7] - 2026-03-14
+
+### Changed
+- Optimized networking by matching the number of queues and vectors to the number of host cores instead of vCPUs. This ensures network processing (vhost threads) stays on host cores to minimize guest latency.
+
+### Added
+- Added `vhost` kernel module to the boot configuration.
+
 ## [v0.7.6] - 2026-03-14
 
 ### Added
