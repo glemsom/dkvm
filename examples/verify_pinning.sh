@@ -9,6 +9,7 @@
 # ║              Correlates Guest CPU IDs to Guest Physical Cores,
 # ║              fetches Host CPU topology, generates CPU load on each
 # ║              guest vCPU, and verifies core/thread siblings are correctly placed.
+# ║              NOTE: You must disable cpu-pm flag for this to work!
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
 #
 # Requirements:
