@@ -806,11 +806,11 @@ mainHandlerVM() {
 	# Networking (via tap + qemu-bridge-helper)
 	# vhost=on: offloads virtqueue processing into the kernel (eliminates userspace context switches)
 	#           Note: vhost is only supported on 'tap' netdev, not 'bridge'
-	# mq=on + vectors: enable multiqueue so each vCPU can process network traffic in parallel
-	local NUM_VCPUS
-	NUM_VCPUS=$(echo "${VMCPU}" | tr ',' '\n' | grep -c .)
-	local VIRTIO_NET_VECTORS=$(( NUM_VCPUS * 2 + 2 ))
-	OPTS+=" -netdev tap,id=hostnet0,br=br0,helper=/usr/lib/qemu/qemu-bridge-helper,vhost=on"
+	# mq=on + vectors: enable multiqueue so each host core can process network traffic in parallel
+	local NUM_NET_QUEUES
+	NUM_NET_QUEUES=$(echo "${HOSTCPU}" | tr ',' '\n' | grep -c .)
+	local VIRTIO_NET_VECTORS=$(( NUM_NET_QUEUES * 2 + 2 ))
+	OPTS+=" -netdev tap,id=hostnet0,br=br0,helper=/usr/lib/qemu/qemu-bridge-helper,vhost=on,queues=${NUM_NET_QUEUES}"
 	OPTS+=" -device virtio-net-pci,netdev=hostnet0,id=net0,mac=${VMMAC},mq=on,vectors=${VIRTIO_NET_VECTORS}"
 
 	# Hugepages for better memory performance
