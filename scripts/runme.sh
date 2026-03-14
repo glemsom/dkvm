@@ -135,8 +135,6 @@ kvm_intel
 kvm_amd
 vfio_iommu_type1
 tun
-vhost
-vhost_net
 vfio-pci
 vfio" >>/etc/modules
 

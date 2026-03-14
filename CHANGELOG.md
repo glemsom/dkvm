@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.8] - 2026-03-14
+
+### Changed
+- Reverted networking from `tap` back to `bridge` netdev. This simplifies the configuration by removing the need for `vhost` and `vhost_net` kernel modules and complex multiqueue/vector calculations, improving compatibility across different bridge setups.
+
 ## [v0.7.7] - 2026-03-14
 
 ### Changed
