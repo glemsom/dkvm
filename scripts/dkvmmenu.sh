@@ -803,13 +803,14 @@ mainHandlerVM() {
 	# cpu-pm=on: allow guest to manage host CPU power states directly (no VM exit on HLT), safe because cores are dedicated/pinned
 	OPTS+=" -mem-prealloc -overcommit mem-lock=on,cpu-pm=on -rtc base=localtime,clock=vm,driftfix=slew -serial none -parallel none "
 
-	# Networking (Sourced from bridge helper)
+	# Networking (via tap + qemu-bridge-helper)
 	# vhost=on: offloads virtqueue processing into the kernel (eliminates userspace context switches)
+	#           Note: vhost is only supported on 'tap' netdev, not 'bridge'
 	# mq=on + vectors: enable multiqueue so each vCPU can process network traffic in parallel
 	local NUM_VCPUS
 	NUM_VCPUS=$(echo "${VMCPU}" | tr ',' '\n' | grep -c .)
 	local VIRTIO_NET_VECTORS=$(( NUM_VCPUS * 2 + 2 ))
-	OPTS+=" -netdev bridge,id=hostnet0,vhost=on"
+	OPTS+=" -netdev tap,id=hostnet0,br=br0,helper=/usr/lib/qemu/qemu-bridge-helper,vhost=on"
 	OPTS+=" -device virtio-net-pci,netdev=hostnet0,id=net0,mac=${VMMAC},mq=on,vectors=${VIRTIO_NET_VECTORS}"
 
 	# Hugepages for better memory performance
