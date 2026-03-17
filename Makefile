@@ -12,7 +12,7 @@
 # ║ Disk image size in megabytes
 # ║ Alpine Linux major and minor versions
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-VERSION ?= v0.7.8
+VERSION ?= v0.7.9
 DISK_SIZE ?= 2048
 ALPINE_VERSION ?= 3.23
 ALPINE_MINOR ?= 3

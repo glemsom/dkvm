@@ -5,6 +5,14 @@ All notable changes to DKVM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.7.9] - 2026-03-17
+
+### Added
+- Standard DKVM shell comments to the `getQEMUStatus()` function in `dkvmmenu.sh`.
+
+### Changed
+- Improved `getQEMUStatus()` robustness by adding a retry mechanism (3 attempts with 2-second intervals) to handle transient QMP connection issues.
+
 ## [Unreleased]
 
 ## [v0.7.8] - 2026-03-14
