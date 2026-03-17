@@ -55,13 +55,23 @@ waitForQMP() {
 	err "QMP failed to become ready after $max_attempts seconds"
 }
 
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ USAGE: getQEMUStatus                                                             
+# ║ DESCRIPTION: Returns the current status of QEMU. Retries 3 times on failure.      
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
 getQEMUStatus() {
-	local resp=$(doQMP query-status)
-	if [ -z "$resp" ]; then
-		echo "disconnected" # Connection failed
-	else
-		echo "$resp" | grep return | tail -n 1 | jq -r .return.status 2>/dev/null
-	fi
+	local max_attempts=3
+	local attempt=1
+	while [ $attempt -le $max_attempts ]; do
+		local resp=$(doQMP query-status)
+		if [ -n "$resp" ]; then
+			echo "$resp" | grep return | tail -n 1 | jq -r .return.status 2>/dev/null
+			return 0
+		fi
+		[ $attempt -lt $max_attempts ] && sleep 2
+		let attempt++
+	done
+	echo "disconnected" # All attempts failed
 }
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
