@@ -15,7 +15,7 @@
 VERSION ?= v0.7.9
 DISK_SIZE ?= 2048
 ALPINE_VERSION ?= 3.23
-ALPINE_MINOR ?= 3
+ALPINE_MINOR ?= 4
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ DERIVED VARIABLES
