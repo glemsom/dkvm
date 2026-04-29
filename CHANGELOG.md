@@ -5,6 +5,13 @@ All notable changes to DKVM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [v0.7.11] - 2026-04-29
+
+### Changed
+- Improved and fixed comments in Makefile for better clarity.
+
 ## [v0.7.9] - 2026-03-17
 
 ### Added
@@ -12,8 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Improved `getQEMUStatus()` robustness by adding a retry mechanism (3 attempts with 2-second intervals) to handle transient QMP connection issues.
-
-## [Unreleased]
 
 ## [v0.7.8] - 2026-03-14
 
@@ -72,17 +77,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Resolved issues affecting CPU pinning configuration.
-
-
-## [v0.7.1] - 2026-04-29
-
-### Changed
-- Version bump to v0.7.1.
-
-## [v0.7.1] - 2026-02-09
-
-### Changed
-- Improved and fixed comments in Makefile for better clarity.
 
 ## [v0.7.0] - 2026-02-09
 
