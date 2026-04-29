@@ -18,6 +18,14 @@ ALPINE_VERSION ?= 3.23
 ALPINE_MINOR ?= 4
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ DKVM Manager Configuration
+# ║ Pinned tag for reproducible builds
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
+DKVM_MANAGER_VERSION ?= v0.1.0
+DKVM_MANAGER_URL ?= https://github.com/glemsom/dkvmmanager/releases/download/$(DKVM_MANAGER_VERSION)/dkvmmanager_0.1.0_linux_amd64.tar.gz
+DKVM_MANAGER_BIN := scripts/dkvmmanager
+
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ DERIVED VARIABLES
 # ║ Alpine ISO filename, UEFI firmware files, output disk image filename
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
@@ -31,7 +39,7 @@ QEMU := /usr/bin/qemu-system-x86_64
 # ║ DEPENDENCIES
 # ║ Required tools that must be installed on the build system
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-DEPS := wget expect mkisofs dd xorriso zip $(QEMU) losetup mount sudo
+DEPS := wget expect mkisofs dd xorriso zip $(QEMU) losetup mount sudo tar
 
 .PHONY: all build verify-deps cleanup run help
 
@@ -60,6 +68,7 @@ help:
 	@echo "  DISK_SIZE=$(DISK_SIZE)"
 	@echo "  ALPINE_VERSION=$(ALPINE_VERSION)"
 	@echo "  ALPINE_MINOR=$(ALPINE_MINOR)"
+	@echo "  DKVM_MANAGER_VERSION=$(DKVM_MANAGER_VERSION)"
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ TARGET: verify-deps
@@ -116,10 +125,23 @@ $(OVMF_VARS):
 	exit 1
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
-# ║ TARGET: scripts.iso
-# ║ Create ISO image containing DKVM setup scripts for automated installation
+# ║ TARGET: $(DKVM_MANAGER_BIN)
+# ║ Download pre-built DKVM Manager release binary for the pinned version
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-scripts.iso: scripts/runme.sh scripts/dkvmmenu.sh scripts/answer.txt
+$(DKVM_MANAGER_BIN):
+	@echo "Downloading DKVM Manager $(DKVM_MANAGER_VERSION)..."
+	@mkdir -p scripts
+	wget -O /tmp/dkvmmanager.tar.gz $(DKVM_MANAGER_URL)
+	tar xzf /tmp/dkvmmanager.tar.gz --strip-components=1 -C scripts/ dkvmmanager_0.1.0_linux_amd64/dkvmmanager
+	rm -f /tmp/dkvmmanager.tar.gz
+	chmod +x $(DKVM_MANAGER_BIN)
+	@echo "DKVM Manager $(DKVM_MANAGER_VERSION) downloaded to $(DKVM_MANAGER_BIN)"
+
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: scripts.iso
+# ║ Create ISO image containing DKVM setup scripts and DKVM Manager binary
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
+scripts.iso: scripts/runme.sh scripts/dkvmmenu.sh scripts/answer.txt $(DKVM_MANAGER_BIN)
 	@echo "Creating scripts ISO..."
 	mkisofs -o scripts.iso scripts
 
@@ -215,6 +237,7 @@ cleanup:
 	@sudo rm -rf tmp_dkvm alpine_extract
 	@echo "Removing intermediate files..."
 	@rm -f scripts.iso $(OVMF_CODE) $(OVMF_VARS)
+	@rm -f $(DKVM_MANAGER_BIN)
 	@echo "Removing disk images..."
 	@rm -f dkvm-*.img
 	@echo "Removing Alpine ISO..."

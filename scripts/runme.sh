@@ -172,6 +172,22 @@ cp /etc/inittab /etc/inittab.bak
 cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh#' >/etc/inittab
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ Install DKVM Manager and configure TTY2
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
+if [ -f /media/cdrom/dkvmmanager ]; then
+	echo "Installing DKVM Manager..."
+	cp /media/cdrom/dkvmmanager /usr/bin/dkvmmanager
+	chmod +x /usr/bin/dkvmmanager
+	lbu include /usr/bin/dkvmmanager
+	echo "Configuring DKVM Manager on tty2..."
+	echo 'tty2::respawn:/usr/bin/dkvmmanager' >>/etc/inittab
+	lbu include /etc/inittab
+	echo "DKVM Manager installed and configured on tty2."
+else
+	echo "WARNING: DKVM Manager binary not found on CD-ROM, skipping."
+fi
+
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ Finalize installation with APK cache and local backup
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
 setup-apkcache /media/usb/cache
