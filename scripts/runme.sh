@@ -180,11 +180,15 @@ if [ -f /media/cdrom/dkvmmanager ]; then
 	chmod +x /usr/bin/dkvmmanager
 	lbu include /usr/bin/dkvmmanager
 	echo "Configuring DKVM Manager on tty2..."
-	echo 'tty2::respawn:/usr/bin/dkvmmanager' >>/etc/inittab
+	if grep -q '^tty2::' /etc/inittab; then
+		sed -i 's#^tty2::.*#tty2::respawn:/usr/bin/dkvmmanager#' /etc/inittab
+	else
+		echo 'tty2::respawn:/usr/bin/dkvmmanager' >>/etc/inittab
+	fi
 	lbu include /etc/inittab
 	echo "DKVM Manager installed and configured on tty2."
 else
-	echo "WARNING: DKVM Manager binary not found on CD-ROM, skipping."
+	err "DKVM Manager binary not found on CD-ROM"
 fi
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
