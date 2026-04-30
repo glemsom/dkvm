@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.12] - 2026-04-30
+
+### Changed
+- Changed `mkisofs` to use `-iso-level 4` for scripts ISO creation, improving compatibility with longer filenames and deeper directory structures.
+- Improved DKVM Manager injection in `runme.sh`: the `tty2` entry in `/etc/inittab` is now updated if it already exists instead of blindly appending a duplicate line.
+- Replaced the warning message for a missing DKVM Manager binary with the standard `err()` function for consistent error reporting.
+
 ## [v0.7.11] - 2026-04-29
 
 ### Changed
