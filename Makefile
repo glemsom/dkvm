@@ -12,7 +12,7 @@
 # ║ Disk image size in megabytes
 # ║ Alpine Linux major and minor versions
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-VERSION ?= v0.7.1
+VERSION ?= v0.7.12
 DISK_SIZE ?= 2048
 ALPINE_VERSION ?= 3.23
 ALPINE_MINOR ?= 4
@@ -143,7 +143,7 @@ $(DKVM_MANAGER_BIN):
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
 scripts.iso: scripts/runme.sh scripts/dkvmmenu.sh scripts/answer.txt $(DKVM_MANAGER_BIN)
 	@echo "Creating scripts ISO..."
-	mkisofs -o scripts.iso scripts
+	mkisofs -iso-level 4 -o scripts.iso scripts
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ TARGET: alpine_extract/vmlinuz-lts
