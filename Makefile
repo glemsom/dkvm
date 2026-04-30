@@ -21,8 +21,8 @@ ALPINE_MINOR ?= 4
 # ║ DKVM Manager Configuration
 # ║ Pinned tag for reproducible builds
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-DKVM_MANAGER_VERSION ?= v0.1.0
-DKVM_MANAGER_URL ?= https://github.com/glemsom/dkvmmanager/releases/download/$(DKVM_MANAGER_VERSION)/dkvmmanager_0.1.0_linux_amd64.tar.gz
+DKVM_MANAGER_VERSION ?= v0.1.2
+DKVM_MANAGER_URL ?= https://github.com/glemsom/dkvmmanager/releases/download/$(DKVM_MANAGER_VERSION)/dkvmmanager_$(DKVM_MANAGER_VERSION:v%=%)_linux_amd64.tar.gz
 DKVM_MANAGER_BIN := scripts/dkvmmanager
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
@@ -132,7 +132,7 @@ $(DKVM_MANAGER_BIN):
 	@echo "Downloading DKVM Manager $(DKVM_MANAGER_VERSION)..."
 	@mkdir -p scripts
 	wget -O /tmp/dkvmmanager.tar.gz $(DKVM_MANAGER_URL)
-	tar xzf /tmp/dkvmmanager.tar.gz --strip-components=1 -C scripts/ dkvmmanager_0.1.0_linux_amd64/dkvmmanager
+	tar xzf /tmp/dkvmmanager.tar.gz --strip-components=1 -C scripts/ dkvmmanager_$(DKVM_MANAGER_VERSION:v%=%)_linux_amd64/dkvmmanager
 	rm -f /tmp/dkvmmanager.tar.gz
 	chmod +x $(DKVM_MANAGER_BIN)
 	@echo "DKVM Manager $(DKVM_MANAGER_VERSION) downloaded to $(DKVM_MANAGER_BIN)"
