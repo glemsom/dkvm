@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.13] - 2026-05-02
+
+### Changed
+- Swapped TTY assignments: DKVM Manager now runs on tty1 (primary) and `dkvmmenu.sh` runs on tty2 (backup).
+
 ## [v0.7.12] - 2026-04-30
 
 ### Changed

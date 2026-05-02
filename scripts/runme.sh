@@ -166,27 +166,27 @@ chmod +x /root/dkvmmenu.sh
 lbu include /root
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
-# ║ Configure TTY1 to auto-respawn dkvmmenu.sh on login
+# ║ Configure TTY2 to auto-respawn dkvmmenu.sh on login
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
 cp /etc/inittab /etc/inittab.bak
-cat /etc/inittab.bak | sed 's#tty1::.*#tty1::respawn:/root/dkvmmenu.sh#' >/etc/inittab
+cat /etc/inittab.bak | sed 's#tty2::.*#tty2::respawn:/root/dkvmmenu.sh#' >/etc/inittab
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
-# ║ Install DKVM Manager and configure TTY2
+# ║ Install DKVM Manager and configure TTY1
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
 if [ -f /media/cdrom/dkvmmanager ]; then
 	echo "Installing DKVM Manager..."
 	cp /media/cdrom/dkvmmanager /usr/bin/dkvmmanager
 	chmod +x /usr/bin/dkvmmanager
 	lbu include /usr/bin/dkvmmanager
-	echo "Configuring DKVM Manager on tty2..."
-	if grep -q '^tty2::' /etc/inittab; then
-		sed -i 's#^tty2::.*#tty2::respawn:/usr/bin/dkvmmanager#' /etc/inittab
+	echo "Configuring DKVM Manager on tty1..."
+	if grep -q '^tty1::' /etc/inittab; then
+		sed -i 's#^tty1::.*#tty1::respawn:/usr/bin/dkvmmanager#' /etc/inittab
 	else
-		echo 'tty2::respawn:/usr/bin/dkvmmanager' >>/etc/inittab
+		echo 'tty1::respawn:/usr/bin/dkvmmanager' >>/etc/inittab
 	fi
 	lbu include /etc/inittab
-	echo "DKVM Manager installed and configured on tty2."
+	echo "DKVM Manager installed and configured on tty1."
 else
 	err "DKVM Manager binary not found on CD-ROM"
 fi
