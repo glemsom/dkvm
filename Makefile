@@ -21,7 +21,7 @@ ALPINE_MINOR ?= 4
 # ║ DKVM Manager Configuration
 # ║ Pinned tag for reproducible builds
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-DKVM_MANAGER_VERSION ?= v0.1.4
+DKVM_MANAGER_VERSION ?= v0.1.5
 DKVM_MANAGER_URL ?= https://github.com/glemsom/dkvmmanager/releases/download/$(DKVM_MANAGER_VERSION)/dkvmmanager_$(DKVM_MANAGER_VERSION:v%=%)_linux_amd64.tar.gz
 DKVM_MANAGER_BIN := scripts/dkvmmanager
 
