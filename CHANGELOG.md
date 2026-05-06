@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- Removed `scripts/dkvmmenu.sh`. The project now relies entirely on the Golang TUI **DKVM Manager** for VM management.
+
 ## [v0.7.18] - 2026-05-06
 
 ### Changed
@@ -15,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.7.13] - 2026-05-02
 
 ### Changed
-- Swapped TTY assignments: DKVM Manager now runs on tty1 (primary) and `dkvmmenu.sh` runs on tty2 (backup).
+- Updated TTY configuration: DKVM Manager runs exclusively on tty1. The previous tty2 fallback (`dkvmmenu.sh`) has been removed.
 
 ## [v0.7.12] - 2026-04-30
 

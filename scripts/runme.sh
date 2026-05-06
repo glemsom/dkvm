@@ -159,19 +159,6 @@ mount -a
 chmod +x /etc/local.d/dkvm_folder.start
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
-# ║ Install DKVM menu script to root home directory
-# ╚═══════════════════════════════════════════════════════════════════════════════════╝
-cp /media/cdrom/dkvmmenu.sh /root/dkvmmenu.sh
-chmod +x /root/dkvmmenu.sh
-lbu include /root
-
-# ╔═══════════════════════════════════════════════════════════════════════════════════╗
-# ║ Configure TTY2 to auto-respawn dkvmmenu.sh on login
-# ╚═══════════════════════════════════════════════════════════════════════════════════╝
-cp /etc/inittab /etc/inittab.bak
-cat /etc/inittab.bak | sed 's#tty2::.*#tty2::respawn:/root/dkvmmenu.sh#' >/etc/inittab
-
-# ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ Install DKVM Manager and configure TTY1
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
 if [ -f /media/cdrom/dkvmmanager ]; then

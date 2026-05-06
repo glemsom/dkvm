@@ -141,7 +141,7 @@ $(DKVM_MANAGER_BIN):
 # ║ TARGET: scripts.iso
 # ║ Create ISO image containing DKVM setup scripts and DKVM Manager binary
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-scripts.iso: scripts/runme.sh scripts/dkvmmenu.sh scripts/answer.txt $(DKVM_MANAGER_BIN)
+scripts.iso: scripts/runme.sh scripts/answer.txt $(DKVM_MANAGER_BIN)
 	@echo "Creating scripts ISO..."
 	mkisofs -iso-level 4 -o scripts.iso scripts
 

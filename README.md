@@ -3,7 +3,7 @@ DKVM - Desktop KVM
 
 DKVM is a minimal hypervisor that runs entirely from RAM, enabling you to virtualize your own desktop PC with maximum performance. It supports full VGA (GPU) passthrough, PCI‑e device assignment, and other hardware acceleration features, delivering near‑native speed for the guest OS.
 
-The project builds a bootable USB image containing an Alpine Linux base, the required virtualization packages, and a custom DKVM menu (`dkvmmenu.sh`).
+The project builds a bootable USB image containing an Alpine Linux base, the required virtualization packages, and the **DKVM Manager** Golang TUI.
 
 ## Features
 - **GPU (VGA) Passthrough** – Direct access to your graphics card for high‑performance graphics.
@@ -57,10 +57,10 @@ It will be mounted at:
 # Replace /dev/sdXY with your target partition
 sudo mkfs.ext4 -L DKVMDATA /dev/sdXY
 ```
-The DKVM menu will look for VM configurations and data in this directory.
+The DKVM Manager TUI will look for VM configurations and data in this directory.
 
-## Custom Launcher Menu
-The interactive menu provides a convenient way to configure and launch the VM:
+## DKVM Manager
+The **DKVM Manager** is a Golang-based TUI that provides a convenient way to configure and launch VMs:
 - **CPU Pinning & Topology** – Detects host CPU topology, reserves cores for the host, and pins guest vCPUs to specific host threads for optimal performance.
 - **PCI Passthrough** – Lets you select PCI devices (including GPUs) to pass through to the VM.
 - **USB Passthrough** – Allows selection of USB devices to expose to the guest.
