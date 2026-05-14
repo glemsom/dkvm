@@ -89,7 +89,7 @@ sed -i '/^#.*v3.*community/s/^#/@community /' /etc/apk/repositories
 # Add DKVM-QEMU repository
 echo "Adding DKVM-QEMU repository"
 wget -O /etc/apk/keys/signkey.rsa.pub https://raw.githubusercontent.com/glemsom/dkvm-qemu/main/keys/signkey.rsa.pub
-echo "https://glemsom.github.io/dkvm-qemu/" >>/etc/apk/repositories
+echo "@dkvm https://glemsom.github.io/dkvm-qemu/" >>/etc/apk/repositories
 
 apk update
 apk upgrade
