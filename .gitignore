@@ -13,3 +13,4 @@ scripts.iso
 dkvm-*.zip
 dkvm*img
 scripts/dkvmmanager
+.lean-ctx
