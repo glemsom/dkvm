@@ -12,8 +12,8 @@
 # ║ Disk image size in megabytes
 # ║ Alpine Linux major and minor versions
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-VERSION ?= v0.7.18
-DISK_SIZE ?= 1480
+VERSION ?= v0.7.20
+DISK_SIZE ?= 2048
 ALPINE_VERSION ?= 3.23
 ALPINE_MINOR ?= 4
 
@@ -198,7 +198,7 @@ build: verify-deps $(OVMF_CODE) $(OVMF_VARS) scripts.iso alpine_extract/vmlinuz-
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
 run: $(DISK_FILE) $(OVMF_CODE) $(OVMF_VARS)
 	@echo "Running DKVM image $(DISK_FILE)..."
-	@sudo $(QEMU) -m 4G -machine q35 \
+	@sudo $(QEMU) -m 8G -machine q35 \
 	-drive if=pflash,format=raw,unit=0,file=$(OVMF_CODE),readonly=on \
 	-drive if=pflash,format=raw,unit=1,file=$(OVMF_VARS) \
 	-drive if=none,format=raw,id=usbstick,file=$(DISK_FILE) \

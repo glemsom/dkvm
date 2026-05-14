@@ -112,7 +112,7 @@ cp /boot/intel-ucode.img /media/usb/boot/ || echo "intel-ucode.img not found"
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ Update to latest LTS kernel in repository
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-update-kernel /media/usb/boot/
+update-kernel -v /media/usb/boot/
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ Configure system services and network for DKVM
