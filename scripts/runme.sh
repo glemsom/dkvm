@@ -93,7 +93,7 @@ echo "@dkvm https://glemsom.github.io/dkvm-qemu/" >>/etc/apk/repositories
 
 apk update
 apk upgrade
-apk add ca-certificates wget util-linux bridge bridge-utils amd-ucode intel-ucode qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@dkvm ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance hwloc-tools || err "Cannot install packages"
+apk add ca-certificates wget util-linux bridge bridge-utils amd-ucode intel-ucode qemu-img@community qemu-hw-usb-host@community qemu-system-x86_64@dkvm ovmf@community qemu-hw-display-virtio-vga@community swtpm@community bash dialog bc nettle jq vim lvm2 lvm2-dmeventd e2fsprogs pciutils irqbalance hwloc-tools capstone@community libslirp@community vde2-libs@community || err "Cannot install packages"
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ Configure GRUB with IOMMU and VFIO kernel parameters for DKVM
