@@ -90,7 +90,7 @@ verify-deps:
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
 $(ALPINE_ISO):
 	@echo "Downloading Alpine Linux ISO..."
-	wget "http://dl-cdn.alpinelinux.org/alpine/v$(ALPINE_VERSION)/releases/x86_64/$(ALPINE_ISO)" -O "$(ALPINE_ISO)"
+	wget -q "http://dl-cdn.alpinelinux.org/alpine/v$(ALPINE_VERSION)/releases/x86_64/$(ALPINE_ISO)" -O "$(ALPINE_ISO)"
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ TARGET: $(OVMF_CODE)
