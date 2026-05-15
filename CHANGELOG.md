@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Removed `scripts/dkvmmenu.sh`. The project now relies entirely on the Golang TUI **DKVM Manager** for VM management.
 
+## [v0.7.24] - 2026-05-15
+
+### Changed
+- Updated DKVM Manager to v0.1.15.
+
 ## [v0.7.18] - 2026-05-06
 
 ### Changed
