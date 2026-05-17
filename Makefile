@@ -12,7 +12,7 @@
 # ║ Disk image size in megabytes
 # ║ Alpine Linux major and minor versions
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-VERSION ?= v0.7.25
+VERSION ?= v0.7.26
 DISK_SIZE ?= 2048
 ALPINE_VERSION ?= 3.23
 ALPINE_MINOR ?= 4
@@ -21,7 +21,7 @@ ALPINE_MINOR ?= 4
 # ║ DKVM Manager Configuration
 # ║ Pinned tag for reproducible builds
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-DKVM_MANAGER_VERSION ?= v0.1.16
+DKVM_MANAGER_VERSION ?= v0.1.17
 DKVM_MANAGER_URL ?= https://github.com/glemsom/dkvmmanager/releases/download/$(DKVM_MANAGER_VERSION)/dkvmmanager_$(DKVM_MANAGER_VERSION:v%=%)_linux_amd64.tar.gz
 DKVM_MANAGER_BIN := scripts/dkvmmanager
 
