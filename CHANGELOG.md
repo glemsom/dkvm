@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Updated DKVM Manager to v0.1.19.
 
+## [v0.7.33] - 2026-06-13
+
+### Fixed
+- Removed masked/missing Alpine packages (`vim`, `lvm2-dmeventd`) from the build to prevent installation failures.
+
 ## [Unreleased]
 
 ### Removed
