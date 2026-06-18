@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.35] - 2026-06-18
+
+### Changed
+- Updated Alpine Linux from 3.24.0 to 3.24.1.
+
 ### Removed
 - Removed `scripts/dkvmmenu.sh`. The project now relies entirely on the Golang TUI **DKVM Manager** for VM management.
 
