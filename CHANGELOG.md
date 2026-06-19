@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.36] - 2026-06-19
+
+### Changed
+- Updated DKVM Manager to v0.1.28.
+
 ## [v0.7.35] - 2026-06-18
 
 ### Changed
