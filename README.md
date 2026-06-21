@@ -10,6 +10,12 @@ The project builds a bootable USB image containing an Alpine Linux base, the req
 - **PCI‑e Device Assignment** – Attach other devices such as network cards or USB controllers.
 - **Minimal Overhead** – Runs from RAM.
 
+## Documentation
+
+User guides: [First Boot](docs/user/first-boot.md), [Configuration Files](docs/user/configuration-files.md), [Networking](docs/user/networking.md), [Example Scripts](docs/user/example-scripts.md), [Troubleshooting](docs/user/troubleshooting.md)
+
+Contributor guides: [Contributing](docs/contributor/CONTRIBUTING.md), [Architecture](docs/contributor/architecture.md), [Local Development](docs/contributor/local-dev.md)
+
 ## Build Process
 Pre-built images are available in the [GitHub Releases](https://github.com/glemsom/dkvm/releases) section of this project.
 
