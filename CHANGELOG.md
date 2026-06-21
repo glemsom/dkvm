@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Created docs/contributor/CONTRIBUTING.md with contributor guide.
+
 ## [v0.7.37] - 2026-06-20
 
 ### Changed
