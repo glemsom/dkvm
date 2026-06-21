@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Created docs/contributor/CONTRIBUTING.md with contributor guide.
+- Created docs/contributor/architecture.md with end-to-end architecture
+  documentation covering boot sequence, build pipeline, persistence model,
+  and component map.
 
 ## [v0.7.37] - 2026-06-20
 
