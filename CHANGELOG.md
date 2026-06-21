@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Removed masked/missing Alpine packages (`vim`, `lvm2-dmeventd`) from the build to prevent installation failures.
 
-## [Unreleased]
+## [v0.7.38] - 2026-06-21
 
 ### Added
 - Created docs/contributor/CONTRIBUTING.md with contributor guide.
@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Created docs/contributor/local-dev.md with local development guide covering
   the standard build loop, script-only iteration, image inspection, and
   cleanup procedures.
+
+### Changed
+- Updated DKVM Manager to v0.1.31.
+
+## [Unreleased]
 
 ## [v0.7.37] - 2026-06-20
 
