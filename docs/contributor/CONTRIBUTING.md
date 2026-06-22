@@ -163,7 +163,7 @@ DKVM Manager is a separate Go binary hosted at
 The Makefile pins a specific release tag:
 
 ```makefile
-DKVM_MANAGER_VERSION ?= v0.1.29
+DKVM_MANAGER_VERSION ?= v0.2.0
 ```
 
 To update:
@@ -174,7 +174,7 @@ To update:
 3.  Add a `CHANGELOG.md` entry under `## [Unreleased]`:
     ```
     ### Changed
-    - Updated DKVM Manager to v0.1.30.
+    - Updated DKVM Manager to v0.2.0.
     ```
 
 ---
