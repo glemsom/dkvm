@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.40] - 2026-06-23
+
 ### Added
 - Community health files: SECURITY.md, CODE_OF_CONDUCT.md, issue/PR templates.
 - Markdownlint configuration (`.markdownlint.yaml`) and `make lint-docs` target.
