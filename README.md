@@ -32,8 +32,8 @@ required virtualization packages, and the **DKVM Manager** Golang TUI.
    `sudo mkfs.ext4 -L DKVMDATA /dev/sdXY && reboot`
    (see [Setting Up DKVMDATA](docs/user/first-boot.md#3-setting-up-dkvmdata)).
 5. Configure CPU pinning, PCI/USB passthrough, memory, and hugepages via the
-   DKVM Manager TUI on tty1 (see
-   [Configuring via DKVM Manager](docs/user/first-boot.md#4-configuring-via-dkvm-manager)).
+   DKVM Manager TUI on tty1.
+   See [Configuring via DKVM Manager](docs/user/first-boot.md#4-configuring-via-dkvm-manager).
 6. Create and start a virtual machine (see
    [Creating a VM](docs/user/first-boot.md#45-creating-a-vm) and
    [Launch the VM](docs/user/first-boot.md#51-launch-the-vm)).

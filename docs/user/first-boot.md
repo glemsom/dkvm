@@ -5,6 +5,9 @@ running your first virtual machine.
 
 If you run into problems, see the [Troubleshooting](troubleshooting.md) guide.
 
+> **Terminology**: See [CONTEXT.md](../../CONTEXT.md) for definitions of
+> "DKVMDATA", "Guest", "Host", "lbu", and other project terms.
+
 ## Learning Objectives
 
 By the end of this walkthrough you will:
@@ -250,3 +253,7 @@ Run through these checks to confirm your DKVM setup is working:
 | Networking modes  | [Networking](networking.md)                                     |
 | Common problems   | [Troubleshooting](troubleshooting.md)                           |
 | Build & develop   | [Local Development](../contributor/local-dev.md)                |
+
+---
+
+*Last updated: 2026-06-23*

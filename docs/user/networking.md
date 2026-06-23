@@ -3,6 +3,9 @@
 DKVM provides three networking modes for different use cases. Bridge mode is
 the default and recommended for production use.
 
+> **Terminology**: See [CONTEXT.md](../../CONTEXT.md) for definitions of
+> "DKVMDATA", "Guest", "Host", "lbu", and other project terms.
+
 ## Prerequisites
 
 Before configuring DKVM networking, ensure:
@@ -223,4 +226,8 @@ an isolated network segment:
 - Check `sshd` is running:
   ```bash
   rc-service sshd status
+
+---
+
+*Last updated: 2026-06-23*
   ```

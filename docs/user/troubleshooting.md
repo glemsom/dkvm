@@ -5,6 +5,9 @@ Common problems and how to diagnose them.
 If your issue is not covered here, check the logs (see [Getting Logs](#getting-logs)) and open a
 [GitHub issue](https://github.com/glemsom/dkvm/issues).
 
+> **Terminology**: See [CONTEXT.md](../../CONTEXT.md) for definitions of
+> "DKVMDATA", "Guest", "Host", "lbu", and other project terms.
+
 ## Error Message Quick Reference
 
 | Error / Symptom | Likely Cause | More Info |
@@ -251,3 +254,7 @@ cat /var/log/messages   # General system messages
 - Read the [Architecture document](../contributor/architecture.md) for a deep
   understanding of boot sequence and components.
 - Search or open a [GitHub issue](https://github.com/glemsom/dkvm/issues).
+
+---
+
+*Last updated: 2026-06-23*

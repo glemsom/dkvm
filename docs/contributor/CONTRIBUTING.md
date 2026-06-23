@@ -76,6 +76,20 @@ Documentation follows the
 
 See `.markdownlint.yaml` for the project's Markdown style rules.
 
+### Last-Updated Dates
+
+Every documentation file in `docs/` must include a last-updated footer at the
+end of the file:
+
+```markdown
+---
+
+*Last updated: YYYY-MM-DD*
+```
+
+When your PR modifies a documentation file, update the date in its footer to
+the current date. This helps readers assess how current the information is.
+
 ---
 
 ## Environment Setup
@@ -276,3 +290,7 @@ and the project adheres to
 
 If `## [Unreleased]` does not exist yet, create it at the top of the
 file, above the most recent release entry.
+
+---
+
+*Last updated: 2026-06-23*

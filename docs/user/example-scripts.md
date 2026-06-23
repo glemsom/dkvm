@@ -4,6 +4,9 @@ This document describes the two example scripts provided in the DKVM `examples/`
 directory. They are optional helpers — you do not need them for basic DKVM
 operation.
 
+> **Terminology**: See [CONTEXT.md](../../CONTEXT.md) for definitions of
+> "DKVMDATA", "Guest", "Host", "lbu", and other project terms.
+
 ---
 
 ## 1. `amd_9000_StartStop.sh`
@@ -180,4 +183,8 @@ Die 0         | 0,1,2,3                       | 0             | PASS
   Ensure your DKVM host is on a trusted network.
 - The example scripts are provided as-is for reference. Review them before
   running on your hardware.
+
+---
+
+*Last updated: 2026-06-23*
 - Only use these scripts on hardware you own and control.

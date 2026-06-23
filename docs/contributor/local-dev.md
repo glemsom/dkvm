@@ -4,6 +4,9 @@ This guide covers the day-to-day development workflow for iterating on DKVM
 changes. It assumes you have read the [architecture document](architecture.md)
 for build pipeline context.
 
+> **Terminology**: See [CONTEXT.md](../../CONTEXT.md) for definitions of
+> "DKVMDATA", "Guest", "Host", "lbu", and other project terms.
+
 ---
 
 ## Standard Build Loop
@@ -156,3 +159,7 @@ workflow.
   persistence model, component map
 - [CONTRIBUTING.md](CONTRIBUTING.md) — PR process, coding standards, changelog
   policy
+
+---
+
+*Last updated: 2026-06-23*
