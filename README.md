@@ -82,18 +82,8 @@ required virtualization packages, and the **DKVM Manager** Golang TUI.
 Pre-built images are available in
 [GitHub Releases](https://github.com/glemsom/dkvm/releases).
 
-To build manually:
-
-```bash
-make verify-deps
-make build
-```
-
-Output: `dkvm-<version>.img` — a bootable FAT32 disk image.
-
-For detailed build instructions, see
-[Local Development](docs/contributor/local-dev.md).
-
+To build from source, see the
+[Local Development](docs/contributor/local-dev.md) guide.
 ---
 
 ## DKVM Manager
