@@ -219,6 +219,16 @@ Die 0         | 0,1,2,3                       | 0             | PASS
   running on your hardware.
 - Only use these scripts on hardware you own and control.
 
+## Reference
+
+| Topic | Document |
+|-------|----------|
+| First-time setup | [First-Boot Walkthrough](first-boot.md) |
+| GPU passthrough setup | [GPU Passthrough](gpu-passthrough.md) |
+| Architecture & design | [Architecture Overview](../contributor/architecture-overview.md) |
+| Build & develop | [Local Development](../contributor/local-dev.md) |
+| Project terminology | [CONTEXT](../../CONTEXT.md) |
+
 ---
 
 *Last updated: 2026-06-23*

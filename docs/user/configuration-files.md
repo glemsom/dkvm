@@ -169,6 +169,17 @@ and is not supported.
 For full details on how persistence works across boot cycles, see the
 [Architecture Reference](../contributor/architecture-reference.md#persistence-model).
 
+## Reference
+
+| Topic | Document |
+|-------|----------|
+| First-time setup | [First-Boot Walkthrough](first-boot.md) |
+| Networking modes | [Networking](networking.md) |
+| Common problems | [Troubleshooting](troubleshooting.md) |
+| Architecture & design | [Architecture Overview](../contributor/architecture-overview.md) |
+| Build & develop | [Local Development](../contributor/local-dev.md) |
+| Project terminology | [CONTEXT](../../CONTEXT.md) |
+
 ---
 
 *Last updated: 2026-06-23*

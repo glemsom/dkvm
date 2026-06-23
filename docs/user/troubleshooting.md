@@ -246,14 +246,16 @@ cat /var/log/messages   # General system messages
 
 ---
 
-## Still Stuck?
+## Reference
 
-- Check the [Networking](networking.md) doc for network-specific issues.
-- Review the [First-Boot Walkthrough](first-boot.md) to ensure all setup steps
-  were followed.
-- Read the [Architecture Overview](../contributor/architecture-overview.md) for a deep
-  understanding of boot sequence and components.
-- Search or open a [GitHub issue](https://github.com/glemsom/dkvm/issues).
+| Topic | Document |
+|-------|----------|
+| First-time setup | [First-Boot Walkthrough](first-boot.md) |
+| Networking modes | [Networking](networking.md) |
+| GPU passthrough setup | [GPU Passthrough](gpu-passthrough.md) |
+| DKVMDATA layout | [Configuration Files](configuration-files.md) |
+| Architecture & design | [Architecture Overview](../contributor/architecture-overview.md) |
+| Project terminology | [CONTEXT](../../CONTEXT.md) |
 
 ---
 

@@ -145,9 +145,14 @@ DKVM is split across three repositories. See
 repository listings.
 ---
 
-## Further Reading
+## Reference
 
-- [Architecture Reference](architecture-reference.md) — detailed technical
-  documentation (boot sequence, build pipeline, persistence, acronyms)
-- [CONTEXT.md](../../CONTEXT.md) — project terminology and ubiquitous language
-- [First-Boot Walkthrough](../user/first-boot.md) — practical setup guide
+| Topic | Document |
+|-------|----------|
+| Booting, pipeline, persistence | [Architecture Reference](architecture-reference.md) |
+| First-time setup | [First-Boot Walkthrough](../user/first-boot.md) |
+| GPU passthrough setup | [GPU Passthrough](../user/gpu-passthrough.md) |
+| Networking modes | [Networking](../user/networking.md) |
+| DKVMDATA layout | [Configuration Files](../user/configuration-files.md) |
+| Build & develop | [Local Development](local-dev.md) |
+| Project terminology | [CONTEXT](../../CONTEXT.md)

@@ -228,6 +228,16 @@ an isolated network segment:
   rc-service sshd status
   ```
 
+## Reference
+
+| Topic | Document |
+|-------|----------|
+| First-time setup | [First-Boot Walkthrough](first-boot.md) |
+| Common problems | [Troubleshooting](troubleshooting.md) |
+| DKVMDATA layout | [Configuration Files](configuration-files.md) |
+| Architecture & design | [Architecture Overview](../contributor/architecture-overview.md) |
+| Project terminology | [CONTEXT](../../CONTEXT.md) |
+
 ---
 
 *Last updated: 2026-06-23*
