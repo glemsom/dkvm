@@ -140,14 +140,9 @@ passthrough.
 
 ## Repositories
 
-DKVM is split across three repositories:
-
-| Repository | Role |
-|---|---|
-| [glemsom/dkvm](https://github.com/glemsom/dkvm) | Build system, scripts, examples, documentation. Produces the bootable USB image. |
-| [glemsom/dkvmmanager](https://github.com/glemsom/dkvmmanager) | Go TUI binary that runs on tty1. Version-pinned in the Makefile. |
-| [glemsom/dkvm-qemu](https://github.com/glemsom/dkvm-qemu) | Custom QEMU APK repository with DKVM-specific patches. |
-
+DKVM is split across three repositories. See
+[Project Repositories](../README.md#project-repositories) in the README for
+repository listings.
 ---
 
 ## Further Reading
