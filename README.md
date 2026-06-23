@@ -19,6 +19,20 @@ required virtualization packages, and the **DKVM Manager** Golang TUI.
 - **PCI‑e Device Assignment** – Attach other devices such as network cards or
   USB controllers.
 - **Minimal Overhead** – Entire OS runs from RAM after boot.
+- **DKVM Manager TUI** – CPU pinning, PCI/USB passthrough, VM creation, and
+  configuration via an interactive terminal UI.
+- **Hugepages** – Back guest memory with hugepages to reduce TLB pressure and
+  overhead.
+- **TPM (swtpm)** – Virtual TPM 2.0 for guests requiring secure boot or
+  BitLocker.
+- **Bridge Networking** – `br0` bridge with DHCP for seamless guest access to
+  the LAN.
+- **QMP Guest Management** – QEMU Machine Protocol for scripted VM control and
+  automation.
+- **ACPI Power Management** – Graceful guest shutdown, reboot, and power
+  management via ACPI.
+- **Two‑Layer Persistence** – `lbu` overlay preserves OS configuration; a
+  dedicated `DKVMDATA` partition stores VM data across reboots.
 
 ## Quick Start
 
