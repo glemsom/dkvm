@@ -9,6 +9,10 @@ Manager TUI (see [First-Boot Walkthrough](first-boot.md#4-configuring-via-dkvm-m
 For OS-level persistence (Alpine `lbu` overlay), see the
 [Architecture document](../contributor/architecture.md#persistence-model).
 
+---
+
+*Last updated: 2026-06-23*
+
 > **Terminology**: See [CONTEXT.md](../../CONTEXT.md) for definitions of
 > "DKVMDATA", "Guest", "Host", and other project terms.
 

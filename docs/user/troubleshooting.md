@@ -16,8 +16,8 @@ If your issue is not covered here, check the logs (see [Getting Logs](#getting-l
 | `can't read superblock` | Corrupted partition or wrong device | [DKVMDATA Not Mounting](#dkvmdata-not-mounting) |
 | DKVM Manager shows "No data partition" | DKVMDATA label missing or not ext4 | [Setting Up DKVMDATA](first-boot.md#3-setting-up-dkvdata) |
 | VM fails to start / instant crash | Missing OVMF firmware | [VM Won't Boot](#vm-wont-boot) |
-| `Kernel driver in use: nvidia` or `amdgpu` | GPU not bound to vfio-pci | [VM Won't Boot](#3-check-passthrough-device-ids) |
-| `Failed to assign device` in QEMU | IOMMU group not isolated | [VM Won't Boot](#3-check-passthrough-device-ids) |
+| `Kernel driver in use: nvidia` or `amdgpu` | GPU not bound to vfio-pci | [GPU Passthrough](gpu-passthrough.md#3-bind-gpu-to-vfio-pci), [VM Won't Boot](#3-check-passthrough-device-ids) |
+| `Failed to assign device` in QEMU | IOMMU group not isolated | [GPU Passthrough](gpu-passthrough.md#2-check-iommu-groups), [VM Won't Boot](#3-check-passthrough-device-ids) |
 | Guest has no IP | DHCP failure in guest or bridge not up | [Networking](../user/networking.md#1-bridge-mode-default) |
 | Cannot SSH to DKVM host | Bridge not up or firewall blocking | [Networking](../user/networking.md#ssh-access-not-working) |
 | DKVM Manager crashes on start | Corrupted config or missing binary | Rebuild image or reinstall DKVM Manager |

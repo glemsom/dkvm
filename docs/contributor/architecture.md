@@ -258,3 +258,7 @@ echo '{ "execute": "qmp_capabilities" }' |
 
 This sends a graceful shutdown request to the running guest VM via the QMP
 socket. The host does not shut down until the guest responds.
+
+---
+
+*Last updated: 2026-06-23*
