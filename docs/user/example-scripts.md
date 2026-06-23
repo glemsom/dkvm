@@ -22,6 +22,40 @@ before `vfio-pci` can claim them. The script automates that sequence.
 - AMD 9000-series GPU with IOMMU enabled (`amd_iommu=on` on kernel cmdline)
 - `vfio-pci` kernel module loaded
 - DKVM system with PCI passthrough configured
+25:d05|
+### Installation
+
+Place the script so DKVM Manager loads it on startup:
+
+1. **Copy the script** to the DKVMDATA mount:
+   ```bash
+   cp examples/amd_9000_StartStop.sh /media/dkvmdata/amd_9000_StartStop.sh
+   ```
+
+2. **Source it from DKVM Manager's `.profile`** — DKVM Manager sources
+   `/media/dkvmdata/.profile` at startup. Either:
+   - Create/edit `/media/dkvmdata/.profile` and add:
+     ```bash
+     source /media/dkvmdata/amd_9000_StartStop.sh
+     ```
+   - Or source from the host's root profile instead:
+     ```bash
+     echo "source /media/dkvmdata/amd_9000_StartStop.sh" >> /root/.profile
+     ```
+
+3. **Reload the profile** (or reboot):
+   ```bash
+   source /root/.profile
+   ```
+
+### Verification
+
+Confirm the hooks are loaded:
+```bash
+declare -f customVMStart customVMStop
+```
+This prints both function bodies if they are correctly registered. If you see
+`customVMStart: not found`, the script is not being sourced.
 
 ### How DKVM Manager Integration Works
 
