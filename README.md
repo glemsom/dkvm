@@ -26,8 +26,17 @@ required virtualization packages, and the **DKVM Manager** Golang TUI.
    [Releases](https://github.com/glemsom/dkvm/releases).
 2. Write the image to a USB stick (see
    [First-Boot Walkthrough](docs/user/first-boot.md#1-write-usb)).
-3. Boot from USB and follow the
-   [walkthrough](docs/user/first-boot.md).
+3. Boot from USB (see
+   [First-Boot Walkthrough](docs/user/first-boot.md#2-booting)).
+4. Create a `DKVMDATA` partition:
+   `sudo mkfs.ext4 -L DKVMDATA /dev/sdXY && reboot`
+   (see [Setting Up DKVMDATA](docs/user/first-boot.md#3-setting-up-dkvmdata)).
+5. Configure CPU pinning, PCI/USB passthrough, memory, and hugepages via the
+   DKVM Manager TUI on tty1 (see
+   [Configuring via DKVM Manager](docs/user/first-boot.md#4-configuring-via-dkvm-manager)).
+6. Create and start a virtual machine (see
+   [Creating a VM](docs/user/first-boot.md#45-creating-a-vm) and
+   [Launch the VM](docs/user/first-boot.md#51-launch-the-vm)).
 
 ---
 
@@ -89,23 +98,12 @@ For detailed build instructions, see
 ## DKVM Manager
 
 The **DKVM Manager** is a Golang-based TUI that provides a convenient way to
-configure and launch VMs:
+configure and launch VMs — CPU pinning, PCI/USB passthrough, VM creation,
+hugepages, TPM support, and more.
 
-- **CPU Pinning & Topology** – Detects host CPU topology, reserves cores for
-  the host, and pins guest vCPUs to specific host threads.
-- **PCI Passthrough** – Lets you select PCI devices (including GPUs) to pass
-  through to the VM.
-- **USB Passthrough** – Allows selection of USB devices to expose to the guest.
-- **VM Creation & Editing** – Create new VM configurations, edit existing ones,
-  and adjust disk, CDROM, and other parameters.
-- **Hugepages & Memory Allocation** – Configures hugepages and reserves memory
-  for the VM.
-- **TPM Support** – Starts a software TPM (`swtpm`) for the guest.
-- **Persistence** – Changes are saved using Alpine's `lbu commit` to ensure they
-  survive reboots.
-
-For more details, see the blog post:
-[GlemSom Tech](https://glemsomtechs.blogspot.com/2018/07/dkvm-desktop-kvm.html).
+See the [First-Boot Walkthrough](docs/user/first-boot.md#4-configuring-via-dkvm-manager)
+for a step-by-step guide. For the full feature list, see the
+[dkvmmanager repository](https://github.com/glemsom/dkvmmanager).
 
 ---
 
