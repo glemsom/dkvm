@@ -12,7 +12,7 @@ virtualization and passthrough.
 
 ```mermaid
 flowchart TD
-    USB["USB Power On"]
+    USB["Power On"]
     GRUB["UEFI/BIOS → GRUB (on USB, FAT32)"]
     KERNEL["Alpine LTS Kernel + initramfs<br/>(loaded into RAM)"]
     DISKLESS["initramfs completes →<br/>diskless mode (root in RAM)"]
