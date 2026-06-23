@@ -1,8 +1,13 @@
 # Configuration Files (DKVMDATA)
 
-DKVM uses two separate persistence layers. This document covers the **DKVMDATA
-data partition** — where VM workloads live. For OS-level persistence (Alpine
-`lbu` overlay), see the [Architecture document](../contributor/architecture.md#persistence-model).
+This document describes the layout and contents of the **DKVMDATA data
+partition** — where VM disk images, ISOs, TPM state, and VM configurations
+live. Understanding this layout helps with capacity planning, troubleshooting,
+and manual recovery. All configuration changes must be made through the DKVM
+Manager TUI (see [First-Boot Walkthrough](first-boot.md#4-configuring-via-dkvm-manager)).
+
+For OS-level persistence (Alpine `lbu` overlay), see the
+[Architecture document](../contributor/architecture.md#persistence-model).
 
 > **Terminology**: See [CONTEXT.md](../../CONTEXT.md) for definitions of
 > "DKVMDATA", "Guest", "Host", and other project terms.
