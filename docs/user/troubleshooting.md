@@ -134,7 +134,7 @@ Expected flags: `intel_iommu=on` or `amd_iommu=on`, `iommu=pt`, `vfio-pci.ids=..
 
 If these are missing, the VM will not have hardware passthrough capability.
 The GRUB configuration is set during image build — see the
-[Architecture document](../contributor/architecture.md#boot-sequence).
+[Architecture Reference](../contributor/architecture-reference.md#boot-sequence).
 
 ### 3. Check Passthrough Device IDs
 
@@ -251,7 +251,7 @@ cat /var/log/messages   # General system messages
 - Check the [Networking](networking.md) doc for network-specific issues.
 - Review the [First-Boot Walkthrough](first-boot.md) to ensure all setup steps
   were followed.
-- Read the [Architecture document](../contributor/architecture.md) for a deep
+- Read the [Architecture Overview](../contributor/architecture-overview.md) for a deep
   understanding of boot sequence and components.
 - Search or open a [GitHub issue](https://github.com/glemsom/dkvm/issues).
 

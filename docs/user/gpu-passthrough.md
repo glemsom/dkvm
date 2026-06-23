@@ -136,7 +136,7 @@ Options:
 2. **ACS override patch** — the DKVM kernel includes ACS override support,
    which splits groups at the PCIe root port level. Enable it by adding
    `pcie_acs_override=downstream` to the kernel command line. See
-   [Architecture](../contributor/architecture.md#boot-sequence) for how to
+   [Architecture Reference](../contributor/architecture-reference.md#boot-sequence) for how to
    modify kernel parameters.
 3. **Re-seat the GPU** — moving the GPU to a different PCIe slot can sometimes
    put it in its own group, especially on AMD platforms.
@@ -534,5 +534,5 @@ Failed to assign device "0000:26:00.0"
 | PCI passthrough in TUI      | [First-Boot Walkthrough §4.2](first-boot.md#42-pci-passthrough)   |
 | AMD 9000-series driver cycle| [Example Scripts](example-scripts.md#1-amd_9000_startstopsh)      |
 | Common problems             | [Troubleshooting](troubleshooting.md)                             |
-| Architecture & boot flow    | [Architecture](../contributor/architecture.md)                    |
+| Architecture & boot flow    | [Architecture Reference](../contributor/architecture-reference.md) |
 | DKVM terminology            | [CONTEXT](../../CONTEXT.md)                                       |

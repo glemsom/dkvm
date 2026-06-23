@@ -1,7 +1,45 @@
-# DKVM Architecture
+# DKVM Architecture Reference
 
-This document describes the end-to-end architecture of DKVM — how the operating
-system is built, how it boots, how data persists, and how the components relate.
+This document provides the technical reference for DKVM — boot sequence
+details, build pipeline commands, persistence mechanism specifics, component
+maps, and acronym definitions.
+
+For a high-level explanation of how DKVM works and why it is designed this way,
+see [Architecture Overview](architecture-overview.md).
+
+---
+
+## Acronym Glossary
+
+| Acronym | Expansion | Description |
+|---|---|---|
+| ACPI | Advanced Configuration and Power Interface | Power management standard; DKVM uses ACPI events for graceful guest shutdown. |
+| BIOS | Basic Input/Output System | Legacy firmware interface (DKVM uses UEFI/OVMF). |
+| CPPC | Collaborative Processor Performance Control | Interface for managing CPU performance; used in pinning verification. |
+| DHCP | Dynamic Host Configuration Protocol | Assigns IP addresses to network interfaces automatically. |
+| DMA | Direct Memory Access | Allows devices to access memory without CPU involvement. |
+| FAT32 | File Allocation Table (32-bit) | Filesystem used on the DKVM USB boot image. |
+| GRUB | Grand Unified Bootloader | Bootloader that loads the Alpine kernel with IOMMU/VFIO parameters. |
+| IOMMU | I/O Memory Management Unit | Hardware for device address translation; required for PCI passthrough. |
+| KVM | Kernel-based Virtual Machine | Linux kernel module for hardware-accelerated virtualization. |
+| LTS | Long Term Support | Alpine's stable kernel variant used by DKVM. |
+| NAT | Network Address Translation | Masks guest IP behind host IP (user-mode networking). |
+| NTP | Network Time Protocol | Synchronises system clock over the network. |
+| OVMF | Open Virtual Machine Firmware | UEFI firmware for QEMU guests (TianoCore). |
+| PCI | Peripheral Component Interconnect | Standard for connecting hardware devices. |
+| QEMU | Quick EMUlator | The hypervisor that runs guest VMs. |
+| QMP | QEMU Machine Protocol | JSON-based management interface for running QEMU instances. |
+| SSH | Secure Shell | Encrypted remote access protocol. |
+| STP | Spanning Tree Protocol | Network loop prevention (disabled on DKVM bridge). |
+| TPM | Trusted Platform Module | Hardware security module; DKVM provides software TPM via swtpm. |
+| TUI | Terminal User Interface | Text-based user interface (DKVM Manager on tty1). |
+| UEFI | Unified Extensible Firmware Interface | Modern firmware interface; DKVM uses OVMF (UEFI) for guests. |
+| USB | Universal Serial Bus | Standard for connecting peripherals and storage. |
+| VBIOS | Video BIOS | Firmware for GPU initialisation; may be needed for passthrough. |
+| vCPU | Virtual CPU | CPU core presented to a guest VM. |
+| VFIO | Virtual Function I/O | Kernel framework for userspace device access (passthrough). |
+| VGA | Video Graphics Array | Display hardware standard; used for GPU passthrough. |
+| VM | Virtual Machine | A guest operating system instance running under QEMU/KVM. |
 
 ---
 
@@ -196,7 +234,7 @@ flowchart LR
 ### External dependencies
 
 | Component | Source | Notes |
-|-----------|--------|-------|
+|---|---|---|
 | Alpine Linux | [alpinelinux.org](https://alpinelinux.org) | Base OS, diskless mode |
 | QEMU | `glemsom/dkvm-qemu` (custom APK repo) | Custom build with DKVM patches |
 | DKVM Manager | [glemsom/dkvmmanager](https://github.com/glemsom/dkvmmanager) | Go TUI, separate repo, version-pinned in Makefile |
@@ -214,38 +252,6 @@ flowchart LR
 
 ---
 
-## Acronym Glossary
-
-| Acronym | Expansion | Description |
-|---------|-----------|-------------|
-| ACPI | Advanced Configuration and Power Interface | Power management standard; DKVM uses ACPI events for graceful guest shutdown. |
-| BIOS | Basic Input/Output System | Legacy firmware interface (DKVM uses UEFI/OVMF). |
-| CPPC | Collaborative Processor Performance Control | Interface for managing CPU performance; used in pinning verification. |
-| DHCP | Dynamic Host Configuration Protocol | Assigns IP addresses to network interfaces automatically. |
-| DMA | Direct Memory Access | Allows devices to access memory without CPU involvement. |
-| FAT32 | File Allocation Table (32-bit) | Filesystem used on the DKVM USB boot image. |
-| GRUB | Grand Unified Bootloader | Bootloader that loads the Alpine kernel with IOMMU/VFIO parameters. |
-| IOMMU | I/O Memory Management Unit | Hardware for device address translation; required for PCI passthrough. |
-| KVM | Kernel-based Virtual Machine | Linux kernel module for hardware-accelerated virtualization. |
-| LTS | Long Term Support | Alpine's stable kernel variant used by DKVM. |
-| NAT | Network Address Translation | Masks guest IP behind host IP (user-mode networking). |
-| NTP | Network Time Protocol | Synchronises system clock over the network. |
-| OVMF | Open Virtual Machine Firmware | UEFI firmware for QEMU guests (TianoCore). |
-| PCI | Peripheral Component Interconnect | Standard for connecting hardware devices. |
-| QEMU | Quick EMUlator | The hypervisor that runs guest VMs. |
-| QMP | QEMU Machine Protocol | JSON-based management interface for running QEMU instances. |
-| SSH | Secure Shell | Encrypted remote access protocol. |
-| STP | Spanning Tree Protocol | Network loop prevention (disabled on DKVM bridge). |
-| TPM | Trusted Platform Module | Hardware security module; DKVM provides software TPM via swtpm. |
-| TUI | Terminal User Interface | Text-based user interface (DKVM Manager on tty1). |
-| UEFI | Unified Extensible Firmware Interface | Modern firmware interface; DKVM uses OVMF (UEFI) for guests. |
-| USB | Universal Serial Bus | Standard for connecting peripherals and storage. |
-| VBIOS | Video BIOS | Firmware for GPU initialisation; may be needed for passthrough. |
-| vCPU | Virtual CPU | CPU core presented to a guest VM. |
-| VFIO | Virtual Function I/O | Kernel framework for userspace device access (passthrough). |
-| VGA | Video Graphics Array | Display hardware standard; used for GPU passthrough. |
-| VM | Virtual Machine | A guest operating system instance running under QEMU/KVM. |
-
 ## ACPI Power Management
 
 When the DKVM host power button is pressed, an ACPI event triggers:
@@ -258,7 +264,3 @@ echo '{ "execute": "qmp_capabilities" }' |
 
 This sends a graceful shutdown request to the running guest VM via the QMP
 socket. The host does not shut down until the guest responds.
-
----
-
-*Last updated: 2026-06-23*

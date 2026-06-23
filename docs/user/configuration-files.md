@@ -7,7 +7,7 @@ and manual recovery. All configuration changes must be made through the DKVM
 Manager TUI (see [First-Boot Walkthrough](first-boot.md#4-configuring-via-dkvm-manager)).
 
 For OS-level persistence (Alpine `lbu` overlay), see the
-[Architecture document](../contributor/architecture.md#persistence-model).
+[Architecture Reference](../contributor/architecture-reference.md#persistence-model).
 
 ---
 
@@ -167,4 +167,8 @@ and is not supported.
 | VM data     | DKVMDATA     | Disks, ISOs, TPM, VM config | DKVM Manager TUI          |
 
 For full details on how persistence works across boot cycles, see the
-[Architecture document](../contributor/architecture.md#persistence-model).
+[Architecture Reference](../contributor/architecture-reference.md#persistence-model).
+
+---
+
+*Last updated: 2026-06-23*

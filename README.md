@@ -72,7 +72,7 @@ required virtualization packages, and the **DKVM Manager** Golang TUI.
 | Document | Topic | Last reviewed |
 |----------|-------|---------------|
 | [CONTEXT](CONTEXT.md) | Project terminology and ubiquitous language (what "DKVM", "DKVMDATA", "Guest" mean). | 2026-06-23 |
-| [Architecture](docs/contributor/architecture.md) | How DKVM works end-to-end — boot, build, persistence, ACPI. | 2026-06-23 |
+| [Architecture Overview](docs/contributor/architecture-overview.md) | How DKVM works, design decisions, high-level architecture narrative. | 2026-06-23 |
 | [Persistence Model](docs/user/configuration-files.md#persistence-model-summary) | How OS settings and VM data survive reboots. | 2026-06-23 |
 
 ---

@@ -226,8 +226,8 @@ an isolated network segment:
 - Check `sshd` is running:
   ```bash
   rc-service sshd status
+  ```
 
 ---
 
 *Last updated: 2026-06-23*
-  ```

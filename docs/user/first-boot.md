@@ -70,7 +70,7 @@ GRUB menu → Alpine kernel messages → tty1: DKVM Manager TUI
 
 1. **GRUB** — the bootloader appears briefly, then loads the Alpine LTS kernel
    with IOMMU/VFIO parameters (see
-   [Architecture](../contributor/architecture.md#boot-sequence) for details).
+   [Architecture Reference](../contributor/architecture-reference.md#boot-sequence) for details).
 2. **Kernel messages** — scroll by as the system boots from RAM (diskless mode).
 3. **tty1** — the DKVM Manager TUI launches automatically.
 
@@ -239,7 +239,7 @@ Run through these checks to confirm your DKVM setup is working:
   [example scripts](../../examples/verify_pinning.sh) for GPU passthrough and CPU
   pinning workflows.
 - **Read the Architecture doc** — for a deep understanding of the boot sequence
-  and components, see the [Architecture](../contributor/architecture.md)
+  and components, see the [Architecture Overview](../contributor/architecture-overview.md)
   document.
 
 ---
@@ -248,7 +248,7 @@ Run through these checks to confirm your DKVM setup is working:
 
 | Step              | Document                                                        |
 |-------------------|-----------------------------------------------------------------|
-| Boot flow         | [Architecture](../contributor/architecture.md#boot-sequence)    |
+| Boot flow         | [Architecture Reference](../contributor/architecture-reference.md#boot-sequence) |
 | DKVMDATA layout   | [Configuration Files](configuration-files.md)                   |
 | Networking modes  | [Networking](networking.md)                                     |
 | Common problems   | [Troubleshooting](troubleshooting.md)                           |

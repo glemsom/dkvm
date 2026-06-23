@@ -183,8 +183,8 @@ Die 0         | 0,1,2,3                       | 0             | PASS
   Ensure your DKVM host is on a trusted network.
 - The example scripts are provided as-is for reference. Review them before
   running on your hardware.
+- Only use these scripts on hardware you own and control.
 
 ---
 
 *Last updated: 2026-06-23*
-- Only use these scripts on hardware you own and control.

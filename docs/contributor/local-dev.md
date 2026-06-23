@@ -1,7 +1,7 @@
 # Local Development
 
 This guide covers the day-to-day development workflow for iterating on DKVM
-changes. It assumes you have read the [architecture document](architecture.md)
+changes. It assumes you have read the [Architecture Overview](architecture-overview.md)
 for build pipeline context.
 
 > **Terminology**: See [CONTEXT.md](../../CONTEXT.md) for definitions of
@@ -155,7 +155,7 @@ workflow.
 
 ## Reference
 
-- [Architecture Document](architecture.md) — full build pipeline, boot sequence,
+- [Architecture Reference](architecture-reference.md) — full build pipeline, boot sequence,
   persistence model, component map
 - [CONTRIBUTING.md](CONTRIBUTING.md) — PR process, coding standards, changelog
   policy
