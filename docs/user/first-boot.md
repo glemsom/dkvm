@@ -20,6 +20,21 @@ By the end of this walkthrough you will:
 
 ---
 
+## Prerequisites
+
+Before starting, make sure you have the following:
+
+- **USB stick** — 8 GB+ recommended, 2 GB minimum
+- **IOMMU-supporting CPU and motherboard** — Intel VT-d or AMD-Vi
+- **Secondary GPU** (if planning GPU passthrough) — iGPU or dedicated card for
+  the host to use
+- **Image-writing tool** — `dd` on Linux/macOS, or balenaEtcher / Rufus on
+  Windows
+- **Basic BIOS/UEFI familiarity** — you need to select a boot device
+- **Network cable** — Wi-Fi is not supported for the production bridge setup
+- **Time estimate** — ~15–30 minutes
+
+
 ## 1. Write USB
 
 Download the latest release ZIP from the
