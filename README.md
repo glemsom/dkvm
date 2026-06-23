@@ -62,7 +62,7 @@ required virtualization packages, and the **DKVM Manager** Golang TUI.
 
 | Document | What it describes | Last reviewed |
 |----------|-------------------|---------------|
-| [Architecture](docs/contributor/architecture.md) | Boot sequence, build pipeline, persistence model, component map. | 2026-06-23 |
+| [Architecture Reference](docs/contributor/architecture-reference.md) | Boot sequence details, build pipeline commands, persistence specifics, component map. | 2026-06-23 |
 | [Local Development](docs/contributor/local-dev.md) | Build commands, quick iteration loop, image inspection, cleanup. | 2026-06-23 |
 | [CONTRIBUTING](docs/contributor/CONTRIBUTING.md) | PR process, coding standards, changelog policy. | 2026-06-23 |
 | [CHANGELOG](CHANGELOG.md) | Version history and release notes. | 2026-06-23 |
