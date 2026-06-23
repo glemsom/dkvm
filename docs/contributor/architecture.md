@@ -10,41 +10,24 @@ system is built, how it boots, how data persists, and how the components relate.
 DKVM follows a standard Alpine Linux diskless boot path with customizations for
 virtualization and passthrough.
 
-```
-USB Power On
-    │
-    ▼
-UEFI/BIOS → GRUB (on USB, FAT32)
-    │
-    │ Kernel cmdline includes:
-    │   intel_iommu=on amd_iommu=on iommu=pt
-    │   mitigations=off elevator=noop waitusb=5
-    │   blacklist=amdgpu split_lock_detect=off
-    │   modules=...vfio-pci
-    │
-    ▼
-Alpine LTS Kernel + initramfs (loaded into RAM)
-    │
-    ▼
-initramfs completes → diskless mode (root in RAM)
-    │
-    ▼
-/etc/local.d/dkvm_folder.start runs:
-    │   mkdir /media/dkvmdata
-    │   mount -a  →  mounts DKVMDATA partition if present
-    │
-    ▼
-OpenRC starts services:
-    │   - lvm (LVM2)
-    │   - local (local scripts)
-    │   - ntpd (NTP time sync)
-    │   - sshd (root login enabled)
-    │
-    ▼
-tty1: DKVM Manager TUI (respawn on exit)
-    │
-    ▼
-User configures VMs via the TUI
+```mermaid
+flowchart TD
+    USB["USB Power On"]
+    GRUB["UEFI/BIOS → GRUB (on USB, FAT32)"]
+    KERNEL["Alpine LTS Kernel + initramfs<br/>(loaded into RAM)"]
+    DISKLESS["initramfs completes →<br/>diskless mode (root in RAM)"]
+    START["/etc/local.d/dkvm_folder.start runs:<br/>mkdir /media/dkvmdata<br/>mount -a → mounts DKVMDATA<br/>partition if present"]
+    SERVICES["OpenRC starts services:<br/>lvm (LVM2)<br/>local (local scripts)<br/>ntpd (NTP time sync)<br/>sshd (root login enabled)"]
+    TUI["tty1: DKVM Manager TUI<br/>(respawn on exit)"]
+    USER["User configures VMs via the TUI"]
+
+    USB --> GRUB
+    GRUB -->|"Kernel cmdline includes:<br/>intel_iommu=on amd_iommu=on iommu=pt<br/>mitigations=off elevator=noop waitusb=5<br/>blacklist=amdgpu split_lock_detect=off<br/>modules=...vfio-pci"| KERNEL
+    KERNEL --> DISKLESS
+    DISKLESS --> START
+    START --> SERVICES
+    SERVICES --> TUI
+    TUI --> USER
 ```
 
 ### Key points
@@ -68,66 +51,36 @@ image (`dkvm-<version>.img`).
 
 ### Flow diagram
 
-```
-make build
-    │
-    ├── verify-deps
-    │       Check wget, expect, mkisofs, dd, xorriso, zip, qemu-system-x86_64,
-    │       losetup, mount, sudo, tar
-    │
-    ├── OVMF_CODE.fd / OVMF_VARS.fd
-    │       Locate and copy UEFI firmware from system paths
-    │
-    ├── alpine-standard-<ver>.iso
-    │       Download from Alpine mirror (if not present)
-    │
-    ├── scripts.iso
-    │       Build ISO containing:
-    │       │   - scripts/runme.sh
-    │       │   - scripts/answer.txt
-    │       │   - scripts/dkvmmanager (pre-built binary)
-    │       └── mkisofs -iso-level 4
-    │
-    ├── alpine_extract/vmlinuz-lts
-    │       Extract LTS kernel from Alpine ISO via xorriso
-    │
-    ├── alpine_extract/initramfs-lts
-    │       Extract initramfs via xorriso
-    │
-    ├── dkvm-<version>.img (2048 MB default)
-    │   │
-    │   │ dd if=/dev/zero → raw disk image
-    │   │
-    │   └── QEMU VM (automated via install.expect)
-    │           │
-    │           │ QEMU args:
-    │           │   -kernel alpine_extract/vmlinuz-lts
-    │           │   -initrd alpine_extract/initramfs-lts
-    │           │   -drive Alpine ISO (sr0)
-    │           │   -drive scripts ISO (sr1)
-    │           │   -drive disk image (usb stick)
-    │           │   -nographic, serial console
-    │           │
-    │           │ install.expect drives setup-alpine:
-    │           │   1. Boots QEMU with Alpine kernel + initramfs
-    │           │   2. Waits for login prompt → logs in as root
-    │           │   3. Mounts scripts ISO → runs runme.sh /dev/sda
-    │           │
-    │           │ runme.sh inside QEMU:
-    │           │   1. Creates FAT32 partition on /dev/sda
-    │           │   2. Runs setup-alpine -f answer.txt (diskless mode)
-    │           │   3. Copies Alpine ISO bootfiles via setup-bootable
-    │           │   4. Installs packages (QEMU, VFIO, bridge, swtpm, etc.)
-    │           │   5. Patches GRUB with IOMMU/VFIO cmdline args
-    │           │   6. Copies CPU microcode
-    │           │   7. Installs DKVM Manager binary, configures tty1
-    │           │   8. Sets up fstab, modules, SSH, ACPI power button
-    │           │   9. lbu commit → saves overlay to USB
-    │           │  10. Poweroff
-    │           │
-    │           └── Post-build: mount image, write dkvm-release version file
-    │
-    └── dkvm-<version>.img ✓
+```mermaid
+flowchart TD
+    BUILD["make build"]
+    VERIFY["verify-deps:<br/>Check wget, expect, mkisofs, dd, xorriso,<br/>zip, qemu-system-x86_64, losetup, mount, sudo, tar"]
+    OVMF["OVMF_CODE.fd / OVMF_VARS.fd:<br/>Locate and copy UEFI firmware<br/>from system paths"]
+    ALPINE["alpine-standard-&lt;ver&gt;.iso:<br/>Download from Alpine mirror<br/>(if not present)"]
+    SCRIPTS["scripts.iso:<br/>Build ISO containing:<br/>• scripts/runme.sh<br/>• scripts/answer.txt<br/>• scripts/dkvmmanager<br/>└ mkisofs -iso-level 4"]
+    VMLINUZ["alpine_extract/vmlinuz-lts:<br/>Extract LTS kernel from Alpine ISO<br/>via xorriso"]
+    INITRAMFS["alpine_extract/initramfs-lts:<br/>Extract initramfs via xorriso"]
+    IMG["dkvm-&lt;version&gt;.img (2048 MB default)"]
+    DD["dd if=/dev/zero → raw disk image"]
+
+    subgraph QEMU_STEP["QEMU VM (automated via install.expect)"]
+        QARGS["QEMU args:<br/>-kernel vmlinuz-lts<br/>-initrd initramfs-lts<br/>-drive Alpine ISO (sr0)<br/>-drive scripts ISO (sr1)<br/>-drive disk image (usb stick)<br/>-nographic, serial console"]
+        EXPECT["install.expect drives setup-alpine:<br/>1. Boots QEMU with Alpine kernel + initramfs<br/>2. Waits for login prompt → logs in as root<br/>3. Mounts scripts ISO → runs runme.sh /dev/sda"]
+        RUNME["runme.sh inside QEMU:<br/>1. Creates FAT32 partition on /dev/sda<br/>2. Runs setup-alpine -f answer.txt (diskless)<br/>3. Copies Alpine ISO bootfiles<br/>4. Installs packages (QEMU, VFIO, bridge, swtpm)<br/>5. Patches GRUB with IOMMU/VFIO args<br/>6. Copies CPU microcode<br/>7. Installs DKVM Manager, configures tty1<br/>8. Sets up fstab, modules, SSH, ACPI<br/>9. lbu commit → saves overlay to USB<br/>10. Poweroff"]
+        POST["Post-build: mount image,<br/>write dkvm-release version file"]
+
+        QARGS --> EXPECT --> RUNME --> POST
+    end
+
+    BUILD --> VERIFY
+    BUILD --> OVMF
+    BUILD --> ALPINE
+    BUILD --> SCRIPTS
+    BUILD --> VMLINUZ
+    BUILD --> INITRAMFS
+    BUILD --> IMG
+    IMG --> DD --> QEMU_STEP
+    POST --> DONE["dkvm-&lt;version&gt;.img ✓"]
 ```
 
 ### Quick iteration (script-only changes)
@@ -208,63 +161,29 @@ the `lbu` overlay. It lives on a separate ext4 partition labeled `DKVMDATA`.
 
 ## Component Map
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      Build System (Host)                        │
-│                                                                 │
-│  Makefile                                                       │
-│    ├── verify-deps      — check dependencies                   │
-│    ├── build            — full pipeline                         │
-│    ├── run              — smoke test in QEMU                    │
-│    ├── cleanup          — remove generated files                │
-│    └── scripts.iso      — rebuild script ISO only               │
-│                                                                 │
-│  install.expect (Expect script)                                 │
-│    └── Automated QEMU session: boots Alpine, runs runme.sh      │
-│                                                                 │
-│  scripts/                                                       │
-│    ├── runme.sh          — installation logic inside QEMU VM   │
-│    ├── answer.txt        — setup-alpine answer file             │
-│    ├── dkvmmanager      — pre-built binary (downloaded)         │
-│                                                                 │
-│  examples/                                                      │
-│    ├── amd_9000_StartStop.sh  — GPU passthrough with driver     │
-│    │                             cycling                        │
-│    └── verify_pinning.sh      — CPU pinning verification        │
-│                                                                 │
-│  OVMF_CODE.fd / OVMF_VARS.fd  — UEFI firmware (copied from     │
-│                                  host system)                   │
-│  alpine-standard-<ver>.iso     — Alpine base ISO (downloaded)   │
-│  alpine_extract/               — extracted kernel + initramfs   │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph BUILD["Build System (Host)"]
+        direction TB
+        MF["Makefile<br/>├── verify-deps — check dependencies<br/>├── build — full pipeline<br/>├── run — smoke test in QEMU<br/>├── cleanup — remove generated files<br/>└── scripts.iso — rebuild script ISO only"]
+        EXPECT2["install.expect (Expect script)<br/>└── Automated QEMU session: boots Alpine, runs runme.sh"]
+        SCRIPTS2["scripts/<br/>├── runme.sh — installation logic inside QEMU VM<br/>├── answer.txt — setup-alpine answer file<br/>└── dkvmmanager — pre-built binary (downloaded)"]
+        EXAMP["examples/<br/>├── amd_9000_StartStop.sh — GPU passthrough<br/>│   with driver cycling<br/>└── verify_pinning.sh — CPU pinning verification"]
+        OVMF2["OVMF_CODE.fd / OVMF_VARS.fd — UEFI firmware (copied from host system)"]
+        ALPINE2["alpine-standard-&lt;ver&gt;.iso — Alpine base ISO (downloaded)"]
+        EXTRACT["alpine_extract/ — extracted kernel + initramfs"]
+    end
 
-┌─────────────────────────────────────────────────────────────────┐
-│                  DKVM Operating System (Target)                  │
-│                                                                 │
-│  GRUB → Alpine LTS Kernel + initramfs                           │
-│       │                                                         │
-│       ▼                                                         │
-│  /etc/local.d/dkvm_folder.start                                 │
-│       │  Mounts DKVMDATA partition                              │
-│       ▼                                                         │
-│  OpenRC services: lvm, local, ntpd, sshd                        │
-│       │                                                         │
-│       ▼                                                         │
-│  DKVM Manager (tty1)  ────  glemsom/dkvmmanager (separate repo) │
-│       │                                                         │
-│       ├── CPU pinning & topology                                │
-│       ├── PCI passthrough                                       │
-│       ├── USB passthrough                                       │
-│       ├── VM creation & editing                                 │
-│       ├── Hugepages & memory                                    │
-│       ├── TPM support (swtpm)                                   │
-│       └── lbu commit (persistence)                              │
-│                                                                 │
-│  Guest VMs (QEMU/KVM)                                           │
-│       ├── QMP socket on localhost:4444                          │
-│       ├── Bridge networking (br0)                               │
-│       └── Passthrough devices via vfio-pci                      │
-└─────────────────────────────────────────────────────────────────┘
+    subgraph TARGET["DKVM Operating System (Target)"]
+        direction TB
+        BOOT["GRUB → Alpine LTS Kernel + initramfs"]
+        MOUNT["/etc/local.d/dkvm_folder.start<br/>↳ Mounts DKVMDATA partition"]
+        SVC["OpenRC services: lvm, local, ntpd, sshd"]
+        MGR["DKVM Manager (tty1)<br/>↳ glemsom/dkvmmanager (separate repo)"]
+        FEAT["• CPU pinning &amp; topology<br/>• PCI passthrough<br/>• USB passthrough<br/>• VM creation &amp; editing<br/>• Hugepages &amp; memory<br/>• TPM support (swtpm)<br/>• lbu commit (persistence)"]
+        GUEST["Guest VMs (QEMU/KVM)<br/>• QMP socket on localhost:4444<br/>• Bridge networking (br0)<br/>• Passthrough devices via vfio-pci"]
+        BOOT --> MOUNT --> SVC --> MGR --> FEAT --> GUEST
+    end
 ```
 
 ### External dependencies
