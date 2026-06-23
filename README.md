@@ -71,8 +71,7 @@ required virtualization packages, and the **DKVM Manager** Golang TUI.
 | [Example Scripts](docs/user/example-scripts.md) | GPU driver cycling for AMD 9000-series, CPU pinning verification. | 2026-06-23 |
 | [GPU Passthrough](docs/user/gpu-passthrough.md) | Configure dedicated GPU passthrough, IOMMU groups, vfio-pci binding, VBIOS, reset issues. | 2026-06-23 |
 | [Configuration Files](docs/user/configuration-files.md) | Understand the DKVMDATA partition layout and how VM configs are stored. | 2026-06-23 |
-
-### 📖 Reference — technical details
+| [Backup, Restore & Migration](docs/user/backup-restore.md) | Back up VM data, restore after failure, and migrate VMs to another host. | 2026-06-23 |
 
 | Document | What it describes | Last reviewed |
 |----------|-------------------|---------------|
