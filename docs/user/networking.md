@@ -24,7 +24,7 @@ The three networking modes serve different use cases:
 |------|--------------------------|---------------|----------|
 | Bridge (default) | ✅ Full LAN access | Yes | Production VMs needing full network presence |
 | User-mode (NAT) | ❌ Isolated behind host | No (QEMU built-in) | Quick testing, development, isolated guests |
-| Port forwarding | Depends on mode | Depends on mode | Exposing specific guest services (e.g., SSH) |
+| Port forwarding | Via user-mode NAT only | Via user-mode NAT only | Exposing specific guest services (e.g., SSH) via hostfwd rules |
 
 ---
 
@@ -103,23 +103,26 @@ ssh -p 2222 root@localhost
 
 ---
 
-## 3. Port Forwarding
+## 3. Connecting to Guest Services
 
-Port forwarding exposes guest services on the host network.
+Two approaches exist depending on the networking mode.
 
-### Forwarding to DKVM Host
+### Via bridge (direct)
 
-If the DKVM host is on the LAN (bridge mode), its IP is on `br0`.
-Forwarding to a guest on the bridge requires no extra setup — the guest has its
-own LAN IP. Just connect directly:
+When the guest uses **bridge mode**, it has its own LAN IP. No port forwarding
+is needed — connect directly from any machine on the same network:
 
 ```bash
 ssh root@<guest-ip>
 ```
 
-### Forwarding Through the Host (User-Mode)
+No extra QEMU configuration is required beyond attaching the guest NIC to `br0`
+(as DKVM Manager does by default).
 
-In user-mode networking, use QEMU `hostfwd` rules:
+### Via user-mode NAT (port forwarding)
+
+When the guest uses **user-mode networking**, it is isolated behind the host.
+Expose guest services using QEMU `hostfwd` rules:
 
 ```bash
 # Forward host port 2222 to guest port 22
@@ -129,14 +132,29 @@ hostfwd=tcp::2222-:22
 hostfwd=tcp::8080-:80
 ```
 
-### Firewall / Network Segment Considerations
+Apply these rules in the `-netdev` option of the QEMU command line. For example,
+the DKVM Makefile `run` target forwards host port 2222 to guest SSH:
 
-If the DKVM host sits behind a firewall or on an isolated network segment, ensure:
+```makefile
+-netdev user,id=mynet0,hostfwd=tcp::2222-:22 \
+-device e1000,netdev=mynet0
+```
 
-- The LAN router gives DHCP leases to the bridge interface.
-- Inbound traffic to forwarded ports is allowed.
-- The bridge has `STP` disabled (already the default in `answer.txt`) to avoid
-  forwarding delays.
+Then SSH from the host:
+
+```bash
+ssh -p 2222 root@localhost
+```
+
+### Firewall and Network Segment Considerations
+
+Regardless of the approach chosen, if the DKVM host sits behind a firewall or on
+an isolated network segment:
+
+- Ensure the LAN router gives DHCP leases to the bridge interface (bridge mode).
+- Ensure inbound traffic to forwarded ports is allowed (user-mode NAT).
+- Keep `STP` disabled on the bridge (already the default in `answer.txt`) to
+  avoid forwarding delays.
 
 ---
 
