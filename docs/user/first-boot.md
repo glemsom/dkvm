@@ -5,6 +5,19 @@ running your first virtual machine.
 
 If you run into problems, see the [Troubleshooting](troubleshooting.md) guide.
 
+## Learning Objectives
+
+By the end of this walkthrough you will:
+
+- Write the DKVM disk image to a USB stick
+- Boot DKVM for the first time and understand what happens
+- Create and label a `DKVMDATA` partition for persistent storage
+- Configure CPU pinning, PCI/USB passthrough, memory, and hugepages via the
+  DKVM Manager TUI
+- Create and start your first virtual machine
+- Verify that passthrough devices and networking work inside the guest
+- Know where to go next for deeper understanding
+
 ---
 
 ## 1. Write USB
@@ -181,6 +194,21 @@ ssh root@<guest-ip>
 
 See the [Networking](networking.md) document for more details.
 
+### 5.4 Verification Checklist
+
+Run through these checks to confirm your DKVM setup is working:
+
+| Check | How to Verify |
+|-------|---------------|
+| DKVMDATA mounted | `mount \| grep dkvmdata` shows the partition |
+| DKVM Manager running | tty1 shows the DKVM Manager TUI menu |
+| VM starts | Guest OS boots and is accessible |
+| GPU passthrough | Guest `lspci` shows the GPU |
+| USB passthrough | USB devices appear in the guest |
+| Guest networking | Guest can ping LAN hosts and be pinged |
+| SSH access | `ssh root@<guest-ip>` from another machine |
+| Changes persist | Reboot the host, verify config is still present |
+
 ---
 
 ## 6. Next Steps
@@ -190,7 +218,7 @@ See the [Networking](networking.md) document for more details.
   the USB across reboots.
 - **Add more VMs** — repeat the VM creation steps for additional guests.
 - **Explore examples** — see the
-  [example scripts](../examples/verify_pinning.sh) for GPU passthrough and CPU
+  [example scripts](../../examples/verify_pinning.sh) for GPU passthrough and CPU
   pinning workflows.
 - **Read the Architecture doc** — for a deep understanding of the boot sequence
   and components, see the [Architecture](../contributor/architecture.md)

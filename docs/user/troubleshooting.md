@@ -5,6 +5,21 @@ Common problems and how to diagnose them.
 If your issue is not covered here, check the logs (see [Getting Logs](#getting-logs)) and open a
 [GitHub issue](https://github.com/glemsom/dkvm/issues).
 
+## Error Message Quick Reference
+
+| Error / Symptom | Likely Cause | More Info |
+|-----------------|--------------|-----------|
+| `wrong fs type` when mounting | Partition is not ext4 | [DKVMDATA Not Mounting](#dkvmdata-not-mounting) |
+| `can't read superblock` | Corrupted partition or wrong device | [DKVMDATA Not Mounting](#dkvmdata-not-mounting) |
+| DKVM Manager shows "No data partition" | DKVMDATA label missing or not ext4 | [Setting Up DKVMDATA](first-boot.md#3-setting-up-dkvdata) |
+| VM fails to start / instant crash | Missing OVMF firmware | [VM Won't Boot](#vm-wont-boot) |
+| `Kernel driver in use: nvidia` or `amdgpu` | GPU not bound to vfio-pci | [VM Won't Boot](#3-check-passthrough-device-ids) |
+| `Failed to assign device` in QEMU | IOMMU group not isolated | [VM Won't Boot](#3-check-passthrough-device-ids) |
+| Guest has no IP | DHCP failure in guest or bridge not up | [Networking](../user/networking.md#1-bridge-mode-default) |
+| Cannot SSH to DKVM host | Bridge not up or firewall blocking | [Networking](../user/networking.md#ssh-access-not-working) |
+| DKVM Manager crashes on start | Corrupted config or missing binary | Rebuild image or reinstall DKVM Manager |
+| `lbu commit` fails | USB stick full or read-only | Free space on USB or check write-protect switch |
+
 ---
 
 ## DKVMDATA Not Mounting
@@ -181,38 +196,7 @@ Use `query-status` to confirm whether the VM is running, paused, or stopped.
 ## SSH Access Not Working
 
 See the [Networking troubleshooting](networking.md#ssh-access-not-working) section
-for detailed steps. Summary:
-
-- Confirm DKVM host IP: `ip addr show br0`
-- Root SSH is enabled by default (`PermitRootLogin yes`)
-- Test from another machine: `ssh root@<dkvm-ip>`
-- Check `sshd` is running: `rc-service sshd status`
-- Verify bridge networking is up: `ip a show br0`
-
-### Bridge Not Up
-
-```bash
-ip a show br0
-```
-
-If `br0` is missing, check `/etc/network/interfaces` and restart networking:
-
-```bash
-rc-service networking restart
-```
-
-### Firewall / Network Segment
-
-If the DKVM host is behind a firewall or on an isolated segment, ensure:
-
-- The LAN router gives DHCP leases to the bridge interface.
-- Inbound traffic to the DKVM host is allowed.
-- The physical cable is connected and `eth0` has link:
-  ```bash
-  ip link show eth0
-  ```
-
----
+for detailed steps.
 
 ## Getting Logs
 

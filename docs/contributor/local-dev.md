@@ -110,6 +110,44 @@ sudo losetup -d /dev/loop0
 sudo losetup -D
 ```
 
+## Build Troubleshooting
+
+### `make build` fails with "Error during installation"
+
+This usually means `install.expect` failed to complete the QEMU-based
+installation. Common causes:
+
+| Symptom | Likely Cause | Solution |
+|---------|--------------|----------|
+| QEMU window appears briefly then disappears | Missing OVMF firmware | Run `make verify-deps` and check OVMF files exist |
+| `expect: spawn id ... not open` | QEMU failed to start | Check `qemu-system-x86_64` is installed and working |
+| Alpine ISO not found | Download interrupted | Remove `alpine-standard-*.iso` and re-run `make build` |
+| Script hangs at "Starting installation..." | `install.expect` timeout | The build VM may need more time; try running `install.expect` manually |
+
+### Loop devices not cleaned up after failed build
+
+If `make build` is interrupted, loop devices may remain attached:
+
+```bash
+# List attached loop devices
+sudo losetup -a
+
+# Detach all loop devices
+sudo losetup -D
+```
+
+### Permission errors
+
+`make build` requires `sudo` for loop device and mount operations. Ensure your
+user has `sudo` access and the `sudo` session has not expired.
+
+### Slow build
+
+The full build downloads an Alpine ISO (~200 MB), extracts kernel/initramfs, and
+boots a QEMU VM to run the installation scripts. Expect 5–15 minutes depending
+on network speed and host performance. For faster iteration on script-only
+changes, use the [quick script-only iteration](#quick-script-only-iteration)
+workflow.
 ---
 
 ## Reference

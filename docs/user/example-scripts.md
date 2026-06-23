@@ -12,7 +12,7 @@ operation.
 `amdgpu` kernel driver. These GPUs need a special driver unload/load sequence
 before `vfio-pci` can claim them. The script automates that sequence.
 
-**File**: `examples/amd_9000_StartStop.sh`
+**File**: [`examples/amd_9000_StartStop.sh`](../../examples/amd_9000_StartStop.sh)
 
 ### Requirements
 
@@ -69,7 +69,7 @@ working. It runs **inside the guest VM**, correlates guest vCPUs to host
 physical cores, and reports PASS/FAIL for core sibling and die topology
 consistency.
 
-**File**: `examples/verify_pinning.sh`
+**File**: [`examples/verify_pinning.sh`](../../examples/verify_pinning.sh)
 
 ### Requirements
 

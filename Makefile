@@ -41,7 +41,7 @@ QEMU := /usr/bin/qemu-system-x86_64
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
 DEPS := wget expect mkisofs dd xorriso zip $(QEMU) losetup mount sudo tar
 
-.PHONY: all build verify-deps cleanup run help
+.PHONY: all build verify-deps cleanup run help lint-docs
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ DEFAULT TARGET
@@ -62,6 +62,7 @@ help:
 	@echo "  run          - Run the built image in QEMU"
 	@echo "  cleanup      - Remove all generated files and clean up"
 	@echo "  help         - Show this help message"
+	@echo "  lint-docs    - Run markdownlint on documentation files"
 	@echo ""
 	@echo "Configuration variables (can be set via environment or make args):"
 	@echo "  VERSION=$(VERSION)"
@@ -243,3 +244,17 @@ cleanup:
 	@echo "Removing Alpine ISO..."
 	@rm -f $(ALPINE_ISO)
 	@echo "Cleanup complete."
+
+# ╔═══════════════════════════════════════════════════════════════════════════════════╗
+# ║ TARGET: lint-docs
+# ║ Run markdownlint on all documentation files
+# ╚═══════════════════════════════════════════════════════════════════════════════════╝
+lint-docs:
+	@echo "Running markdownlint on documentation..."
+	@if command -v markdownlint >/dev/null 2>&1; then \
+		markdownlint 'docs/**/*.md' '*.md' --config .markdownlint.yaml; \
+	else \
+		echo "markdownlint not installed. Install with:"; \
+		echo "  npm install -g markdownlint-cli"; \
+		exit 1; \
+	fi
