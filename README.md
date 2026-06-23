@@ -1,78 +1,118 @@
 # DKVM
-DKVM - Desktop KVM
 
-DKVM is a minimal hypervisor that runs entirely from RAM, enabling you to virtualize your own desktop PC with maximum performance. It supports full VGA (GPU) passthrough, PCI‑e device assignment, and other hardware acceleration features, delivering near‑native speed for the guest OS.
+[![Build](https://github.com/glemsom/dkvm/actions/workflows/build-image.yml/badge.svg)](https://github.com/glemsom/dkvm/actions/workflows/build-image.yml)
 
-The project builds a bootable USB image containing an Alpine Linux base, the required virtualization packages, and the **DKVM Manager** Golang TUI.
+DKVM — Desktop KVM. A minimal hypervisor that runs entirely from RAM,
+enabling you to virtualize your own desktop PC with maximum performance.
+Tailored for **power users**, **homelab enthusiasts**, and **developers** who need
+near-native VM performance with GPU/PCI passthrough.
+Supports full VGA (GPU) passthrough, PCI‑e device assignment, and other
+hardware acceleration features, delivering near‑native speed for the guest OS.
+
+The project builds a bootable USB image containing an Alpine Linux base, the
+required virtualization packages, and the **DKVM Manager** Golang TUI.
 
 ## Features
-- **GPU (VGA) Passthrough** – Direct access to your graphics card for high‑performance graphics.
-- **PCI‑e Device Assignment** – Attach other devices such as network cards or USB controllers.
-- **Minimal Overhead** – Runs from RAM.
+
+- **GPU (VGA) Passthrough** – Direct access to your graphics card for
+  high‑performance graphics.
+- **PCI‑e Device Assignment** – Attach other devices such as network cards or
+  USB controllers.
+- **Minimal Overhead** – Entire OS runs from RAM after boot.
+
+## Quick Start
+
+1. Download the latest release ZIP from
+   [Releases](https://github.com/glemsom/dkvm/releases).
+2. Write the image to a USB stick (see
+   [First-Boot Walkthrough](docs/user/first-boot.md#1-write-usb)).
+3. Boot from USB and follow the
+   [walkthrough](docs/user/first-boot.md).
+
+---
 
 ## Documentation
 
-User guides: [First Boot](docs/user/first-boot.md), [Configuration Files](docs/user/configuration-files.md), [Networking](docs/user/networking.md), [Example Scripts](docs/user/example-scripts.md), [Troubleshooting](docs/user/troubleshooting.md)
+### 🧪 Tutorials — start here
 
-Contributor guides: [Contributing](docs/contributor/CONTRIBUTING.md), [Architecture](docs/contributor/architecture.md), [Local Development](docs/contributor/local-dev.md)
+| Document | What you'll do |
+|----------|----------------|
+| [First-Boot Walkthrough](docs/user/first-boot.md) | Write USB image, boot DKVM, configure storage and devices, create your first VM. |
+
+### 🔧 How-to Guides — solve specific problems
+
+| Document | Problem it solves |
+|----------|-------------------|
+| [Networking](docs/user/networking.md) | Set up bridge, user-mode, or port forwarding networking for guests. |
+| [Troubleshooting](docs/user/troubleshooting.md) | Diagnose DKVMDATA mounts, VM boot failures, SSH issues. |
+| [Example Scripts](docs/user/example-scripts.md) | GPU driver cycling for AMD 9000-series, CPU pinning verification. |
+| [Configuration Files](docs/user/configuration-files.md) | Understand the DKVMDATA partition layout and how VM configs are stored. |
+
+### 📖 Reference — technical details
+
+| Document | What it describes |
+|----------|-------------------|
+| [Architecture](docs/contributor/architecture.md) | Boot sequence, build pipeline, persistence model, component map. |
+| [Local Development](docs/contributor/local-dev.md) | Build commands, quick iteration loop, image inspection, cleanup. |
+| [CONTRIBUTING](docs/contributor/CONTRIBUTING.md) | PR process, coding standards, changelog policy. |
+| [CHANGELOG](CHANGELOG.md) | Version history and release notes. |
+
+### 🧠 Explanation — deeper understanding
+
+| Document | Topic |
+|----------|-------|
+| [CONTEXT](CONTEXT.md) | Project terminology and ubiquitous language (what "DKVM", "DKVMDATA", "Guest" mean). |
+| [Architecture](docs/contributor/architecture.md) | How DKVM works end-to-end — boot, build, persistence, ACPI. |
+| [Persistence Model](docs/user/configuration-files.md#persistence-model-summary) | How OS settings and VM data survive reboots. |
+
+---
 
 ## Build Process
-Pre-built images are available in the [GitHub Releases](https://github.com/glemsom/dkvm/releases) section of this project.
 
-If you wish to build the image manually:
-1. Verify dependencies: `make verify-deps`
-2. Run `make build`. This will:
-   - Download Alpine Linux ISO (if needed)
-   - Find and copy OVMF files (if needed)
-   - Set up an Alpine Linux environment.
-   - Extract the kernel and initramfs.
-   - Boots a temporary QEMU VM and runs `scripts/runme.sh` via `expect` to automate the installation.
-   - Generate `dkvm-<version>.img`.
+Pre-built images are available in
+[GitHub Releases](https://github.com/glemsom/dkvm/releases).
 
-## Usage (Linux)
+To build manually:
 
-### 1. Download and Unpack
-Download the latest release ZIP file from the [Releases](https://github.com/glemsom/dkvm/releases) page and unpack it:
 ```bash
-unzip dkvm-*.zip
+make verify-deps
+make build
 ```
 
-### 2. Write to USB Disk
-Write the resulting `.img` file to your USB stick using `dd`:
-```bash
-# Replace /dev/sdX with your actual USB device (e.g., /dev/sdb)
-# WARNING: This will erase all data on the target device!
-sudo dd if=dkvm-<version>.img of=/dev/sdX bs=4M status=progress && sync
-```
+Output: `dkvm-<version>.img` — a bootable FAT32 disk image.
 
-### 3. Boot
-Configure your system’s BIOS/UEFI to boot from the USB device.
-On the first boot, you should configure the storage partition as described in the next section - and reboot the system.
-After rebooting, you should configure CPU Affinity, PCI Passthrough, USB Passthrough and other settings in the DKVM menu.
+For detailed build instructions, see
+[Local Development](docs/contributor/local-dev.md).
 
-### 4. Storage Configuration (`dkvmdata`)
-DKVM requires a persistent storage area for VM data (hard disks, ISOs, TPM state, and configurations). For automatic mounting, the partition **MUST** have the filesystem label `DKVMDATA`.
-
-It will be mounted at:
-```
-/media/dkvmdata
-```
-
-**Example (formatting and labeling a partition as ext4):**
-```bash
-# Replace /dev/sdXY with your target partition
-sudo mkfs.ext4 -L DKVMDATA /dev/sdXY
-```
-The DKVM Manager TUI will look for VM configurations and data in this directory.
+---
 
 ## DKVM Manager
-The **DKVM Manager** is a Golang-based TUI that provides a convenient way to configure and launch VMs:
-- **CPU Pinning & Topology** – Detects host CPU topology, reserves cores for the host, and pins guest vCPUs to specific host threads for optimal performance.
-- **PCI Passthrough** – Lets you select PCI devices (including GPUs) to pass through to the VM.
-- **USB Passthrough** – Allows selection of USB devices to expose to the guest.
-- **VM Creation & Editing** – Create new VM configurations, edit existing ones, and adjust disk, CDROM, and other parameters.
-- **Hugepages & Memory Allocation** – Configures hugepages and reserves memory for the VM.
-- **TPM Support** – Starts a software TPM (`swtpm`) for the guest.
-- **Persistence** – Changes are saved using Alpine’s `lbu commit` to ensure they survive reboots.
 
-For more details, see the blog post: [GlemSom Tech](https://glemsomtechs.blogspot.com/2018/07/dkvm-desktop-kvm.html)
+The **DKVM Manager** is a Golang-based TUI that provides a convenient way to
+configure and launch VMs:
+
+- **CPU Pinning & Topology** – Detects host CPU topology, reserves cores for
+  the host, and pins guest vCPUs to specific host threads.
+- **PCI Passthrough** – Lets you select PCI devices (including GPUs) to pass
+  through to the VM.
+- **USB Passthrough** – Allows selection of USB devices to expose to the guest.
+- **VM Creation & Editing** – Create new VM configurations, edit existing ones,
+  and adjust disk, CDROM, and other parameters.
+- **Hugepages & Memory Allocation** – Configures hugepages and reserves memory
+  for the VM.
+- **TPM Support** – Starts a software TPM (`swtpm`) for the guest.
+- **Persistence** – Changes are saved using Alpine's `lbu commit` to ensure they
+  survive reboots.
+
+For more details, see the blog post:
+[GlemSom Tech](https://glemsomtechs.blogspot.com/2018/07/dkvm-desktop-kvm.html).
+
+---
+
+## Project Repositories
+
+| Repository | Purpose |
+|------------|---------|
+| [glemsom/dkvm](https://github.com/glemsom/dkvm) | This repo. Makefile, scripts, examples, docs. Produces the bootable USB image. |
+| [glemsom/dkvmmanager](https://github.com/glemsom/dkvmmanager) | Go TUI binary that runs on tty1. Separate repo, version-pinned in Makefile. |
+| [glemsom/dkvm-qemu](https://github.com/glemsom/dkvm-qemu) | Custom QEMU APK repository with DKVM-specific patches. |

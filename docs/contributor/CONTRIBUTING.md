@@ -11,6 +11,71 @@ First off, thank you for considering contributing to DKVM.
 - [DKVM Manager Dependency](#dkvm-manager-dependency)
 - [Changelog Policy](#changelog-policy)
 
+**Documentation changes**: If your PR includes documentation changes, also
+update the relevant document(s) under `docs/`. See the
+[Documentation section](#documentation-changes) for details.
+
+## Testing Guidelines
+
+Before submitting a PR, run the following checks:
+
+### Shell scripts
+
+Run ShellCheck on all shell scripts:
+
+```bash
+shellcheck scripts/*.sh examples/*.sh
+```
+
+### Documentation
+
+If you changed documentation, verify rendering with markdownlint:
+
+```bash
+make lint-docs
+```
+
+### Build verification
+
+For changes that affect the build system or scripts:
+
+1. Run a full build: `make build`
+2. Smoke-test the resulting image: `make run`
+3. Verify the image boots and DKVM Manager starts (see
+   [First-Boot Walkthrough](../user/first-boot.md))
+
+### Functional testing
+
+For changes to scripts or runtime behaviour:
+
+- Test with at least one Linux guest and one Windows guest (if applicable)
+- Verify PCI/USB passthrough works with your test hardware
+- Check that `lbu commit` persists changes across a reboot
+
+> **Note**: Some tests require physical hardware (GPU, USB devices) and cannot
+> be automated. Document the hardware you tested with in the PR description.
+
+## Documentation Changes
+
+Pull requests that add, modify, or remove functionality **must** include
+corresponding documentation updates in `docs/`. This includes:
+
+- New features: add a how-to guide or reference entry
+- Changed behaviour: update existing documents to match
+- Removed features: mark as deprecated or remove references
+
+Documentation follows the
+[Diátaxis framework](https://diataxis.fr/):
+
+| Type | Audience | Location |
+|------|----------|----------|
+| Tutorials | New users starting out | `docs/user/` |
+| How-to Guides | Users solving specific problems | `docs/user/` |
+| Reference | Developers and advanced users | `docs/contributor/` |
+| Explanation | Users seeking deeper understanding | `docs/contributor/` and `CONTEXT.md` |
+
+See `.markdownlint.yaml` for the project's Markdown style rules.
+
 ---
 
 ## Environment Setup

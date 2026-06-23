@@ -21,6 +21,9 @@ flowchart TD
     TUI["tty1: DKVM Manager TUI<br/>(respawn on exit)"]
     USER["User configures VMs via the TUI"]
 
+    style USB fill:#f9f,stroke:#333,stroke-width:2px
+    style USER fill:#9cf,stroke:#333,stroke-width:2px
+
     USB --> GRUB
     GRUB -->|"Kernel cmdline includes:<br/>intel_iommu=on amd_iommu=on iommu=pt<br/>mitigations=off elevator=noop waitusb=5<br/>blacklist=amdgpu split_lock_detect=off<br/>modules=...vfio-pci"| KERNEL
     KERNEL --> DISKLESS
@@ -29,6 +32,10 @@ flowchart TD
     SERVICES --> TUI
     TUI --> USER
 ```
+
+> **Terminology**: See [CONTEXT.md](../../CONTEXT.md) for the project's
+> ubiquitous language — what "DKVM", "DKVMDATA", "Guest", "Host", and
+> "DKVM Manager" mean in this codebase.
 
 ### Key points
 
@@ -206,6 +213,38 @@ flowchart LR
   patches and configurations.
 
 ---
+
+## Acronym Glossary
+
+| Acronym | Expansion | Description |
+|---------|-----------|-------------|
+| ACPI | Advanced Configuration and Power Interface | Power management standard; DKVM uses ACPI events for graceful guest shutdown. |
+| BIOS | Basic Input/Output System | Legacy firmware interface (DKVM uses UEFI/OVMF). |
+| CPPC | Collaborative Processor Performance Control | Interface for managing CPU performance; used in pinning verification. |
+| DHCP | Dynamic Host Configuration Protocol | Assigns IP addresses to network interfaces automatically. |
+| DMA | Direct Memory Access | Allows devices to access memory without CPU involvement. |
+| FAT32 | File Allocation Table (32-bit) | Filesystem used on the DKVM USB boot image. |
+| GRUB | Grand Unified Bootloader | Bootloader that loads the Alpine kernel with IOMMU/VFIO parameters. |
+| IOMMU | I/O Memory Management Unit | Hardware for device address translation; required for PCI passthrough. |
+| KVM | Kernel-based Virtual Machine | Linux kernel module for hardware-accelerated virtualization. |
+| LTS | Long Term Support | Alpine's stable kernel variant used by DKVM. |
+| NAT | Network Address Translation | Masks guest IP behind host IP (user-mode networking). |
+| NTP | Network Time Protocol | Synchronises system clock over the network. |
+| OVMF | Open Virtual Machine Firmware | UEFI firmware for QEMU guests (TianoCore). |
+| PCI | Peripheral Component Interconnect | Standard for connecting hardware devices. |
+| QEMU | Quick EMUlator | The hypervisor that runs guest VMs. |
+| QMP | QEMU Machine Protocol | JSON-based management interface for running QEMU instances. |
+| SSH | Secure Shell | Encrypted remote access protocol. |
+| STP | Spanning Tree Protocol | Network loop prevention (disabled on DKVM bridge). |
+| TPM | Trusted Platform Module | Hardware security module; DKVM provides software TPM via swtpm. |
+| TUI | Terminal User Interface | Text-based user interface (DKVM Manager on tty1). |
+| UEFI | Unified Extensible Firmware Interface | Modern firmware interface; DKVM uses OVMF (UEFI) for guests. |
+| USB | Universal Serial Bus | Standard for connecting peripherals and storage. |
+| VBIOS | Video BIOS | Firmware for GPU initialisation; may be needed for passthrough. |
+| vCPU | Virtual CPU | CPU core presented to a guest VM. |
+| VFIO | Virtual Function I/O | Kernel framework for userspace device access (passthrough). |
+| VGA | Video Graphics Array | Display hardware standard; used for GPU passthrough. |
+| VM | Virtual Machine | A guest operating system instance running under QEMU/KVM. |
 
 ## ACPI Power Management
 

@@ -27,3 +27,51 @@ _Avoid_: Bare metal, physical host
 **Guest**:
 A virtual machine running under QEMU/KVM within DKVM.
 _Avoid_: VM, virtual machine (interchangeable, but Guest is canonical)
+
+**QEMU**:
+The hypervisor used to run guest VMs. DKVM uses a custom build from
+`glemsom/dkvm-qemu` with DKVM-specific patches.
+_Avoid_: Emulator, virtualizer
+
+**KVM**:
+Kernel-based Virtual Machine — the Linux kernel module that accelerates QEMU
+guest execution using hardware virtualization extensions (Intel VT-x / AMD SVM).
+_Avoid_: (acronym, always expand on first use)
+
+**OVMF**:
+TianoCore UEFI firmware used to boot guests. DKVM copies OVMF_CODE.fd and
+OVMF_VARS.fd from the host system during build.
+_Avoid_: BIOS, firmware (OVMF is the specific implementation)
+
+**IOMMU**:
+I/O Memory Management Unit — hardware that maps device DMA addresses to system
+memory. Required for PCI passthrough. Enabled via `intel_iommu=on` or
+`amd_iommu=on` kernel parameters.
+_Avoid_: IOMMU (always uppercase)
+
+**VFIO**:
+Virtual Function I/O — kernel framework for userspace device access. The
+`vfio-pci` driver binds passthrough devices so QEMU can own them exclusively.
+_Avoid_: vfio (always uppercase)
+
+**lbu**:
+Alpine Linux utility (`lbu commit`) that persists the running system overlay to
+the USB stick. DKVM Manager runs `lbu commit` automatically on configuration
+changes.
+_Avoid_: Backup utility, save command (use lbu)
+
+**swtpm**:
+Software TPM daemon that provides a Trusted Platform Module to guest VMs.
+Launched and managed by DKVM Manager per-VM.
+_Avoid_: TPM emulator (use swtpm)
+
+**QMP**:
+QEMU Machine Protocol — a JSON-based management interface available on
+localhost:4444 when a guest is running. Used for power management and
+diagnostics.
+_Avoid_: QEMU monitor (use QMP)
+
+**br0**:
+The default Linux bridge on the DKVM host, bound to the physical Ethernet
+interface. Guest VMs attached to br0 receive LAN IPs via DHCP.
+_Avoid_: Network bridge (use br0)

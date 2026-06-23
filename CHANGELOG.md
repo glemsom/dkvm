@@ -5,20 +5,33 @@ All notable changes to DKVM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.7.30] - 2026-05-31
+## [Unreleased]
+
+### Added
+- Community health files: SECURITY.md, CODE_OF_CONDUCT.md, issue/PR templates.
+- Markdownlint configuration (`.markdownlint.yaml`) and `make lint-docs` target.
 
 ### Changed
-- Updated DKVM Manager to v0.1.21.
+- README.md: added CI badge and clarified target audience.
+- CONTEXT.md: expanded terminology with QEMU, KVM, OVMF, IOMMU, VFIO, lbu,
+  swtpm, QMP, br0.
+- docs/user/first-boot.md: added learning objectives and verification checklist.
+- docs/user/networking.md: added prerequisites section and mode comparison table.
+- docs/user/troubleshooting.md: added error message quick-reference table;
+  consolidated duplicate SSH troubleshooting (now points to networking.md).
+- docs/user/configuration-files.md: added sample config structure and disk space
+  guidance.
+- docs/user/example-scripts.md: made file paths clickable links.
+- docs/contributor/architecture.md: added acronym glossary.
+- docs/contributor/CONTRIBUTING.md: added testing guidelines and documentation
+  change requirement.
+- docs/contributor/local-dev.md: added build troubleshooting section.
+- CHANGELOG.md: fixed version ordering (chronological, newest first).
 
-## [v0.7.28] - 2026-05-20
+## [v0.7.39] - 2026-06-22
 
 ### Changed
-- Updated DKVM Manager to v0.1.19.
-
-## [v0.7.33] - 2026-06-13
-
-### Fixed
-- Removed masked/missing Alpine packages (`vim`, `lvm2-dmeventd`) from the build to prevent installation failures.
+- Updated DKVM Manager to v0.2.0.
 
 ## [v0.7.38] - 2026-06-21
 
@@ -33,13 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Updated DKVM Manager to v0.1.31.
-
-## [v0.7.39] - 2026-06-22
-
-### Changed
-- Updated DKVM Manager to v0.2.0.
-
-## [Unreleased]
 
 ## [v0.7.37] - 2026-06-20
 
@@ -58,6 +64,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Removed `scripts/dkvmmenu.sh`. The project now relies entirely on the Golang TUI **DKVM Manager** for VM management.
+
+## [v0.7.33] - 2026-06-13
+
+### Fixed
+- Removed masked/missing Alpine packages (`vim`, `lvm2-dmeventd`) from the build to prevent installation failures.
+
+## [v0.7.30] - 2026-05-31
+
+### Changed
+- Updated DKVM Manager to v0.1.21.
+
+## [v0.7.28] - 2026-05-20
+
+### Changed
+- Updated DKVM Manager to v0.1.19.
 
 ## [v0.7.24] - 2026-05-15
 

@@ -3,6 +3,31 @@
 DKVM provides three networking modes for different use cases. Bridge mode is
 the default and recommended for production use.
 
+## Prerequisites
+
+Before configuring DKVM networking, ensure:
+
+- **DKVM is installed and booting** — follow the
+  [First-Boot Walkthrough](first-boot.md) if you have not done so yet.
+- **A `DKVMDATA` partition is set up** — the DKVM Manager requires it to save
+  VM configurations. See [Setting Up DKVMDATA](first-boot.md#3-setting-up-dkvdata).
+- **Physical network** — an Ethernet cable connected to the host and a router
+  that provides DHCP leases on the LAN.
+- **Wireless note** — DKVM currently supports wired Ethernet only. Wi-Fi is not
+  supported in this release.
+
+## Mode Comparison
+
+The three networking modes serve different use cases:
+
+| Mode | Guest Reachable from LAN | Requires DHCP | Use Case |
+|------|--------------------------|---------------|----------|
+| Bridge (default) | ✅ Full LAN access | Yes | Production VMs needing full network presence |
+| User-mode (NAT) | ❌ Isolated behind host | No (QEMU built-in) | Quick testing, development, isolated guests |
+| Port forwarding | Depends on mode | Depends on mode | Exposing specific guest services (e.g., SSH) |
+
+---
+
 ---
 
 ## 1. Bridge Mode (Default)

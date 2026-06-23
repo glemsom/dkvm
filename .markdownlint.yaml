@@ -1,0 +1,27 @@
+# Markdownlint configuration for DKVM documentation
+# See https://github.com/DavidAnson/markdownlint
+
+# Default state for all rules
+default: true
+
+# MD013/line-length — allow longer lines for code blocks and tables
+MD013:
+  line_length: 80
+  code_blocks: false
+  tables: false
+  headings: false
+  strict: false
+  stern: false
+
+# MD033/no-inline-html — allow inline HTML (e.g., for badges)
+MD033: false
+
+# MD041/first-line-heading — allow first line to be an image/heading
+MD041: false
+
+# MD024/no-duplicate-heading — allow duplicate headings in same file
+MD024:
+  siblings_only: true
+
+# MD046/code-block-style — allow both fenced and indented code blocks
+MD046: false
