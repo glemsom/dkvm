@@ -58,35 +58,35 @@ required virtualization packages, and the **DKVM Manager** Golang TUI.
 
 ### 🧪 Tutorials — start here
 
-| Document                                          | What you'll do                                                                   | Last reviewed |
-| ------------------------------------------------- | -------------------------------------------------------------------------------- | ------------- |
-| [First-Boot Walkthrough](docs/user/first-boot.md) | Write USB image, boot DKVM, configure storage and devices, create your first VM. | 2026-06-23    |
+| Document                                          | What you'll do                                                                   |
+| ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [First-Boot Walkthrough](docs/user/first-boot.md) | Write USB image, boot DKVM, configure storage and devices, create your first VM. |
 
 ### 🔧 How-to Guides — solve specific problems
 
-| Document | Problem it solves | Last reviewed |
-| ---------- | ------------------- | --------------- |
-| [Networking](docs/user/networking.md) | Set up bridge, user-mode, or port forwarding networking for guests. | 2026-06-23 |
-| [Troubleshooting](docs/user/troubleshooting.md) | Diagnose DKVMDATA mounts, VM boot failures, SSH issues. | 2026-06-23 |
-| [Example Scripts](docs/user/example-scripts.md) | GPU driver cycling for AMD 9000-series, CPU pinning verification. | 2026-06-23 |
-| [GPU Passthrough](docs/user/gpu-passthrough.md) | Configure dedicated GPU passthrough, IOMMU groups, vfio-pci binding, VBIOS, reset issues. | 2026-06-23 |
-| [Configuration Files](docs/user/configuration-files.md) | Understand the DKVMDATA partition layout and how VM configs are stored. | 2026-06-23 |
-| [Backup, Restore & Migration](docs/user/backup-restore.md) | Back up VM data, restore after failure, and migrate VMs to another host. | 2026-06-23 |
+| Document | Problem it solves |
+| ---------- | ------------------- |
+| [Networking](docs/user/networking.md) | Set up bridge, user-mode, or port forwarding networking for guests. |
+| [Troubleshooting](docs/user/troubleshooting.md) | Diagnose DKVMDATA mounts, VM boot failures, SSH issues. |
+| [Example Scripts](docs/user/example-scripts.md) | GPU driver cycling for AMD 9000-series, CPU pinning verification. |
+| [GPU Passthrough](docs/user/gpu-passthrough.md) | Configure dedicated GPU passthrough, IOMMU groups, vfio-pci binding, VBIOS, reset issues. |
+| [Configuration Files](docs/user/configuration-files.md) | Understand the DKVMDATA partition layout and how VM configs are stored. |
+| [Backup, Restore & Migration](docs/user/backup-restore.md) | Back up VM data, restore after failure, and migrate VMs to another host. |
 
-| Document | What it describes | Last reviewed |
-| ---------- | ------------------- | --------------- |
-| [Architecture Reference](docs/contributor/architecture-reference.md) | Boot sequence details, build pipeline commands, persistence specifics, component map. | 2026-06-23 |
-| [Local Development](docs/contributor/local-dev.md) | Build commands, quick iteration loop, image inspection, cleanup. | 2026-06-23 |
-| [CONTRIBUTING](docs/contributor/CONTRIBUTING.md) | PR process, coding standards, changelog policy. | 2026-06-23 |
-| [CHANGELOG](CHANGELOG.md) | Version history and release notes. | 2026-06-23 |
+| Document | What it describes |
+| ---------- | ------------------- |
+| [Architecture Reference](docs/contributor/architecture-reference.md) | Boot sequence details, build pipeline commands, persistence specifics, component map. |
+| [Local Development](docs/contributor/local-dev.md) | Build commands, quick iteration loop, image inspection, cleanup. |
+| [CONTRIBUTING](docs/contributor/CONTRIBUTING.md) | PR process, coding standards, changelog policy. |
+| [CHANGELOG](CHANGELOG.md) | Version history and release notes. |
 
 ### 🧠 Explanation — deeper understanding
 
-| Document | Topic | Last reviewed |
-| ---------- | ------- | --------------- |
-| [CONTEXT](CONTEXT.md) | Project terminology and ubiquitous language (what "DKVM", "DKVMDATA", "Guest" mean). | 2026-06-23 |
-| [Architecture Overview](docs/contributor/architecture-overview.md) | How DKVM works, design decisions, high-level architecture narrative. | 2026-06-23 |
-| [Persistence Model](docs/user/configuration-files.md#persistence-model-summary) | How OS settings and VM data survive reboots. | 2026-06-23 |
+| Document | Topic |
+| ---------- | ------- |
+| [CONTEXT](CONTEXT.md) | Project terminology and ubiquitous language (what "DKVM", "DKVMDATA", "Guest" mean). |
+| [Architecture Overview](docs/contributor/architecture-overview.md) | How DKVM works, design decisions, high-level architecture narrative. |
+| [Persistence Model](docs/user/configuration-files.md#persistence-model-summary) | How OS settings and VM data survive reboots. |
 
 ---
 
