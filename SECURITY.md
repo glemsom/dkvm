@@ -13,8 +13,8 @@ stable release only.
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability in DKVM, please report it by emailing
-the maintainer directly (see commit history for contact) **instead of** opening a
-public GitHub issue.
+the maintainer directly (see commit history for contact) **instead of** opening
+a public GitHub issue.
 
 Please include:
 

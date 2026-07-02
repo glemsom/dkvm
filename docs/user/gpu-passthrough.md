@@ -1,4 +1,5 @@
 # GPU Passthrough
+<!-- markdownlint-disable MD051 -->
 
 Configure a dedicated GPU for exclusive use by a guest VM with near-native
 performance.
@@ -38,7 +39,7 @@ Most modern CPUs and motherboards support IOMMU. Enable it in BIOS/UEFI:
 
 - **Secondary GPU** — The GPU you passthrough *cannot* be the host's primary
   display output. Use an integrated GPU (iGPU) or a second dedicated GPU for
-  the DKVM host. See [Primary vs Secondary GPU](#primary-vs-secondary-gpu).
+  the DKVM host. See [Primary vs Secondary GPU](#5-primary-vs-secondary-gpu).
 - **ACS-supporting chipset** — The PCIe root ports must support Access Control
   Services (ACS) so each device ends up in its own IOMMU group. Most modern
   chipsets (Intel Z/X-series, AMD X/B-series) work. See
@@ -68,25 +69,25 @@ List all VGA-compatible controllers:
 
 ```bash
 lspci -nn | grep -i vga
-```
+```text
 
 Example output:
 
-```
+```text
 26:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
-```
+```text
 
 List audio devices to find the GPU's audio function (same bus, function `.1`):
 
 ```bash
 lspci -nn | grep -i audio
-```
+```text
 
 Example output:
 
-```
+```text
 26:00.1 Audio device [0403]: NVIDIA Corporation GA104 High Definition Audio Controller [10de:228b] (rev a1)
-```
+```text
 
 Note the full PCI addresses (`0000:26:00.0` and `0000:26:00.1`). You will use
 them in the next steps.
@@ -104,14 +105,14 @@ List all IOMMU groups and their devices:
 for d in /sys/kernel/iommu_groups/*/devices/*; do
   echo "$(basename $(dirname $d)): $(basename $d)"
 done | sort -t: -k1 -n
-```
+```text
 
 Example output for an isolated GPU:
 
-```
+```text
 16: 0000:26:00.0
 16: 0000:26:00.1
-```
+```text
 
 Here the GPU and its audio function share group 16. Because they are the only
 devices in the group, both can be passed through together — this is the ideal
@@ -123,11 +124,11 @@ If the output shows additional devices sharing the GPU's group (e.g., an NVMe
 SSD, a USB controller, or the GPU's own PCIe bridge), you have a
 **non-isolated group**. Running `for d in /sys/kernel/iommu_groups/*/devices/*; do echo "$(basename $(dirname $d)): $(basename $d)"; done | sort -t: -k1 -n` may show:
 
-```
+```text
 16: 0000:26:00.0
 16: 0000:26:00.1
 16: 0000:27:00.0
-```
+```text
 
 Options:
 
@@ -157,14 +158,14 @@ Check which driver is currently bound:
 
 ```bash
 lspci -nnk -s 26:00
-```
+```text
 
 Look for the `Kernel driver in use:` line. For an NVIDIA GPU still bound to
 the host driver:
 
-```
+```text
 Kernel driver in use: nvidia
-```
+```text
 
 ### 3.2 Add PCI IDs to vfio-pci
 
@@ -176,9 +177,9 @@ Passthrough** menu and save. The IDs are written to
 If you need to do it manually (for testing), add the vendor and device IDs to
 the kernel command line in GRUB:
 
-```
+```text
 vfio-pci.ids=10de:2484,10de:228b
-```
+```text
 
 The two IDs (comma-separated, no spaces) correspond to the GPU and its audio
 function.
@@ -191,25 +192,25 @@ issues, verify the blacklist:
 
 ```bash
 cat /etc/modprobe.d/*.conf | grep -i blacklist
-```
+```text
 
 Expected entries:
 
-```
+```text
 blacklist nvidia
 blacklist nvidia_drm
 blacklist nvidia_modeset
 blacklist nvidia_uvm
-```
+```text
 
 For AMD GPUs:
 
-```
+```text
 blacklist amdgpu
-```
+```text
 
 > **Note**: On AMD systems with an iGPU that the host uses, do **not** blacklist
-> `amdgpu` entirely — see [Primary vs Secondary GPU](#primary-vs-secondary-gpu).
+> `amdgpu` entirely — see [Primary vs Secondary GPU](#5-primary-vs-secondary-gpu).
 
 ### 3.4 Reboot
 
@@ -217,7 +218,7 @@ After configuring PCI passthrough in DKVM Manager, reboot the system:
 
 ```bash
 reboot
-```
+```text
 
 ### 3.5 Verify vfio-pci Binding
 
@@ -225,11 +226,11 @@ After reboot, confirm the devices are bound to `vfio-pci`:
 
 ```bash
 lspci -nnk -s 26:00
-```
+```text
 
 Expected output:
 
-```
+```text
 26:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484]
         Subsystem: ...
         Kernel driver in use: vfio-pci
@@ -237,13 +238,13 @@ Expected output:
 
 26:00.1 Audio device [0403]: NVIDIA Corporation GA104 High Definition Audio Controller [10de:228b]
         Kernel driver in use: vfio-pci
-```
+```text
 
 Also verify that `vfio-pci` has claimed the devices:
 
 ```bash
 ls -la /dev/vfio/
-```
+```text
 
 You should see one or more `vfio` device files (e.g., `/dev/vfio/16` for IOMMU
 group 16) plus `/dev/vfio/vfio`.
@@ -276,7 +277,7 @@ Extract the current GPU VBIOS from the host:
 echo 1 > /sys/bus/pci/devices/0000:26:00.0/rom
 cat /sys/bus/pci/devices/0000:26:00.0/rom > /media/dkvmdata/gpu.rom
 echo 0 > /sys/bus/pci/devices/0000:26:00.0/rom
-```
+```text
 
 Specify the ROM file in your VM configuration via DKVM Manager (set the VBIOS
 path in the PCI passthrough device settings).
@@ -358,7 +359,7 @@ To see which reset methods your GPU supports:
 
 ```bash
 cat /sys/bus/pci/devices/0000:26:00.0/reset_method
-```
+```text
 
 Possible values: `flr` (function-level reset), `bus`, `pm` (power management),
 `none`.
@@ -373,7 +374,7 @@ Once the guest OS is running, confirm the GPU is accessible.
 
 ```bash
 lspci -nn | grep -i vga
-```
+```text
 
 If the GPU appears in the list, the passthrough is working at the PCI level.
 
@@ -381,7 +382,7 @@ Check the driver in use inside the guest:
 
 ```bash
 lspci -nnk | grep -A3 VGA
-```
+```text
 
 Install the vendor's driver (NVIDIA or AMD) inside the guest for full GPU
 acceleration.
@@ -417,6 +418,7 @@ functioning correctly.
 has stopped this device because it has reported problems").
 
 **Causes**:
+
 - The GPU detected that it is running inside a VM and disabled itself.
 - Missing or corrupted VBIOS.
 - The GPU was not properly reset between VM sessions.
@@ -427,7 +429,7 @@ has stopped this device because it has reported problems").
    guest. DKVM Manager applies `-cpu hv_vpindex,hv_reset,...` flags for Windows
    guests. Verify the VM configuration includes:
 
-   ```
+   ```xml
    <kvm>
      <hidden state='on'/>
    </kvm>
@@ -435,10 +437,10 @@ has stopped this device because it has reported problems").
 
    Or check that `kvm_hidden=on` appears in the QEMU command line.
 
-2. **Provide a valid VBIOS** — See [VBIOS ROM Considerations](#vbios-rom-considerations).
+1. **Provide a valid VBIOS** — See [VBIOS ROM Considerations](#4-vbios-rom-considerations).
    A dumped or vendor-provided VBIOS often resolves error 43 on NVIDIA GPUs.
 
-3. **Reboot the host** — If the GPU was previously used by the host or by
+1. **Reboot the host** — If the GPU was previously used by the host or by
    another VM without a clean reset, a full power cycle may be needed.
 
 ### AMD Reset Bug
@@ -446,15 +448,15 @@ has stopped this device because it has reported problems").
 **Symptom**: After stopping the VM, any attempt to start it again (or any other
 VM using the same GPU) fails. QEMU output shows:
 
-```
+```text
 Failed to assign device
-```
+```text
 
 Or the host kernel logs show:
 
-```
+```text
 [ 1234.567] vfio-pci 0000:26:00.0: Failed to reset device
-```
+```text
 
 **Cause**: The GPU did not reset properly after the VM stopped. Common on AMD
 RX 400/500 and early RDNA cards.
@@ -491,7 +493,7 @@ unresponsive.
 **Causes**:
 
 - The GPU is the host's primary display output and the host loses its console
-  when QEMU takes the device. See [Primary vs Secondary GPU](#primary-vs-secondary-gpu).
+  when QEMU takes the device. See [Primary vs Secondary GPU](#5-primary-vs-secondary-gpu).
 - ACS override is not sufficient for the platform — try a different PCIe slot.
 - The GPU shares an IOMMU group with a device critical to the host (e.g., NVMe
   SSD, USB controller). Pass all devices in the group or do not pass through.
@@ -500,10 +502,10 @@ unresponsive.
 
 **Symptom**: QEMU error on VM start:
 
-```
+```text
 vfio: Cannot enable device: Invalid argument
 Failed to assign device "0000:26:00.0"
-```
+```text
 
 **Causes**:
 
@@ -518,9 +520,11 @@ Failed to assign device "0000:26:00.0"
 2. Check IOMMU groups and ensure all devices in the group are passed through
    (see [Non-Isolated Groups](#non-isolated-iommu-groups)).
 3. Verify kernel modules are loaded:
+
    ```bash
    lsmod | grep vfio
    ```
+
    Expected: `vfio_pci`, `vfio_pci_core`, `vfio_virqfd`, `vfio_iommu_type1`,
    `vfio`.
 
@@ -528,11 +532,11 @@ Failed to assign device "0000:26:00.0"
 
 ## 9. Reference
 
-| Step                        | Document                                                          |
-|-----------------------------|-------------------------------------------------------------------|
-| First-time DKVM setup       | [First-Boot Walkthrough](first-boot.md)                           |
-| PCI passthrough in TUI      | [First-Boot Walkthrough §4.2](first-boot.md#42-pci-passthrough)   |
-| AMD 9000-series driver cycle| [Example Scripts](example-scripts.md#1-amd_9000_startstopsh)      |
-| Common problems             | [Troubleshooting](troubleshooting.md)                             |
-| Architecture & boot flow    | [Architecture Reference](../contributor/architecture-reference.md) |
-| DKVM terminology            | [CONTEXT](../../CONTEXT.md)                                       |
+| Step                         | Document                                                           |
+| ---------------------------- | ------------------------------------------------------------------ |
+| First-time DKVM setup        | [First-Boot Walkthrough](first-boot.md)                            |
+| PCI passthrough in TUI       | [First-Boot Walkthrough §4.2](first-boot.md#42-pci-passthrough)    |
+| AMD 9000-series driver cycle | [Example Scripts](example-scripts.md#1-amd_9000_startstopsh)       |
+| Common problems              | [Troubleshooting](troubleshooting.md)                              |
+| Architecture & boot flow     | [Architecture Reference](../contributor/architecture-reference.md) |
+| DKVM terminology             | [CONTEXT](../../CONTEXT.md)                                        |

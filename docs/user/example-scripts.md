@@ -23,11 +23,13 @@ before `vfio-pci` can claim them. The script automates that sequence.
 - `vfio-pci` kernel module loaded
 - DKVM system with PCI passthrough configured
 25:d05|
+
 ### Installation
 
 Place the script so DKVM Manager loads it on startup:
 
 1. **Copy the script** to the DKVMDATA mount:
+
    ```bash
    cp examples/amd_9000_StartStop.sh /media/dkvmdata/amd_9000_StartStop.sh
    ```
@@ -35,15 +37,19 @@ Place the script so DKVM Manager loads it on startup:
 2. **Source it from DKVM Manager's `.profile`** — DKVM Manager sources
    `/media/dkvmdata/.profile` at startup. Either:
    - Create/edit `/media/dkvmdata/.profile` and add:
+
      ```bash
      source /media/dkvmdata/amd_9000_StartStop.sh
      ```
+
    - Or source from the host's root profile instead:
+
      ```bash
      echo "source /media/dkvmdata/amd_9000_StartStop.sh" >> /root/.profile
      ```
 
 3. **Reload the profile** (or reboot):
+
    ```bash
    source /root/.profile
    ```
@@ -51,9 +57,11 @@ Place the script so DKVM Manager loads it on startup:
 ### Verification
 
 Confirm the hooks are loaded:
+
 ```bash
 declare -f customVMStart customVMStop
-```
+```text
+
 This prints both function bodies if they are correctly registered. If you see
 `customVMStart: not found`, the script is not being sourced.
 
@@ -122,12 +130,13 @@ IP address on the bridge network:
 
 ```bash
 HOST_IP="192.168.50.21"
-```
+```text
 
 ### Usage
 
 1. Copy the script to your guest VM (e.g., via `scp`).
 2. Inside the guest, run:
+
    ```bash
    ./verify_pinning.sh
    ```
@@ -155,14 +164,14 @@ HOST_IP="192.168.50.21"
 
 #### Main Table
 
-```
+```text
 Guest vCPU    | Guest Core ID  | Guest Die  | Host Logical CPU | Host Core ID    | L3 Cache    | CPPC
 -------------|----------------|------------|-----------------|-----------------|------------|----------
 0            | 0              | 0          | 4               | 0               | 32M        | 204
 1            | 0              | 0          | 5               | 0               | 32M        | 204
 2            | 1              | 0          | 6               | 1               | 32M        | 204
 3            | 1              | 0          | 7               | 1               | 32M        | 204
-```
+```text
 
 - **Guest vCPU** — virtual CPU ID inside the guest.
 - **Guest Core ID** — the core this vCPU belongs to (from guest topology).
@@ -175,14 +184,14 @@ Guest vCPU    | Guest Core ID  | Guest Die  | Host Logical CPU | Host Core ID   
 
 #### Core Sibling Verification
 
-```
+```text
 Guest Core ID | Guest vCPU  | Host Core ID  | Host Logical CPU | Status
 --------------|-------------|---------------|-----------------|---------
 Core 0        | vCPU 0      | 0             | 4               | PASS
 Core 0        | vCPU 1      | 0             | 5               | PASS
 Core 1        | vCPU 2      | 1             | 6               | PASS
 Core 1        | vCPU 3      | 1             | 7               | PASS
-```
+```text
 
 - **PASS** — all vCPUs in the same guest core map to the same host core.
   Pinning is correct.
@@ -191,11 +200,11 @@ Core 1        | vCPU 3      | 1             | 7               | PASS
 
 #### CPU-Die Verification
 
-```
+```text
 Guest Die ID  | Guest vCPUs                   | Host Die ID    | Status
 --------------|-------------------------------|---------------|---------
 Die 0         | 0,1,2,3                       | 0             | PASS
-```
+```text
 
 - **PASS** — all vCPUs on the same guest die map to the same host die.
 - **FAIL** — vCPUs on the same guest die map to different host dies.
@@ -222,7 +231,7 @@ Die 0         | 0,1,2,3                       | 0             | PASS
 ## Reference
 
 | Topic | Document |
-|-------|----------|
+| ------- | ---------- |
 | First-time setup | [First-Boot Walkthrough](first-boot.md) |
 | GPU passthrough setup | [GPU Passthrough](gpu-passthrough.md) |
 | Architecture & design | [Architecture Overview](../contributor/architecture-overview.md) |

@@ -142,17 +142,18 @@ passthrough.
 
 DKVM is split across three repositories. See
 [Project Repositories](../README.md#project-repositories) in the README for
-repository listings.
+repository listings
+
 ---
 
 ## Reference
 
 | Topic | Document |
-|-------|----------|
+| ------- | ---------- |
 | Booting, pipeline, persistence | [Architecture Reference](architecture-reference.md) |
 | First-time setup | [First-Boot Walkthrough](../user/first-boot.md) |
 | GPU passthrough setup | [GPU Passthrough](../user/gpu-passthrough.md) |
 | Networking modes | [Networking](../user/networking.md) |
 | DKVMDATA layout | [Configuration Files](../user/configuration-files.md) |
 | Build & develop | [Local Development](local-dev.md) |
-| Project terminology | [CONTEXT](../../CONTEXT.md)
+| Project terminology | [CONTEXT](../../CONTEXT.md) |

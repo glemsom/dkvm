@@ -2,7 +2,8 @@
 
 Common problems and how to diagnose them.
 
-If your issue is not covered here, check the logs (see [Getting Logs](#getting-logs)) and open a
+If your issue is not covered here, check the logs (see
+[Getting Logs](#getting-logs)) and open a
 [GitHub issue](https://github.com/glemsom/dkvm/issues).
 
 > **Terminology**: See [CONTEXT.md](../../CONTEXT.md) for definitions of
@@ -11,7 +12,7 @@ If your issue is not covered here, check the logs (see [Getting Logs](#getting-l
 ## Error Message Quick Reference
 
 | Error / Symptom | Likely Cause | More Info |
-|-----------------|--------------|-----------|
+| ----------------- | -------------- | ----------- |
 | `wrong fs type` when mounting | Partition is not ext4 | [DKVMDATA Not Mounting](#dkvmdata-not-mounting) |
 | `can't read superblock` | Corrupted partition or wrong device | [DKVMDATA Not Mounting](#dkvmdata-not-mounting) |
 | DKVM Manager shows "No data partition" | DKVMDATA label missing or not ext4 | [Setting Up DKVMDATA](first-boot.md#3-setting-up-dkvdata) |
@@ -152,9 +153,11 @@ start or crash.
 **Common GPU passthrough issues:**
 
 - **IOMMU group not isolated** — check the group:
+
   ```bash
   for d in /sys/kernel/iommu_groups/*/devices/*; do echo "$(basename $(dirname $d)): $(basename $d)"; done
   ```
+
   If your GPU shares a group with other devices, all devices in the group must
   be passed through or isolated via ACS override patches.
 
@@ -249,7 +252,7 @@ cat /var/log/messages   # General system messages
 ## Reference
 
 | Topic | Document |
-|-------|----------|
+| ------- | ---------- |
 | First-time setup | [First-Boot Walkthrough](first-boot.md) |
 | Networking modes | [Networking](networking.md) |
 | GPU passthrough setup | [GPU Passthrough](gpu-passthrough.md) |

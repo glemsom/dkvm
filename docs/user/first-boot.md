@@ -37,7 +37,6 @@ Before starting, make sure you have the following:
 - **Network cable** — Wi-Fi is not supported for the production bridge setup
 - **Time estimate** — ~15–30 minutes
 
-
 ## 1. Write USB
 
 Download the latest release ZIP from the
@@ -45,13 +44,13 @@ Download the latest release ZIP from the
 
 ```bash
 unzip dkvm-*.zip
-```
+```text
 
 Write the image to a USB stick (replace `/dev/sdX` with your device):
 
 ```bash
 sudo dd if=dkvm-<version>.img of=/dev/sdX bs=4M status=progress && sync
-```
+```text
 
 > **Warning**: This erases all data on the target device. Double-check the device
 > path before running.
@@ -64,9 +63,9 @@ Configure your system BIOS/UEFI to boot from the USB device.
 
 ### What You See
 
-```
+```text
 GRUB menu → Alpine kernel messages → tty1: DKVM Manager TUI
-```
+```text
 
 1. **GRUB** — the bootloader appears briefly, then loads the Alpine LTS kernel
    with IOMMU/VFIO parameters (see
@@ -96,7 +95,7 @@ Use `lsblk` or `fdisk` to find the disk and partition you want to use:
 
 ```bash
 lsblk
-```
+```text
 
 Choose a partition that has enough free space for your guest VMs (at least
 50 GB recommended).
@@ -107,7 +106,7 @@ Replace `/dev/sdXY` with your target partition (e.g., `/dev/sda3`):
 
 ```bash
 sudo mkfs.ext4 -L DKVMDATA /dev/sdXY
-```
+```text
 
 ### 3.3 Reboot
 
@@ -115,7 +114,7 @@ Reboot the system:
 
 ```bash
 reboot
-```
+```text
 
 After reboot, the partition is automatically mounted at `/media/dkvmdata`.
 Verify with:
@@ -123,7 +122,7 @@ Verify with:
 ```bash
 lsblk -f | grep DKVMDATA
 mount | grep dkvmdata
-```
+```text
 
 For more details on the DKVMDATA layout, see the
 [Configuration Files](configuration-files.md) document.
@@ -208,7 +207,7 @@ and try connecting:
 ```bash
 # From another machine on the LAN
 ssh root@<guest-ip>
-```
+```text
 
 See the [Networking](networking.md) document for more details.
 
@@ -217,7 +216,7 @@ See the [Networking](networking.md) document for more details.
 Run through these checks to confirm your DKVM setup is working:
 
 | Check | How to Verify |
-|-------|---------------|
+| ------- | --------------- |
 | DKVMDATA mounted | `mount \| grep dkvmdata` shows the partition |
 | DKVM Manager running | tty1 shows the DKVM Manager TUI menu |
 | VM starts | Guest OS boots and is accessible |

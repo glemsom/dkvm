@@ -38,7 +38,7 @@ this:
     "count": 4
   }
 }
-```
+```text
 
 > **Note**: This is an illustrative example. The actual configuration format is
 > managed internally by DKVM Manager and should not be edited by hand.
@@ -48,7 +48,7 @@ this:
 Plan your `DKVMDATA` partition size based on your expected workload:
 
 | Workload | Recommended Size | Notes |
-|----------|-----------------|-------|
+| ---------- | ----------------- | ------- |
 | Minimal (Linux guest, no GUI) | 20–40 GB | Lightweight Alpine/Debian guests |
 | Desktop Linux with GUI | 40–80 GB | Ubuntu, Fedora with desktop environment |
 | Windows 10/11 | 80–160 GB | Windows + applications + updates |
@@ -82,7 +82,7 @@ If you do not already have a partition with the correct label, create one:
 ```bash
 # Replace /dev/sdXY with your target partition (e.g., /dev/sda3)
 sudo mkfs.ext4 -L DKVMDATA /dev/sdXY
-```
+```text
 
 After formatting, reboot the system. The partition is automatically mounted at
 `/media/dkvmdata` by `/etc/local.d/dkvm_folder.start` during boot.
@@ -96,7 +96,7 @@ After formatting, reboot the system. The partition is automatically mounted at
 ```bash
 lsblk -f | grep DKVMDATA
 mount | grep dkvmdata
-```
+```text
 
 Both commands should show the partition mounted at `/media/dkvmdata`.
 
@@ -107,13 +107,13 @@ Both commands should show the partition mounted at `/media/dkvmdata`.
 Once mounted, the DKVM Manager creates and manages the following structure under
 `/media/dkvmdata`:
 
-```
+```text
 /media/dkvmdata/
 ├── images/          # VM disk images (*.qcow2, *.raw)
 ├── iso/             # Guest OS installation ISOs
 ├── tpm/             # TPM state directories (one per VM, managed by swtpm)
 └── config/          # VM configuration files (managed by DKVM Manager)
-```
+```text
 
 ### `images/`
 
@@ -146,6 +146,7 @@ All VM and system configuration **must** be done through the DKVM Manager TUI
 or system files is not supported.
 
 **DKVM Manager handles**:
+
 - CPU pinning and topology
 - PCI/USB passthrough
 - VM creation, editing, and deletion
@@ -172,7 +173,7 @@ For full details on how persistence works across boot cycles, see the
 ## Reference
 
 | Topic | Document |
-|-------|----------|
+| ------- | ---------- |
 | First-time setup | [First-Boot Walkthrough](first-boot.md) |
 | Networking modes | [Networking](networking.md) |
 | Common problems | [Troubleshooting](troubleshooting.md) |

@@ -1,6 +1,7 @@
 # DKVM
+<!-- markdownlint-disable MD013 -->
 
-Desktop KVM — an Alpine Linux based operating system that boots from USB and provides a minimal hypervisor environment with GPU/PCI passthrough capabilities.
+Desktop KVM - an Alpine Linux based operating system that boots from USB and provides a minimal hypervisor environment with GPU/PCI passthrough capabilities.
 
 ## Language
 

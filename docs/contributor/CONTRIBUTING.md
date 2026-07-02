@@ -1,4 +1,5 @@
 # Contributing to DKVM
+<!-- markdownlint-disable MD051 -->
 
 First off, thank you for considering contributing to DKVM.
 
@@ -25,7 +26,7 @@ Run ShellCheck on all shell scripts:
 
 ```bash
 shellcheck scripts/*.sh examples/*.sh
-```
+```text
 
 ### Documentation
 
@@ -33,7 +34,7 @@ If you changed documentation, verify rendering with markdownlint:
 
 ```bash
 make lint-docs
-```
+```text
 
 ### Build verification
 
@@ -68,7 +69,7 @@ Documentation follows the
 [Diátaxis framework](https://diataxis.fr/):
 
 | Type | Audience | Location |
-|------|----------|----------|
+| ------ | ---------- | ---------- |
 | Tutorials | New users starting out | `docs/user/` |
 | How-to Guides | Users solving specific problems | `docs/user/` |
 | Reference | Developers and advanced users | `docs/contributor/` |
@@ -85,7 +86,7 @@ end of the file:
 ---
 
 *Last updated: YYYY-MM-DD*
-```
+```text
 
 When your PR modifies a documentation file, update the date in its footer to
 the current date. This helps readers assess how current the information is.
@@ -101,7 +102,7 @@ dependencies:
 
 ```bash
 make verify-deps
-```
+```text
 
 This checks for: `wget`, `expect`, `mkisofs`, `dd`, `xorriso`, `zip`,
 `qemu-system-x86_64`, `losetup`, `mount`, `sudo`, and `tar`.
@@ -110,7 +111,7 @@ On Debian/Ubuntu systems:
 
 ```bash
 sudo apt install wget expect xorriso zip qemu-system-x86 ovmf mtools
-```
+```text
 
 ### Go Toolchain
 
@@ -123,13 +124,16 @@ DKVM Manager binary.
 
 ### Git Workflow
 
-1.  Fork the repository on GitHub.
-2.  Clone your fork locally:
+1. Fork the repository on GitHub.
+2. Clone your fork locally:
+
     ```bash
     git clone git@github.com:<your-username>/dkvm.git
     cd dkvm
     ```
-3.  Add the upstream remote:
+
+3. Add the upstream remote:
+
     ```bash
     git remote add upstream git@github.com:glemsom/dkvm.git
     ```
@@ -144,17 +148,17 @@ DKVM uses a Makefile-based build system.
 
 ```bash
 make build
-```
+```text
 
 This will:
 
-1.  Check all dependencies (`make verify-deps`).
-2.  Find and copy OVMF firmware files (if needed).
-3.  Download the Alpine Linux ISO (if not present).
-4.  Extract kernel and initramfs from the ISO.
-5.  Boot a temporary QEMU VM and run `scripts/runme.sh` via `expect`
+1. Check all dependencies (`make verify-deps`).
+2. Find and copy OVMF firmware files (if needed).
+3. Download the Alpine Linux ISO (if not present).
+4. Extract kernel and initramfs from the ISO.
+5. Boot a temporary QEMU VM and run `scripts/runme.sh` via `expect`
     (`install.expect`) to automate installation.
-6.  Generate `dkvm-<version>.img`.
+6. Generate `dkvm-<version>.img`.
 
 ### Smoke-Testing
 
@@ -162,7 +166,7 @@ Run the built image in QEMU:
 
 ```bash
 make run
-```
+```text
 
 This boots the image with 8 GB RAM, UEFI, and user-mode networking
 (SSH forwarded to `localhost:2222`).
@@ -171,26 +175,32 @@ This boots the image with 8 GB RAM, UEFI, and user-mode networking
 
 ## PR Process
 
-1.  **Branch from `main`**: create a feature branch:
+1. **Branch from `main`**: create a feature branch:
+
     ```bash
     git checkout -b my-feature main
     ```
-2.  **Make changes** following the [coding standards](#coding-standards)
+
+2. **Make changes** following the [coding standards](#coding-standards)
     below.
-3.  **Update `CHANGELOG.md`** under `## [Unreleased]` (see
+3. **Update `CHANGELOG.md`** under `## [Unreleased]` (see
     [Changelog Policy](#changelog-policy)).
-4.  **Commit your changes** with a descriptive message:
+4. **Commit your changes** with a descriptive message:
+
     ```bash
     git commit -m "area: brief description of change"
     ```
-5.  **Push to your fork**:
+
+5. **Push to your fork**:
+
     ```bash
     git push origin my-feature
     ```
-6.  **Open a Pull Request** against the `main` branch of
+
+6. **Open a Pull Request** against the `main` branch of
     `glemsom/dkvm`.
-7.  Address review feedback, if any.
-8.  A maintainer merges the PR after approval.
+7. Address review feedback, if any.
+8. A maintainer merges the PR after approval.
 
 ---
 
@@ -201,21 +211,25 @@ This boots the image with 8 GB RAM, UEFI, and user-mode networking
 - Use `#!/bin/sh` shebang (Alpine uses BusyBox ash).
 - Use the `err()` function for error handling (defined in
   `scripts/runme.sh`):
+
   ```sh
   err() {
       echo "ERROR" "$@"
       /bin/sh
   }
   ```
+
 - Run `shellcheck` manually before submitting:
+
   ```bash
   shellcheck scripts/*.sh
   ```
+
   ShellCheck is not enforced in CI — it is a manual quality check.
 - Use the box-comment style for file headers (see existing files for
   reference):
 
-```
+```text
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ FILE:  example.sh
 # ║
@@ -223,7 +237,7 @@ This boots the image with 8 GB RAM, UEFI, and user-mode networking
 # ║
 # ║ DESCRIPTION: What this script does.
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-```
+```text
 
 ### Markdown
 
@@ -243,14 +257,15 @@ The Makefile pins a specific release tag:
 
 ```makefile
 DKVM_MANAGER_VERSION ?= v0.2.0
-```
+```text
 
 To update:
 
-1.  Check the latest release tag on the
+1. Check the latest release tag on the
     [dkvmmanager releases page](https://github.com/glemsom/dkvmmanager/releases).
-2.  Update `DKVM_MANAGER_VERSION` in the Makefile.
-3.  Add a `CHANGELOG.md` entry under `## [Unreleased]`:
+2. Update `DKVM_MANAGER_VERSION` in the Makefile.
+3. Add a `CHANGELOG.md` entry under `## [Unreleased]`:
+
     ```
     ### Changed
     - Updated DKVM Manager to v0.2.0.
@@ -286,7 +301,7 @@ and the project adheres to
 
 ### Changed
 - Updated DKVM Manager to v0.1.30.
-```
+```text
 
 If `## [Unreleased]` does not exist yet, create it at the top of the
 file, above the most recent release entry.

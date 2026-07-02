@@ -1,4 +1,5 @@
 # Backup, Restore, and Migration
+<!-- markdownlint-disable MD051 -->
 
 DKVM separates VM data from the boot USB. VM disk images, ISOs, TPM state, and
 VM configurations live on the `DKVMDATA` partition. This guide shows how to
@@ -39,7 +40,7 @@ ps aux | grep qemu
 
 # Gracefully shut down a VM via QMP
 echo '{"execute":"qmp_capabilities"}{"execute":"system_powerdown"}' | nc localhost 4444
-```
+```text
 
 Wait until all QEMU processes have exited before proceeding.
 
@@ -54,7 +55,7 @@ lsblk
 # Create a mount point and mount
 mkdir -p /mnt/backup
 mount /dev/sdb1 /mnt/backup
-```
+```text
 
 > If the external drive uses a filesystem not supported by the DKVM host (e.g.,
 > NTFS, exFAT), format it as ext4 first, or use a drive already formatted as
@@ -67,7 +68,7 @@ QCOW2 disk images:
 
 ```bash
 rsync -avh --sparse --progress /media/dkvmdata/ /mnt/backup/dkvmdata/
-```
+```text
 
 - **`-a`** — archive mode (preserves permissions, timestamps, symlinks).
 - **`-v`** — verbose output.
@@ -78,7 +79,7 @@ Alternatively, use `cp` for a simpler copy:
 
 ```bash
 cp -a /media/dkvmdata/ /mnt/backup/dkvmdata/
-```
+```text
 
 ### 1.4 Verify the Backup
 
@@ -86,17 +87,17 @@ Check that the backup contains all expected directories:
 
 ```bash
 ls -la /mnt/backup/dkvmdata/
-```
+```text
 
 Expected layout:
 
-```
+```text
 /mnt/backup/dkvmdata/
 ├── config/          # VM configuration files
 ├── images/          # VM disk images
 ├── iso/             # Guest OS ISOs
 └── tpm/             # swtpm state directories
-```
+```text
 
 Compare file counts or total sizes:
 
@@ -105,14 +106,14 @@ echo "Original:"
 du -sh /media/dkvmdata/
 echo "Backup:"
 du -sh /mnt/backup/dkvmdata/
-```
+```text
 
 ### 1.5 Unmount and Store
 
 ```bash
 sync
 umount /mnt/backup
-```
+```text
 
 Store the external drive in a safe location.
 
@@ -130,7 +131,7 @@ If the old partition is gone or unusable, create a new one:
 ```bash
 # Replace /dev/sdXY with your target partition (e.g., /dev/sda3)
 sudo mkfs.ext4 -L DKVMDATA /dev/sdXY
-```
+```text
 
 See [Setting Up DKVMDATA](first-boot.md#3-setting-up-dkvmdata) for details.
 
@@ -139,7 +140,7 @@ See [Setting Up DKVMDATA](first-boot.md#3-setting-up-dkvmdata) for details.
 ```bash
 # Mount the external drive containing your backup
 mount /dev/sdb1 /mnt/backup
-```
+```text
 
 ### 2.3 Copy Data Back
 
@@ -149,21 +150,21 @@ mount | grep dkvmdata
 
 # Restore the backup
 rsync -avh --sparse --progress /mnt/backup/dkvmdata/ /media/dkvmdata/
-```
+```text
 
 ### 2.4 Verify the Restore
 
 ```bash
 ls -la /media/dkvmdata/
 mount | grep dkvmdata
-```
+```text
 
 The directory structure should match the backup. Reboot the host to confirm
 DKVM Manager detects the restored VMs:
 
 ```bash
 reboot
-```
+```text
 
 After reboot, open the DKVM Manager TUI on tty1. Your VMs should appear in the
 VM list with their previous configurations.
@@ -186,6 +187,7 @@ SSD or an external drive), you can physically move it:
 4. **Boot the new host** from a DKVM USB stick.
 5. The DKVMDATA partition is auto-detected and mounted at `/media/dkvmdata`.
    Verify:
+
    ```bash
    mount | grep dkvmdata
    ```
@@ -195,26 +197,30 @@ SSD or an external drive), you can physically move it:
 Use this when both hosts are on the same network and you want to copy data
 without physically moving drives.
 
-1.  **On the source host**, ensure SSH is running and accessible:
+1. **On the source host**, ensure SSH is running and accessible:
+
     ```bash
     rc-service sshd status
     ```
 
-2.  **On the destination host**, mount a fresh DKVMDATA partition
+2. **On the destination host**, mount a fresh DKVMDATA partition
     (see [Restoring from Backup](#2-restoring-from-backup)).
 
-3.  **From the destination host**, pull the data over SSH:
+3. **From the destination host**, pull the data over SSH:
+
     ```bash
     # Replace <source-ip> with the source DKVM host's IP
     rsync -avh --sparse --progress -e ssh root@<source-ip>:/media/dkvmdata/ /media/dkvmdata/
     ```
 
-4.  Verify the sync:
+4. Verify the sync:
+
     ```bash
     ls -la /media/dkvmdata/
     ```
 
-5.  Reboot the destination host:
+5. Reboot the destination host:
+
     ```bash
     reboot
     ```
@@ -243,7 +249,7 @@ lsblk
 
 # Create a full disk image
 sudo dd if=/dev/sdc of=/mnt/backup/dkvm-usb.img bs=4M status=progress && sync
-```
+```text
 
 > **Warning**: `dd` copies the entire device block-by-block, including unused
 > space. The resulting image is the same size as the USB drive. For a 16 GB
@@ -254,7 +260,7 @@ sudo dd if=/dev/sdc of=/mnt/backup/dkvm-usb.img bs=4M status=progress && sync
 ```bash
 # Write the image back to a USB stick (replace /dev/sdc with your device)
 sudo dd if=/mnt/backup/dkvm-usb.img of=/dev/sdc bs=4M status=progress && sync
-```
+```text
 
 ### When to Use Which Method
 

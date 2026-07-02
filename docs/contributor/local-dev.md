@@ -84,6 +84,7 @@ sudo losetup -d /dev/loop0
 ```
 
 Check that the following are present:
+
 - `vmlinuz-lts` — Alpine LTS kernel
 - `initramfs-lts` — initramfs
 - `scripts/` — DKVM setup scripts
@@ -121,7 +122,7 @@ This usually means `install.expect` failed to complete the QEMU-based
 installation. Common causes:
 
 | Symptom | Likely Cause | Solution |
-|---------|--------------|----------|
+| --------- | -------------- | ---------- |
 | QEMU window appears briefly then disappears | Missing OVMF firmware | Run `make verify-deps` and check OVMF files exist |
 | `expect: spawn id ... not open` | QEMU failed to start | Check `qemu-system-x86_64` is installed and working |
 | Alpine ISO not found | Download interrupted | Remove `alpine-standard-*.iso` and re-run `make build` |
@@ -150,12 +151,14 @@ The full build downloads an Alpine ISO (~200 MB), extracts kernel/initramfs, and
 boots a QEMU VM to run the installation scripts. Expect 5–15 minutes depending
 on network speed and host performance. For faster iteration on script-only
 changes, use the [quick script-only iteration](#quick-script-only-iteration)
-workflow.
+workflow
+
 ---
 
 ## Reference
 
-- [Architecture Reference](architecture-reference.md) — full build pipeline, boot sequence,
+- [Architecture Reference](architecture-reference.md) — full build pipeline,
+  boot sequence, persistence model, component map
   persistence model, component map
 - [CONTRIBUTING.md](CONTRIBUTING.md) — PR process, coding standards, changelog
   policy

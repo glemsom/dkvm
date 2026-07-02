@@ -24,7 +24,7 @@ Before configuring DKVM networking, ensure:
 The three networking modes serve different use cases:
 
 | Mode | Guest Reachable from LAN | Requires DHCP | Use Case |
-|------|--------------------------|---------------|----------|
+| ------ | -------------------------- | --------------- | ---------- |
 | Bridge (default) | ✅ Full LAN access | Yes | Production VMs needing full network presence |
 | User-mode (NAT) | ❌ Isolated behind host | No (QEMU built-in) | Quick testing, development, isolated guests |
 | Port forwarding | Via user-mode NAT only | Via user-mode NAT only | Exposing specific guest services (e.g., SSH) via hostfwd rules |
@@ -87,8 +87,8 @@ is isolated behind the host's IP.
 The Makefile `run` target uses user-mode networking for smoke testing:
 
 ```makefile
-	-netdev user,id=mynet0,hostfwd=tcp::2222-:22 \
-	-device e1000,netdev=mynet0
+ -netdev user,id=mynet0,hostfwd=tcp::2222-:22 \
+ -device e1000,netdev=mynet0
 ```
 
 This forwards host port **2222** to guest port **22** (SSH). To SSH into the
@@ -166,18 +166,25 @@ an isolated network segment:
 ### No DHCP Lease
 
 - Verify the bridge interface exists:
+
   ```bash
   ip a show br0
   ```
+
 - Check if `eth0` is linked to the bridge:
+
   ```bash
   bridge link show
   ```
+
 - If `br0` has no IP, force a DHCP renewal:
+
   ```bash
   udhcpc -i br0
   ```
+
 - Check the physical cable / link:
+
   ```bash
   ip link show eth0
   ```
@@ -188,10 +195,13 @@ an isolated network segment:
   If it is missing, check that the file contains the `br0` stanza (see
   [Bridge Mode](#1-bridge-mode-default) above).
 - Verify OpenRC networking services are enabled:
+
   ```bash
   rc-service networking restart
   ```
+
 - Check kernel module `bridge` is loaded:
+
   ```bash
   lsmod | grep bridge
   ```
@@ -202,28 +212,37 @@ an isolated network segment:
   `bridge link show` to see connected interfaces.
 - **In user-mode**: no configuration needed — the guest gets NAT access by
   default. Verify with:
+
   ```bash
   ping 8.8.8.8
   ```
+
 - If the guest has an IP but no internet, check DNS:
+
   ```bash
   cat /etc/resolv.conf
   ```
+
 - If the guest has no IP at all, verify DHCP is running inside the guest.
 
 ### SSH Access Not Working
 
 - Confirm the DKVM host IP:
+
   ```bash
   ip addr show br0
   ```
+
 - Root SSH is enabled by default (`PermitRootLogin yes` in
   `/etc/ssh/sshd_config`).
 - Test from another machine:
+
   ```bash
   ssh root@<dkvm-ip>
   ```
+
 - Check `sshd` is running:
+
   ```bash
   rc-service sshd status
   ```
@@ -231,7 +250,7 @@ an isolated network segment:
 ## Reference
 
 | Topic | Document |
-|-------|----------|
+| ------- | ---------- |
 | First-time setup | [First-Boot Walkthrough](first-boot.md) |
 | Common problems | [Troubleshooting](troubleshooting.md) |
 | DKVMDATA layout | [Configuration Files](configuration-files.md) |

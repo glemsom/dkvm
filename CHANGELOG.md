@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD013 MD024 -->
+
 # Changelog
 
 All notable changes to DKVM will be documented in this file.
@@ -10,10 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.7.40] - 2026-06-23
 
 ### Added
+
 - Community health files: SECURITY.md, CODE_OF_CONDUCT.md, issue/PR templates.
 - Markdownlint configuration (`.markdownlint.yaml`) and `make lint-docs` target.
 
 ### Changed
+
 - README.md: added CI badge and clarified target audience.
 - CONTEXT.md: expanded terminology with QEMU, KVM, OVMF, IOMMU, VFIO, lbu,
   swtpm, QMP, br0.
@@ -33,11 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.7.39] - 2026-06-22
 
 ### Changed
+
 - Updated DKVM Manager to v0.2.0.
 
 ## [v0.7.38] - 2026-06-21
 
 ### Added
+
 - Created docs/contributor/CONTRIBUTING.md with contributor guide.
 - Created docs/contributor/architecture.md with end-to-end architecture
   documentation covering boot sequence, build pipeline, persistence model,
@@ -47,59 +53,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cleanup procedures.
 
 ### Changed
+
 - Updated DKVM Manager to v0.1.31.
 
 ## [v0.7.37] - 2026-06-20
 
 ### Changed
+
 - Updated DKVM Manager to v0.1.29.
 
 ## [v0.7.36] - 2026-06-19
 
 ### Changed
+
 - Updated DKVM Manager to v0.1.28.
 
 ## [v0.7.35] - 2026-06-18
 
 ### Changed
+
 - Updated Alpine Linux from 3.24.0 to 3.24.1.
 
 ### Removed
+
 - Removed `scripts/dkvmmenu.sh`. The project now relies entirely on the Golang TUI **DKVM Manager** for VM management.
 
 ## [v0.7.33] - 2026-06-13
 
 ### Fixed
+
 - Removed masked/missing Alpine packages (`vim`, `lvm2-dmeventd`) from the build to prevent installation failures.
 
 ## [v0.7.30] - 2026-05-31
 
 ### Changed
+
 - Updated DKVM Manager to v0.1.21.
 
 ## [v0.7.28] - 2026-05-20
 
 ### Changed
+
 - Updated DKVM Manager to v0.1.19.
 
 ## [v0.7.24] - 2026-05-15
 
 ### Changed
+
 - Updated DKVM Manager to v0.1.15.
 
 ## [v0.7.18] - 2026-05-06
 
 ### Changed
+
 - Updated DKVM Manager to v0.1.11.
 
 ## [v0.7.13] - 2026-05-02
 
 ### Changed
+
 - Updated TTY configuration: DKVM Manager runs exclusively on tty1. The previous tty2 fallback (`dkvmmenu.sh`) has been removed.
 
 ## [v0.7.12] - 2026-04-30
 
 ### Changed
+
 - Changed `mkisofs` to use `-iso-level 4` for scripts ISO creation, improving compatibility with longer filenames and deeper directory structures.
 - Improved DKVM Manager injection in `runme.sh`: the `tty2` entry in `/etc/inittab` is now updated if it already exists instead of blindly appending a duplicate line.
 - Replaced the warning message for a missing DKVM Manager binary with the standard `err()` function for consistent error reporting.
@@ -107,103 +125,126 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.7.11] - 2026-04-29
 
 ### Changed
+
 - Improved and fixed comments in Makefile for better clarity.
 
 ## [v0.7.9] - 2026-03-17
 
 ### Added
+
 - Standard DKVM shell comments to the `getQEMUStatus()` function in `dkvmmenu.sh`.
 
 ### Changed
+
 - Improved `getQEMUStatus()` robustness by adding a retry mechanism (3 attempts with 2-second intervals) to handle transient QMP connection issues.
 
 ## [v0.7.8] - 2026-03-14
 
 ### Changed
+
 - Reverted networking from `tap` back to `bridge` netdev. This simplifies the configuration by removing the need for `vhost` and `vhost_net` kernel modules and complex multiqueue/vector calculations, improving compatibility across different bridge setups.
 
 ## [v0.7.7] - 2026-03-14
 
 ### Changed
+
 - Optimized networking by matching the number of queues and vectors to the number of host cores instead of vCPUs. This ensures network processing (vhost threads) stays on host cores to minimize guest latency.
 
 ### Added
+
 - Added `vhost` kernel module to the boot configuration.
 
 ## [v0.7.6] - 2026-03-14
 
 ### Added
+
 - Added `vhost_net` kernel module to the boot configuration to support vhost networking.
 
 ## [v0.7.5] - 2026-03-14
 
 ### Changed
+
 - Switched from `-netdev bridge` to `-netdev tap` with bridge helper to support `vhost=on`, as the `bridge` backend does not support it.
 
 ### Added
+
 - Note to `verify_pinning.sh` regarding the need to disable `cpu-pm` for the script to work correctly.
 
 ## [v0.7.4] - 2026-03-13
 
 ### Changed
+
 - Enabled `cpu-pm=on` to allow guest to manage host CPU power states directly, eliminating VM exits on HLT instructions (safe with dedicated pinned cores).
 - vCPU threads are now promoted to `SCHED_FIFO` real-time scheduling (priority 1) after pinning to reduce scheduling jitter.
 - Enabled `vhost=on` on the virtio-net backend to offload virtqueue processing into the kernel, reducing context switch overhead.
 - Enabled virtio-net multiqueue (`mq=on`) with queue count matched to vCPU count for parallel per-vCPU network processing.
 
 ### Added
+
 - Added `hv-ipi` (paravirtualized IPIs) and `hv-avic` (AMD APIC virtualisation) as selectable options in the CPU options dialog.
 
 ## [v0.7.3] - 2026-03-12
 
 ### Added
+
 - Added support for additional Hyper-V enlightened flags to improve Windows guest performance.
 
 ### Changed
+
 - Miscellaneous comment and documentation cleanup in scripts.
 
 ## [v0.7.2] - 2026-02-28
 
 ### Added
+
 - Support for custom PCI USB Controller configuration.
 
 ### Changed
+
 - Refactored vCPU affinity logic for improved performance and reliability.
 - Updated base Alpine Linux version for the build environment.
 - Enhanced example verification scripts for better clarity and usability.
 
 ### Fixed
+
 - Resolved issues affecting CPU pinning configuration.
 
 ## [v0.7.0] - 2026-02-09
 
 ### Added
+
 - New Makefile-based build system for simplified project management.
 - `install.expect` script for automated installation processes.
 
 ### Changed
+
 - Migrated build process from `build.sh` and `cleanup.sh` to Makefile targets (`make build`, `make clean`).
 - Updated build instructions in README.md to reflect the new Makefile workflow.
 
 ### Removed
+
 - Deprecated `build.sh` and `cleanup.sh` scripts (functionality now in Makefile).
 
 ## [v0.6.3] - 2026-01-24
 
 ### Added
+
 - Example start/stop script for AMD 9000 series CPUs with advanced CPU pinning and NUMA configuration.
 
 ### Changed
+
 - Improved documentation in `verify_pinning.sh` to clarify SSH passwordless authentication requirement.
 
 ## [v0.6.2] - 2026-01-19
 
 ### Added
+
 - Feature to set and persist the root SSH password directly from the DKVM configuration menu.
 - Documentation for the `DKVMDATA` filesystem label requirement to enable automatic storage mounting at `/media/dkvmdata`.
 - Automatic extraction of version-specific release notes from `CHANGELOG.md` during GitHub Actions builds.
 
 ### Changed
+
 - Renamed `setup.sh` to `build.sh` for better clarity.
 - Refined build process instructions in README.md by removing manual configuration of `setup.sh`.
 - Improved `cleanup.sh` robustness for loop devices and temporary file handling.
@@ -211,11 +252,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Standardized tag trigger patterns in CI for `vX.Y.Z` consistency.
 
 ### Fixed
+
 - Improved glob expansion handling in `cleanup.sh`.
 
 ## [v0.6.1] - 2026-01-18
 
 ### Added
+
 - GitHub Actions workflow for automated builds on tag push
 - Automatic GitHub Release creation with versioned disk images
 - Versioned disk image output (dkvm-<version>.img format)
@@ -223,6 +266,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CHANGELOG.md to track project changes
 
 ### Changed
+
 - Unified build path by removing interactive QEMU step at end of setup.sh
 - Build script now prints recommended QEMU command for manual verification
 - Improved OVMF path discovery to support Ubuntu Noble (24.04 LTS)
@@ -230,12 +274,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VERSION environment variable can override default version in setup.sh
 
 ### Fixed
+
 - OVMF firmware file detection in GitHub Actions CI environment
 - Package name for QEMU in Ubuntu (qemu-system-x86 vs qemu-system-x86_64)
 
 ## [v0.5.14] - 2026-01-17
 
 ### Initial Release
+
 - Basic DKVM setup script for creating bootable USB images
 - Alpine Linux based system with QEMU/KVM support
 - VFIO passthrough configuration

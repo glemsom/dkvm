@@ -58,14 +58,14 @@ required virtualization packages, and the **DKVM Manager** Golang TUI.
 
 ### 🧪 Tutorials — start here
 
-| Document | What you'll do | Last reviewed |
-|----------|----------------|---------------|
-| [First-Boot Walkthrough](docs/user/first-boot.md) | Write USB image, boot DKVM, configure storage and devices, create your first VM. | 2026-06-23 |
+| Document                                          | What you'll do                                                                   | Last reviewed |
+| ------------------------------------------------- | -------------------------------------------------------------------------------- | ------------- |
+| [First-Boot Walkthrough](docs/user/first-boot.md) | Write USB image, boot DKVM, configure storage and devices, create your first VM. | 2026-06-23    |
 
 ### 🔧 How-to Guides — solve specific problems
 
 | Document | Problem it solves | Last reviewed |
-|----------|-------------------|---------------|
+| ---------- | ------------------- | --------------- |
 | [Networking](docs/user/networking.md) | Set up bridge, user-mode, or port forwarding networking for guests. | 2026-06-23 |
 | [Troubleshooting](docs/user/troubleshooting.md) | Diagnose DKVMDATA mounts, VM boot failures, SSH issues. | 2026-06-23 |
 | [Example Scripts](docs/user/example-scripts.md) | GPU driver cycling for AMD 9000-series, CPU pinning verification. | 2026-06-23 |
@@ -74,7 +74,7 @@ required virtualization packages, and the **DKVM Manager** Golang TUI.
 | [Backup, Restore & Migration](docs/user/backup-restore.md) | Back up VM data, restore after failure, and migrate VMs to another host. | 2026-06-23 |
 
 | Document | What it describes | Last reviewed |
-|----------|-------------------|---------------|
+| ---------- | ------------------- | --------------- |
 | [Architecture Reference](docs/contributor/architecture-reference.md) | Boot sequence details, build pipeline commands, persistence specifics, component map. | 2026-06-23 |
 | [Local Development](docs/contributor/local-dev.md) | Build commands, quick iteration loop, image inspection, cleanup. | 2026-06-23 |
 | [CONTRIBUTING](docs/contributor/CONTRIBUTING.md) | PR process, coding standards, changelog policy. | 2026-06-23 |
@@ -83,7 +83,7 @@ required virtualization packages, and the **DKVM Manager** Golang TUI.
 ### 🧠 Explanation — deeper understanding
 
 | Document | Topic | Last reviewed |
-|----------|-------|---------------|
+| ---------- | ------- | --------------- |
 | [CONTEXT](CONTEXT.md) | Project terminology and ubiquitous language (what "DKVM", "DKVMDATA", "Guest" mean). | 2026-06-23 |
 | [Architecture Overview](docs/contributor/architecture-overview.md) | How DKVM works, design decisions, high-level architecture narrative. | 2026-06-23 |
 | [Persistence Model](docs/user/configuration-files.md#persistence-model-summary) | How OS settings and VM data survive reboots. | 2026-06-23 |
@@ -96,7 +96,8 @@ Pre-built images are available in
 [GitHub Releases](https://github.com/glemsom/dkvm/releases).
 
 To build from source, see the
-[Local Development](docs/contributor/local-dev.md) guide.
+[Local Development](docs/contributor/local-dev.md) guide
+
 ---
 
 ## DKVM Manager
@@ -114,7 +115,7 @@ for a step-by-step guide. For the full feature list, see the
 ## Project Repositories
 
 | Repository | Purpose |
-|------------|---------|
+| ------------ | --------- |
 | [glemsom/dkvm](https://github.com/glemsom/dkvm) | This repo. Makefile, scripts, examples, docs. Produces the bootable USB image. |
 | [glemsom/dkvmmanager](https://github.com/glemsom/dkvmmanager) | Go TUI binary that runs on tty1. Separate repo, version-pinned in Makefile. |
 | [glemsom/dkvm-qemu](https://github.com/glemsom/dkvm-qemu) | Custom QEMU APK repository with DKVM-specific patches. |

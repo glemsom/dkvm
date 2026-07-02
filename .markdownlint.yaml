@@ -23,5 +23,11 @@ MD041: false
 MD024:
   siblings_only: true
 
+# MD036/no-emphasis-as-heading — allow emphasis used for metadata like "Last updated"
+MD036: false
+
+
 # MD046/code-block-style — allow both fenced and indented code blocks
 MD046: false
+
+

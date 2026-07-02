@@ -12,7 +12,7 @@ see [Architecture Overview](architecture-overview.md).
 ## Acronym Glossary
 
 | Acronym | Expansion | Description |
-|---|---|---|
+| --- | --- | --- |
 | ACPI | Advanced Configuration and Power Interface | Power management standard; DKVM uses ACPI events for graceful guest shutdown. |
 | BIOS | Basic Input/Output System | Legacy firmware interface (DKVM uses UEFI/OVMF). |
 | CPPC | Collaborative Processor Performance Control | Interface for managing CPU performance; used in pinning verification. |
@@ -175,6 +175,7 @@ overlay on the USB stick.
 - The overlay survives reboots because the USB is writable.
 
 Files persisted via `lbu`:
+
 - `/etc/inittab` (DKVM Manager on tty1)
 - `/usr/bin/dkvmmanager` (the binary itself)
 - System configuration changes made via the TUI
@@ -187,9 +188,11 @@ the `lbu` overlay. It lives on a separate ext4 partition labeled `DKVMDATA`.
 - **Auto-mounted** at `/media/dkvmdata` by `/etc/local.d/dkvm_folder.start`
   during boot.
 - **Format**: ext4 with label `DKVMDATA`. Example:
+
   ```bash
   sudo mkfs.ext4 -L DKVMDATA /dev/sdXY
   ```
+
 - **Contents**:
   - VM disk images (`.qcow2`, `.raw`)
   - ISO files for guest OS installation
@@ -234,7 +237,7 @@ flowchart LR
 ### External dependencies
 
 | Component | Source | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Alpine Linux | [alpinelinux.org](https://alpinelinux.org) | Base OS, diskless mode |
 | QEMU | `glemsom/dkvm-qemu` (custom APK repo) | Custom build with DKVM patches |
 | DKVM Manager | [glemsom/dkvmmanager](https://github.com/glemsom/dkvmmanager) | Go TUI, separate repo, version-pinned in Makefile |
