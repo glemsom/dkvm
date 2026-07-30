@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.46] - 2026-07-31
+
+### Changed
+
+- Bump DKVM Manager to v0.2.7.
+
 ## [v0.7.45] - 2026-07-17
 
 ### Changed
