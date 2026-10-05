@@ -12,10 +12,10 @@
 # ║ Disk image size in megabytes
 # ║ Alpine Linux major and minor versions
 # ╚═══════════════════════════════════════════════════════════════════════════════════╝
-VERSION ?= v0.7.46
+VERSION ?= v0.7.47
 DISK_SIZE ?= 2048
 ALPINE_VERSION ?= 3.24
-ALPINE_MINOR ?= 1
+ALPINE_MINOR ?= 2
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════╗
 # ║ DKVM Manager Configuration
@@ -175,20 +175,27 @@ build: verify-deps $(OVMF_CODE) $(OVMF_VARS) scripts.iso alpine_extract/vmlinuz-
 	@echo "Starting installation..."
 	@sudo expect install.expect "$(QEMU)" "$(OVMF_CODE)" "$(OVMF_VARS)" "$(DISK_FILE)" "$(ALPINE_ISO)" "scripts.iso" || (echo "Error during installation"; exit 1)
 	@echo "Writing version to disk..."
-	@loopDevice=$$(sudo losetup --show -f -P "$(DISK_FILE)"); \
+	@set -e; \
+	loopDevice=$$(sudo losetup --show -f -P "$(DISK_FILE)"); \
+	cleanup() { \
+		sudo umount tmp_dkvm 2>/dev/null || true; \
+		sudo losetup -d "$$loopDevice" 2>/dev/null || true; \
+		sudo rm -rf tmp_dkvm; \
+	}; \
+	trap cleanup EXIT; \
 	mkdir -p tmp_dkvm; \
-	sudo mount -o loop "$${loopDevice}p1" tmp_dkvm || (echo "Cannot mount $${loopDevice}p1"; exit 1); \
-	echo "$(VERSION)" | sudo tee tmp_dkvm/dkvm-release > /dev/null; \
-	while mount | grep "$${loopDevice}p1" -q; do \
-		echo "$${loopDevice}p1 still mounted - trying to cleanup"; \
-		mountPoint=$$(mount | grep "$${loopDevice}p1" | awk '{print $$3}'); \
-		sudo umount "$${loopDevice}p1" 2>/dev/null || true; \
-		sudo umount "$$mountPoint" 2>/dev/null || true; \
-		sudo losetup -D; \
-		sleep 1; \
+	command -v udevadm >/dev/null 2>&1 && sudo udevadm settle || true; \
+	retries=0; \
+	while [ ! -b "$${loopDevice}p1" ] && [ $$retries -lt 50 ]; do \
+		sleep 0.1; \
+		retries=$$((retries + 1)); \
 	done; \
-	echo "$${loopDevice}p1 unmounted"; \
-	sudo rm -rf tmp_dkvm
+	[ -b "$${loopDevice}p1" ] || { echo "Error: $${loopDevice}p1 did not appear"; exit 1; }; \
+	sudo mount -o loop "$${loopDevice}p1" tmp_dkvm; \
+	echo "$(VERSION)" | sudo tee tmp_dkvm/dkvm-release > /dev/null; \
+	sync; \
+	sudo umount tmp_dkvm; \
+	echo "Wrote $(VERSION) to $${loopDevice}p1"
 	@echo "BUILD COMPLETED: $(DISK_FILE) is ready."
 	@echo "To run the image: make run VERSION=$(VERSION)"
 	@	rm -rf alpine_extract scripts.iso

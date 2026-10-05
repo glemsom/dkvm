@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.47] - 2026-10-05
+
+### Changed
+
+- Updated Alpine Linux from 3.24.1 to 3.24.2.
+- `qemu-img` is now installed from the `@dkvm` repository, so the whole
+  QEMU stack comes from the DKVM QEMU build (11.0.5) instead of mixing
+  it with Alpine community's 11.0.3 package.
+
+### Fixed
+
+- `make build` now fails instead of silently skipping the `dkvm-release`
+  version file when the image partition cannot be mounted. The post-build
+  step also waits for the loop partition device to appear and detaches
+  only its own loop device.
+
 ## [v0.7.46] - 2026-07-31
 
 ### Changed
